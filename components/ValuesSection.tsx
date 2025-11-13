@@ -35,7 +35,7 @@ export default function ValuesSection() {
         <div className="mt-16 text-center animate-fade-in-up-delay">
           <div className="mx-auto max-w-3xl rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 p-8 shadow-lg border border-primary-200/50">
             <h3 className="mb-4 text-2xl font-display font-bold text-gray-900">Our Vision</h3>
-            <p className="text-lg italic text-primary-800">"{companyInfo.vision}"</p>
+            <p className="text-lg italic text-primary-800">&ldquo;{companyInfo.vision}&rdquo;</p>
           </div>
         </div>
       </div>

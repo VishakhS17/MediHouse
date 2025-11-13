@@ -22,6 +22,34 @@ export default function AnimatedCounter({
   const counterRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const animateCounter = () => {
+      const startTime = Date.now()
+      const startValue = 0
+
+      const animate = () => {
+        const now = Date.now()
+        const elapsed = now - startTime
+        const progress = Math.min(elapsed / duration, 1)
+
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+        const currentValue = startValue + (end - startValue) * easeOutQuart
+
+        setCount(currentValue)
+
+        if (progress < 1) {
+          requestAnimationFrame(animate)
+        } else {
+          setCount(end)
+        }
+      }
+
+      requestAnimationFrame(animate)
+    }
+
+    const currentRef = counterRef.current
+    if (!currentRef) return
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -34,41 +62,14 @@ export default function AnimatedCounter({
       { threshold: 0.5 }
     )
 
-    if (counterRef.current) {
-      observer.observe(counterRef.current)
-    }
+    observer.observe(currentRef)
 
     return () => {
-      if (counterRef.current) {
-        observer.unobserve(counterRef.current)
+      if (currentRef) {
+        observer.unobserve(currentRef)
       }
     }
-  }, [hasAnimated])
-
-  const animateCounter = () => {
-    const startTime = Date.now()
-    const startValue = 0
-
-    const animate = () => {
-      const now = Date.now()
-      const elapsed = now - startTime
-      const progress = Math.min(elapsed / duration, 1)
-
-      // Easing function for smooth animation
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-      const currentValue = startValue + (end - startValue) * easeOutQuart
-
-      setCount(currentValue)
-
-      if (progress < 1) {
-        requestAnimationFrame(animate)
-      } else {
-        setCount(end)
-      }
-    }
-
-    requestAnimationFrame(animate)
-  }
+  }, [hasAnimated, end, duration])
 
   const formatNumber = (num: number): string => {
     if (decimals === 0) {
