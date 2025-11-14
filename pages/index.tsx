@@ -34,10 +34,65 @@ export default function Home() {
         <section id="services" className="relative overflow-hidden py-20 px-4" aria-label="Our Services">
           {/* Background Decoration with new colors */}
           <div className="absolute inset-0 bg-gradient-to-b from-white via-ocean-aqua/20 to-ocean-sky/10"></div>
+          
+          {/* Angular Geometric Border at Top */}
+          <div className="absolute top-0 left-0 right-0 h-32 overflow-hidden">
+            <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
+              <path 
+                d="M0,0 L0,80 L150,100 L300,120 L450,110 L600,130 L750,115 L900,135 L1050,125 L1200,140 L1200,0 Z" 
+                fill="#ffffff" 
+                opacity="1"
+              />
+              <path 
+                d="M0,0 L0,60 L200,85 L400,105 L600,95 L800,115 L1000,105 L1200,125 L1200,0 Z" 
+                fill="#f8fafc" 
+                opacity="0.9"
+              />
+            </svg>
+          </div>
+
+          {/* Diagonal Stripe Pattern */}
+          <div className="absolute inset-0 overflow-hidden opacity-8">
+            <div className="absolute top-0 left-0 w-full h-full" style={{
+              background: `repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 50px,
+                rgba(59, 180, 232, 0.06) 50px,
+                rgba(59, 180, 232, 0.06) 100px
+              )`
+            }}></div>
+            <div className="absolute top-0 left-0 w-full h-full" style={{
+              background: `repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 70px,
+                rgba(122, 211, 246, 0.05) 70px,
+                rgba(122, 211, 246, 0.05) 140px
+              )`
+            }}></div>
+          </div>
+
           {/* Decorative gradient stripes */}
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 left-0 right-0 h-24" style={{ background: 'linear-gradient(to bottom, #7AD3F6, transparent)' }}></div>
             <div className="absolute bottom-0 left-0 right-0 h-24" style={{ background: 'linear-gradient(to top, #A8D8F0, transparent)' }}></div>
+          </div>
+
+          {/* Angular Geometric Border at Bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">
+            <svg className="absolute bottom-0 left-0 w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
+              <path 
+                d="M0,200 L0,120 L150,100 L300,80 L450,90 L600,70 L750,85 L900,65 L1050,75 L1200,60 L1200,200 Z" 
+                fill="#ffffff" 
+                opacity="1"
+              />
+              <path 
+                d="M0,200 L0,140 L200,115 L400,95 L600,105 L800,85 L1000,95 L1200,75 L1200,200 Z" 
+                fill="#f8fafc" 
+                opacity="0.9"
+              />
+            </svg>
           </div>
           
           <div className="container-custom relative z-10">
@@ -70,6 +125,27 @@ export default function Home() {
         <section id="testimonials" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-24 px-4" aria-label="Customer Testimonials">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
+            {/* Diagonal Stripe Pattern */}
+            <div className="absolute inset-0 overflow-hidden opacity-12">
+              <div className="absolute top-0 left-0 w-full h-full" style={{
+                background: `repeating-linear-gradient(
+                  45deg,
+                  transparent,
+                  transparent 40px,
+                  rgba(168, 216, 240, 0.15) 40px,
+                  rgba(168, 216, 240, 0.15) 80px
+                )`
+              }}></div>
+              <div className="absolute top-0 left-0 w-full h-full" style={{
+                background: `repeating-linear-gradient(
+                  -45deg,
+                  transparent,
+                  transparent 60px,
+                  rgba(59, 180, 232, 0.12) 60px,
+                  rgba(59, 180, 232, 0.12) 120px
+                )`
+              }}></div>
+            </div>
             {/* Floating orbs with new colors */}
             <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(168, 216, 240, 0.15), transparent)' }}></div>
             <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.2), transparent)', animationDelay: '1s', animationDuration: '6s' }}></div>
@@ -127,6 +203,27 @@ export default function Home() {
         <section id="partners" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-12 sm:py-16 md:py-24 px-4" aria-label="Our Partners">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
+            {/* Diagonal Stripe Pattern */}
+            <div className="absolute inset-0 overflow-hidden opacity-12">
+              <div className="absolute top-0 left-0 w-full h-full" style={{
+                background: `repeating-linear-gradient(
+                  45deg,
+                  transparent,
+                  transparent 40px,
+                  rgba(168, 216, 240, 0.15) 40px,
+                  rgba(168, 216, 240, 0.15) 80px
+                )`
+              }}></div>
+              <div className="absolute top-0 left-0 w-full h-full" style={{
+                background: `repeating-linear-gradient(
+                  -45deg,
+                  transparent,
+                  transparent 60px,
+                  rgba(59, 180, 232, 0.12) 60px,
+                  rgba(59, 180, 232, 0.12) 120px
+                )`
+              }}></div>
+            </div>
             {/* Floating orbs with new colors */}
             <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(168, 216, 240, 0.15), transparent)' }}></div>
             <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.2), transparent)', animationDelay: '1s', animationDuration: '6s' }}></div>
@@ -182,6 +279,27 @@ export default function Home() {
         <section id="contact" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-20 px-4" aria-label="Contact">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
+            {/* Diagonal Stripe Pattern */}
+            <div className="absolute inset-0 overflow-hidden opacity-12">
+              <div className="absolute top-0 left-0 w-full h-full" style={{
+                background: `repeating-linear-gradient(
+                  45deg,
+                  transparent,
+                  transparent 40px,
+                  rgba(168, 216, 240, 0.15) 40px,
+                  rgba(168, 216, 240, 0.15) 80px
+                )`
+              }}></div>
+              <div className="absolute top-0 left-0 w-full h-full" style={{
+                background: `repeating-linear-gradient(
+                  -45deg,
+                  transparent,
+                  transparent 60px,
+                  rgba(59, 180, 232, 0.12) 60px,
+                  rgba(59, 180, 232, 0.12) 120px
+                )`
+              }}></div>
+            </div>
             {/* Floating orbs with new colors */}
             <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(168, 216, 240, 0.15), transparent)' }}></div>
             <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.2), transparent)', animationDelay: '1s', animationDuration: '6s' }}></div>

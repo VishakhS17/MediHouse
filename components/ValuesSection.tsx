@@ -3,6 +3,60 @@ import { companyInfo } from '@/data/site'
 export default function ValuesSection() {
   return (
     <section id="about" className="relative overflow-hidden bg-gradient-to-b from-white via-ocean-aqua/20 to-ocean-sky/10 py-24 px-4" aria-label="Our Values">
+      {/* Angular Geometric Border at Top */}
+      <div className="absolute top-0 left-0 right-0 h-32 overflow-hidden">
+        <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
+          <path 
+            d="M0,0 L0,80 L150,100 L300,120 L450,110 L600,130 L750,115 L900,135 L1050,125 L1200,140 L1200,0 Z" 
+            fill="#ffffff" 
+            opacity="1"
+          />
+          <path 
+            d="M0,0 L0,60 L200,85 L400,105 L600,95 L800,115 L1000,105 L1200,125 L1200,0 Z" 
+            fill="#f8fafc" 
+            opacity="0.9"
+          />
+        </svg>
+      </div>
+
+      {/* Diagonal Stripe Pattern */}
+      <div className="absolute inset-0 overflow-hidden opacity-8">
+        <div className="absolute top-0 left-0 w-full h-full" style={{
+          background: `repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 50px,
+            rgba(168, 216, 240, 0.06) 50px,
+            rgba(168, 216, 240, 0.06) 100px
+          )`
+        }}></div>
+        <div className="absolute top-0 left-0 w-full h-full" style={{
+          background: `repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 70px,
+            rgba(122, 211, 246, 0.05) 70px,
+            rgba(122, 211, 246, 0.05) 140px
+          )`
+        }}></div>
+      </div>
+
+      {/* Angular Geometric Border at Bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">
+        <svg className="absolute bottom-0 left-0 w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
+          <path 
+            d="M0,200 L0,120 L150,100 L300,80 L450,90 L600,70 L750,85 L900,65 L1050,75 L1200,60 L1200,200 Z" 
+            fill="#ffffff" 
+            opacity="1"
+          />
+          <path 
+            d="M0,200 L0,140 L200,115 L400,95 L600,105 L800,85 L1000,95 L1200,75 L1200,200 Z" 
+            fill="#f8fafc" 
+            opacity="0.9"
+          />
+        </svg>
+      </div>
+
       <div className="container-custom relative z-10">
         <div className="mb-16 text-center animate-fade-in-up">
           <span className="mb-4 inline-block rounded-full bg-gradient-to-r from-ocean-cyan/20 via-ocean-aqua/20 to-ocean-sky/20 px-4 py-2 text-sm font-semibold text-ocean-royal border border-ocean-cyan/30">
