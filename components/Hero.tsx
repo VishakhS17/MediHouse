@@ -45,42 +45,17 @@ export default function Hero() {
           }}></div>
         </div>
 
-        {/* Diagonal Stripe Pattern */}
-        <div className="absolute inset-0 overflow-hidden opacity-15">
+        {/* Subtle Diagonal Stripe Pattern - Hero only */}
+        <div className="absolute inset-0 overflow-hidden opacity-5">
           <div className="absolute top-0 left-0 w-full h-full" style={{
             background: `repeating-linear-gradient(
               45deg,
               transparent,
-              transparent 40px,
-              rgba(168, 216, 240, 0.1) 40px,
-              rgba(168, 216, 240, 0.1) 80px
-            )`
-          }}></div>
-          <div className="absolute top-0 left-0 w-full h-full" style={{
-            background: `repeating-linear-gradient(
-              -45deg,
-              transparent,
               transparent 60px,
-              rgba(59, 180, 232, 0.08) 60px,
-              rgba(59, 180, 232, 0.08) 120px
+              rgba(168, 216, 240, 0.08) 60px,
+              rgba(168, 216, 240, 0.08) 120px
             )`
           }}></div>
-        </div>
-
-        {/* Angular Geometric Border at Bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden" style={{ zIndex: 1 }}>
-          <svg className="absolute bottom-0 left-0 w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
-            <path 
-              d="M0,200 L0,120 L150,100 L300,80 L450,90 L600,70 L750,85 L900,65 L1050,75 L1200,60 L1200,200 Z" 
-              fill="#ffffff" 
-              opacity="1"
-            />
-            <path 
-              d="M0,200 L0,140 L200,115 L400,95 L600,105 L800,85 L1000,95 L1200,75 L1200,200 Z" 
-              fill="#f8fafc" 
-              opacity="0.9"
-            />
-          </svg>
         </div>
       </div>
 
@@ -137,7 +112,7 @@ export default function Hero() {
             <div className="h-10 w-px bg-white/20"></div>
             <div className="text-center">
               <div className="text-4xl sm:text-5xl font-display font-bold text-white">
-                <AnimatedCounter end={480} suffix="+" />
+                <AnimatedCounter end={720} suffix="+" />
               </div>
               <div className="text-sm sm:text-base text-white/80 mt-1">Satisfied Customers</div>
             </div>

@@ -29,7 +29,7 @@ export const companyInfo = {
   intro:
     'Medi House is a leading firm in Alappuzha that has been creating waves for over 12 years in pharmaceutical distribution. We have established ourselves as a trusted partner in healthcare delivery, serving the community with dedication and excellence.',
   detailedIntro:
-    'Since our establishment, Medi House has been at the forefront of pharmaceutical distribution in Alappuzha. With a dedicated team of five salesmen and one van salesman, we cover the whole of Alappuzha and suburbs, ensuring timely and reliable delivery of medicines and healthcare products. Our customer base exceeds 480 satisfied clients, a testament to our commitment to quality service and customer satisfaction.',
+    'Since our establishment, Medi House has been at the forefront of pharmaceutical distribution in Alappuzha. With a dedicated team of five salesmen and one van salesman, we cover the whole of Alappuzha and suburbs, ensuring timely and reliable delivery of medicines and healthcare products. Our customer base exceeds 720 satisfied clients, a testament to our commitment to quality service and customer satisfaction.',
   vision: 'To serve the needy, thereby serve them with satisfaction and relief too.',
   mission:
     'To be the most reliable pharmaceutical distribution partner in Alappuzha, ensuring timely and quality healthcare products reach every corner of the region. We strive to maintain the highest standards in pharmaceutical distribution while building lasting relationships with our customers, partners, and the community.',
@@ -62,7 +62,7 @@ export const companyInfo = {
   ],
   capabilities: [
     'Team of five salesmen and one van salesman covering whole of Alappuzha and suburbs',
-    'Customer base exceeding 480 satisfied clients',
+    'Customer base exceeding 720 satisfied clients',
     'Cold chain facility ensuring proper storage of temperature-sensitive medications',
     'Tie-up with Tracon Courier for efficient and reliable delivery services',
     'Daily delivery services to major areas in Alappuzha',
@@ -142,7 +142,7 @@ export const services: Service[] = [
   {
     title: 'Wide Coverage',
     description:
-      'Extensive coverage area including whole of Alappuzha and suburbs, serving over 480 satisfied customers.',
+      'Extensive coverage area including whole of Alappuzha and suburbs, serving over 720 satisfied customers.',
     icon: '🗺️',
   },
 ]

@@ -104,11 +104,20 @@ export default function Header() {
         Skip to main content
       </a>
       <nav 
-        className={`mx-auto max-w-7xl rounded-2xl backdrop-blur-2xl shadow-2xl transition-all duration-300 ${
+        className={`mx-auto max-w-7xl rounded-2xl shadow-2xl transition-all duration-300 ${
           shouldUseBlueText
-            ? 'border border-gray-200/30 bg-white/30 hover:bg-white/40'
-            : 'border border-white/30 bg-white/10 hover:bg-white/15'
+            ? 'border border-gray-200/40 bg-white/50 hover:bg-white/60 backdrop-blur-3xl'
+            : 'border border-white/40 bg-white/20 hover:bg-white/25 backdrop-blur-3xl'
         }`}
+        style={shouldUseBlueText ? {
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)'
+        } : {
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.15)'
+        }}
         aria-label="Main navigation"
       >
         <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
@@ -146,7 +155,7 @@ export default function Header() {
                 onClick={(e) => handleNavClick(e, link.href)}
                 className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
                   shouldUseBlueText
-                    ? 'bg-gradient-to-r from-ocean-royal via-ocean-teal to-ocean-cyan bg-clip-text text-transparent hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
+                    ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                     : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
                 }`}
               >
@@ -163,7 +172,7 @@ export default function Header() {
           <button
             className={`md:hidden rounded-lg p-2 transition-colors focus:outline-none focus:ring-2 ${
               shouldUseBlueText
-                ? 'text-primary-700 hover:bg-primary-50/50 focus:ring-primary-500'
+                ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                 : 'text-white/90 hover:bg-white/10 focus:ring-white/50'
             }`}
             aria-label="Toggle menu"
@@ -200,7 +209,7 @@ export default function Header() {
                   onClick={(e) => handleNavClick(e, link.href)}
                   className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer ${
                     shouldUseBlueText
-                      ? 'text-primary-700 hover:bg-primary-50/50 hover:text-primary-800 focus:ring-primary-500'
+                      ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                       : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
                   }`}
                 >
