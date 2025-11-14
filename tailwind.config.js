@@ -30,6 +30,14 @@ module.exports = {
           gray: '#6b7280',
           'gray-light': '#f3f4f6',
         },
+        ocean: {
+          navy: '#0D4A7A',
+          royal: '#156DA3',
+          sky: '#A8D8F0',
+          cyan: '#3BB4E8',
+          teal: '#1F8FC9',
+          aqua: '#7AD3F6',
+        },
       },
       animation: {
         'spin-slow': 'spin 8s linear infinite',

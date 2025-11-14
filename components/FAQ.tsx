@@ -42,14 +42,14 @@ export default function FAQ() {
   }
 
   return (
-    <section id="faq" className="relative overflow-hidden bg-gradient-to-b from-white via-gray-50 to-white py-24 px-4" aria-label="Frequently Asked Questions">
+    <section id="faq" className="relative overflow-hidden bg-gradient-to-b from-white via-ocean-aqua/10 to-ocean-sky/10 py-24 px-4" aria-label="Frequently Asked Questions">
       <div className="container-custom relative z-10">
         <div className="mb-16 text-center animate-fade-in-up">
-          <span className="mb-4 inline-block rounded-full bg-primary-100 px-4 py-2 text-sm font-semibold text-primary-700">
+          <span className="mb-4 inline-block rounded-full bg-gradient-to-r from-ocean-cyan/20 via-ocean-aqua/20 to-ocean-sky/20 px-4 py-2 text-sm font-semibold text-ocean-royal border border-ocean-cyan/30">
             Common Questions
           </span>
           <h2 className="mb-6 font-display font-bold text-gray-900">
-            Frequently Asked <span className="gradient-text">Questions</span>
+            Frequently Asked <span className="bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal bg-clip-text text-transparent">Questions</span>
           </h2>
         </div>
 
@@ -57,21 +57,22 @@ export default function FAQ() {
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className="group overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:shadow-xl"
+              className="group overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:shadow-xl border border-ocean-sky/20 hover:border-ocean-cyan/40"
             >
               <button
                 onClick={() => toggleFAQ(index)}
-                className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-primary-50"
+                className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-ocean-aqua/10"
                 aria-expanded={openIndex === index}
               >
-                <span className="text-lg font-semibold text-gray-900">{faq.question}</span>
+                <span className="text-lg font-semibold bg-gradient-to-r from-ocean-royal via-ocean-teal to-ocean-cyan bg-clip-text text-transparent">{faq.question}</span>
                 <svg
-                  className={`h-5 w-5 text-primary-600 transition-transform duration-300 ${
+                  className={`h-5 w-5 transition-transform duration-300 ${
                     openIndex === index ? 'rotate-180' : ''
                   }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  style={{ color: '#3BB4E8' }}
                 >
                   <path
                     strokeLinecap="round"

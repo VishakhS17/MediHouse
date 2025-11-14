@@ -11,29 +11,36 @@ export default function Hero() {
   }, [])
 
   return (
-    <section className="relative min-h-[90vh] overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 pt-24 sm:pt-28">
+    <section className="relative min-h-[90vh] overflow-hidden bg-gradient-to-b from-ocean-navy via-ocean-royal to-ocean-teal pt-24 sm:pt-28">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Floating orbs */}
-        <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full bg-white/5 blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full bg-blue-300/10 blur-3xl" style={{ animationDelay: '1s', animationDuration: '6s' }}></div>
-        <div className="absolute top-1/2 left-0 h-64 w-64 animate-float rounded-full bg-white/5 blur-3xl" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
-        <div className="absolute bottom-1/4 left-1/2 h-80 w-80 animate-float rounded-full bg-blue-200/10 blur-3xl" style={{ animationDelay: '0.5s', animationDuration: '7s' }}></div>
+        {/* Floating orbs with new colors */}
+        <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(168, 216, 240, 0.15), transparent)' }}></div>
+        <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.2), transparent)', animationDelay: '1s', animationDuration: '6s' }}></div>
+        <div className="absolute top-1/2 left-0 h-64 w-64 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(122, 211, 246, 0.15), transparent)', animationDelay: '2s', animationDuration: '8s' }}></div>
+        <div className="absolute bottom-1/4 left-1/2 h-80 w-80 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(31, 143, 201, 0.2), transparent)', animationDelay: '0.5s', animationDuration: '7s' }}></div>
+        
+        {/* Gradient stripes pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to top, #0D4A7A, transparent)' }}></div>
+          <div className="absolute bottom-16 left-0 right-0 h-24" style={{ background: 'linear-gradient(to top, #156DA3, transparent)' }}></div>
+          <div className="absolute top-0 left-0 right-0 h-40" style={{ background: 'linear-gradient(to bottom, #A8D8F0, transparent)' }}></div>
+        </div>
         
         {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,216,240,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,216,240,0.05)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
         
-        {/* Animated gradient mesh */}
+        {/* Animated gradient mesh with new colors */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute h-full w-full animate-spin-slow" style={{
-            background: 'conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+            background: 'conic-gradient(from 0deg, transparent, rgba(59, 180, 232, 0.3), transparent, rgba(122, 211, 246, 0.2), transparent)',
           }}></div>
         </div>
         
-        {/* Light beams */}
+        {/* Light beams with cyan gradient */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-0 h-full w-full animate-pulse-slow opacity-10" style={{
-            background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+            background: 'linear-gradient(45deg, transparent, rgba(59, 180, 232, 0.2), transparent)',
             animationDuration: '4s'
           }}></div>
         </div>
@@ -73,7 +80,7 @@ export default function Hero() {
             <span className="block animate-slide-up opacity-0 text-4xl sm:text-5xl md:text-6xl" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
               Crafting Your Perfect
             </span>
-            <span className="block animate-slide-up bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent opacity-0 text-4xl sm:text-5xl md:text-6xl" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+            <span className="block animate-slide-up bg-gradient-to-r from-white via-ocean-sky to-ocean-aqua bg-clip-text text-transparent opacity-0 text-4xl sm:text-5xl md:text-6xl" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
               Healthcare Distribution Network
             </span>
             <span className="mt-4 block animate-slide-up text-2xl font-light text-white/80 sm:text-3xl md:text-4xl opacity-0" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
@@ -109,7 +116,7 @@ export default function Hero() {
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row opacity-0 animate-fade-in" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
             <a
               href="#services"
-              className="group relative overflow-hidden rounded-lg bg-white px-8 py-3 text-base font-semibold text-primary-700 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-white/50"
+              className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal px-8 py-3 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-ocean-cyan/50"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Our Services
@@ -127,7 +134,7 @@ export default function Hero() {
                   />
                 </svg>
               </span>
-              <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-primary-50 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]"></div>
+              <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-ocean-aqua/30 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]"></div>
             </a>
             <a
               href="#contact"

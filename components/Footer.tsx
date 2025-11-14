@@ -5,11 +5,11 @@ export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-300" role="contentinfo">
+    <footer className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-navy text-gray-300" role="contentinfo">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/4 h-64 w-64 rounded-full bg-primary-500/5 blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-0 right-1/4 h-64 w-64 rounded-full bg-primary-600/5 blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-0 left-1/4 h-64 w-64 rounded-full blur-3xl animate-pulse-slow" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.15), transparent)' }}></div>
+        <div className="absolute bottom-0 right-1/4 h-64 w-64 rounded-full blur-3xl animate-pulse-slow" style={{ background: 'radial-gradient(circle, rgba(122, 211, 246, 0.15), transparent)', animationDelay: '1s' }}></div>
       </div>
 
       {/* Grid Pattern Overlay */}
@@ -18,7 +18,7 @@ export default function Footer() {
       <div className="container-custom relative z-10 py-16">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="animate-fade-in-up">
-            <h3 className="mb-6 text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            <h3 className="mb-6 text-2xl font-bold bg-gradient-to-r from-ocean-sky via-ocean-aqua to-white bg-clip-text text-transparent">
               {siteConfig.name}
             </h3>
             <p className="mb-6 leading-relaxed text-gray-400 text-sm">{siteConfig.description}</p>
@@ -36,7 +36,7 @@ export default function Footer() {
                   e.preventDefault()
                   document.querySelector('#services')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
-                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 rounded cursor-pointer"
+                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer"
               >
                 <span className="mr-2 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-[-10px]">→</span>
                 Services
@@ -47,7 +47,7 @@ export default function Footer() {
                   e.preventDefault()
                   document.querySelector('#testimonials')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
-                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 rounded cursor-pointer"
+                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer"
               >
                 <span className="mr-2 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-[-10px]">→</span>
                 Testimonials
@@ -58,7 +58,7 @@ export default function Footer() {
                   e.preventDefault()
                   document.querySelector('#partners')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
-                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 rounded cursor-pointer"
+                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer"
               >
                 <span className="mr-2 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-[-10px]">→</span>
                 Partners
@@ -69,7 +69,7 @@ export default function Footer() {
                   e.preventDefault()
                   document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
-                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 rounded cursor-pointer"
+                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer"
               >
                 <span className="mr-2 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-[-10px]">→</span>
                 Contact
@@ -87,7 +87,7 @@ export default function Footer() {
                     <a
                       key={index}
                       href={`tel:${number.replace(/\s/g, '')}`}
-                      className="block text-gray-400 transition-all duration-300 hover:text-primary-400 hover:translate-x-2 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
+                        className="block text-gray-400 transition-all duration-300 hover:text-ocean-aqua hover:translate-x-2 focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded"
                     >
                       {number}
                     </a>
@@ -101,7 +101,7 @@ export default function Footer() {
                     <a
                       key={index}
                       href={`tel:${number.replace(/\s/g, '')}`}
-                      className="block text-gray-400 transition-all duration-300 hover:text-primary-400 hover:translate-x-2 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
+                        className="block text-gray-400 transition-all duration-300 hover:text-ocean-aqua hover:translate-x-2 focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded"
                     >
                       {number}
                     </a>

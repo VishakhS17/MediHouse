@@ -104,7 +104,7 @@
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal bg-clip-text text-transparent;
   }
 }
 

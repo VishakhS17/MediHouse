@@ -6,16 +6,16 @@ interface FeatureCardProps {
 
 export default function FeatureCard({ service }: FeatureCardProps) {
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-xl bg-white p-8 shadow-lg transition-all duration-500 hover:-translate-y-4 hover:scale-105 hover:shadow-2xl hover:shadow-primary-500/40 border-2 border-transparent hover:border-primary-300">
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-xl bg-white p-8 shadow-lg transition-all duration-500 hover:-translate-y-4 hover:scale-105 hover:shadow-2xl border-2 border-transparent hover:border-ocean-cyan/50" style={{ boxShadow: '0 0 0 0 rgba(59, 180, 232, 0), 0 0 0 0 rgba(31, 143, 201, 0)' }}>
       {/* Animated Border Glow */}
-      <div className="absolute inset-0 rounded-xl border-2 border-primary-400/0 transition-all duration-500 group-hover:border-primary-400/50"></div>
+      <div className="absolute inset-0 rounded-xl border-2 opacity-0 transition-all duration-500 group-hover:opacity-100" style={{ borderColor: 'rgba(59, 180, 232, 0.5)' }}></div>
       
-      {/* Animated Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 via-primary-100/0 to-primary-200/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+      {/* Animated Background Gradient with new colors */}
+      <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: 'linear-gradient(to bottom right, rgba(122, 211, 246, 0.1), rgba(168, 216, 240, 0.05), rgba(59, 180, 232, 0.1))' }}></div>
       
-      {/* Hover Glow Effect - Stronger */}
-      <div className="absolute -inset-2 rounded-xl bg-gradient-to-br from-primary-400/0 to-primary-600/0 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-40"></div>
-      <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-primary-300/0 to-primary-500/0 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-30"></div>
+      {/* Hover Glow Effect with new colors */}
+      <div className="absolute -inset-2 rounded-xl opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-40" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.4), rgba(31, 143, 201, 0.2))' }}></div>
+      <div className="absolute -inset-1 rounded-xl opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-30" style={{ background: 'radial-gradient(circle, rgba(122, 211, 246, 0.3), rgba(59, 180, 232, 0.2))' }}></div>
       
       {/* Animated Shine Effect */}
       <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
@@ -24,15 +24,17 @@ export default function FeatureCard({ service }: FeatureCardProps) {
       
       {/* Content */}
       <div className="relative z-10 flex h-full flex-col">
-        {/* Icon Container */}
-        <div className="mb-6 inline-block self-start rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 p-4 shadow-md transition-all duration-500 group-hover:scale-125 group-hover:rotate-6 group-hover:shadow-xl group-hover:shadow-primary-500/50">
+        {/* Icon Container with new gradient */}
+        <div className="mb-6 inline-block self-start rounded-2xl p-4 shadow-md transition-all duration-500 group-hover:scale-125 group-hover:rotate-6 group-hover:shadow-xl" style={{ background: 'linear-gradient(135deg, #A8D8F0, #7AD3F6)', boxShadow: '0 4px 15px rgba(59, 180, 232, 0.3)' }}>
           <div className="text-5xl transition-transform duration-500 group-hover:scale-110" role="img" aria-label={service.title}>
             {service.icon}
           </div>
         </div>
         
-        <h3 className="mb-4 text-2xl font-bold text-gray-900 transition-all duration-500 group-hover:text-primary-700 group-hover:scale-105">
-          {service.title}
+        <h3 className="mb-4 text-2xl font-bold text-gray-900 transition-all duration-500 group-hover:scale-105" style={{ color: 'inherit' }}>
+          <span className="bg-gradient-to-r from-ocean-royal via-ocean-teal to-ocean-cyan bg-clip-text text-transparent group-hover:from-ocean-cyan group-hover:via-ocean-teal group-hover:to-ocean-royal transition-all duration-500">
+            {service.title}
+          </span>
         </h3>
         <p className="leading-relaxed text-gray-700 transition-colors duration-500 group-hover:text-gray-900">
           {service.description}

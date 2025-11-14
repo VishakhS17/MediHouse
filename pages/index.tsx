@@ -32,16 +32,21 @@ export default function Home() {
 
         {/* Features Section */}
         <section id="services" className="relative overflow-hidden py-20 px-4" aria-label="Our Services">
-          {/* Background Decoration */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white via-primary-50/30 to-white"></div>
+          {/* Background Decoration with new colors */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white via-ocean-aqua/20 to-ocean-sky/10"></div>
+          {/* Decorative gradient stripes */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-0 left-0 right-0 h-24" style={{ background: 'linear-gradient(to bottom, #7AD3F6, transparent)' }}></div>
+            <div className="absolute bottom-0 left-0 right-0 h-24" style={{ background: 'linear-gradient(to top, #A8D8F0, transparent)' }}></div>
+          </div>
           
           <div className="container-custom relative z-10">
             <div className="mb-16 text-center animate-fade-in-up">
-              <span className="mb-4 inline-block rounded-full bg-primary-100 px-4 py-2 text-sm font-semibold text-primary-700">
+              <span className="mb-4 inline-block rounded-full bg-gradient-to-r from-ocean-cyan/20 via-ocean-aqua/20 to-ocean-sky/20 px-4 py-2 text-sm font-semibold text-ocean-royal border border-ocean-cyan/30">
                 What We Offer
               </span>
               <h2 className="mb-6 font-display font-bold text-gray-900">
-                Our <span className="gradient-text">Services</span>
+                Our <span className="bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal bg-clip-text text-transparent">Services</span>
               </h2>
               <p className="mx-auto max-w-3xl text-xl leading-relaxed text-gray-600 mb-4">
                 With a dedicated team of five salesmen and one van salesman, we cover the whole of Alappuzha and suburbs. Our comprehensive distribution network ensures timely delivery of medicines and healthcare products to over 480 satisfied customers.
@@ -62,29 +67,36 @@ export default function Home() {
 
 
         {/* Testimonials Section */}
-        <section id="testimonials" className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 py-24 px-4" aria-label="Customer Testimonials">
+        <section id="testimonials" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-24 px-4" aria-label="Customer Testimonials">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
-            {/* Floating orbs */}
-            <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full bg-white/5 blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full bg-blue-300/10 blur-3xl" style={{ animationDelay: '1s', animationDuration: '6s' }}></div>
-            <div className="absolute top-1/2 left-0 h-64 w-64 animate-float rounded-full bg-white/5 blur-3xl" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
-            <div className="absolute bottom-1/4 left-1/2 h-80 w-80 animate-float rounded-full bg-blue-200/10 blur-3xl" style={{ animationDelay: '0.5s', animationDuration: '7s' }}></div>
+            {/* Floating orbs with new colors */}
+            <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(168, 216, 240, 0.15), transparent)' }}></div>
+            <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.2), transparent)', animationDelay: '1s', animationDuration: '6s' }}></div>
+            <div className="absolute top-1/2 left-0 h-64 w-64 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(122, 211, 246, 0.15), transparent)', animationDelay: '2s', animationDuration: '8s' }}></div>
+            <div className="absolute bottom-1/4 left-1/2 h-80 w-80 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(31, 143, 201, 0.2), transparent)', animationDelay: '0.5s', animationDuration: '7s' }}></div>
+            
+            {/* Gradient stripes pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to top, #0D4A7A, transparent)' }}></div>
+              <div className="absolute bottom-16 left-0 right-0 h-24" style={{ background: 'linear-gradient(to top, #156DA3, transparent)' }}></div>
+              <div className="absolute top-0 left-0 right-0 h-40" style={{ background: 'linear-gradient(to bottom, #A8D8F0, transparent)' }}></div>
+            </div>
             
             {/* Grid Pattern Overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,216,240,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,216,240,0.05)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
             
             {/* Animated gradient mesh */}
             <div className="absolute inset-0 opacity-20">
               <div className="absolute h-full w-full animate-spin-slow" style={{
-                background: 'conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                background: 'conic-gradient(from 0deg, transparent, rgba(59, 180, 232, 0.3), transparent, rgba(122, 211, 246, 0.2), transparent)',
               }}></div>
             </div>
             
-            {/* Light beams */}
+            {/* Light beams with cyan */}
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute top-1/4 left-0 h-full w-full animate-pulse-slow opacity-10" style={{
-                background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                background: 'linear-gradient(45deg, transparent, rgba(59, 180, 232, 0.2), transparent)',
                 animationDuration: '4s'
               }}></div>
             </div>
@@ -96,7 +108,7 @@ export default function Home() {
                 Trusted By Healthcare Providers
               </span>
               <h2 className="mb-6 font-display font-bold text-white">
-                What Our <span className="bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">Customers Say</span>
+                What Our <span className="bg-gradient-to-r from-ocean-sky via-ocean-aqua to-white bg-clip-text text-transparent">Customers Say</span>
               </h2>
             </div>
 
@@ -112,29 +124,36 @@ export default function Home() {
         <ValuesSection />
 
         {/* Partners Section */}
-        <section id="partners" className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 py-12 sm:py-16 md:py-24 px-4" aria-label="Our Partners">
+        <section id="partners" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-12 sm:py-16 md:py-24 px-4" aria-label="Our Partners">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
-            {/* Floating orbs */}
-            <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full bg-white/5 blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full bg-blue-300/10 blur-3xl" style={{ animationDelay: '1s', animationDuration: '6s' }}></div>
-            <div className="absolute top-1/2 left-0 h-64 w-64 animate-float rounded-full bg-white/5 blur-3xl" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
-            <div className="absolute bottom-1/4 left-1/2 h-80 w-80 animate-float rounded-full bg-blue-200/10 blur-3xl" style={{ animationDelay: '0.5s', animationDuration: '7s' }}></div>
+            {/* Floating orbs with new colors */}
+            <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(168, 216, 240, 0.15), transparent)' }}></div>
+            <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.2), transparent)', animationDelay: '1s', animationDuration: '6s' }}></div>
+            <div className="absolute top-1/2 left-0 h-64 w-64 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(122, 211, 246, 0.15), transparent)', animationDelay: '2s', animationDuration: '8s' }}></div>
+            <div className="absolute bottom-1/4 left-1/2 h-80 w-80 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(31, 143, 201, 0.2), transparent)', animationDelay: '0.5s', animationDuration: '7s' }}></div>
+            
+            {/* Gradient stripes pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to top, #0D4A7A, transparent)' }}></div>
+              <div className="absolute bottom-16 left-0 right-0 h-24" style={{ background: 'linear-gradient(to top, #156DA3, transparent)' }}></div>
+              <div className="absolute top-0 left-0 right-0 h-40" style={{ background: 'linear-gradient(to bottom, #A8D8F0, transparent)' }}></div>
+            </div>
             
             {/* Grid Pattern Overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,216,240,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,216,240,0.05)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
             
             {/* Animated gradient mesh */}
             <div className="absolute inset-0 opacity-20">
               <div className="absolute h-full w-full animate-spin-slow" style={{
-                background: 'conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                background: 'conic-gradient(from 0deg, transparent, rgba(59, 180, 232, 0.3), transparent, rgba(122, 211, 246, 0.2), transparent)',
               }}></div>
             </div>
             
-            {/* Light beams */}
+            {/* Light beams with cyan */}
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute top-1/4 left-0 h-full w-full animate-pulse-slow opacity-10" style={{
-                background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                background: 'linear-gradient(45deg, transparent, rgba(59, 180, 232, 0.2), transparent)',
                 animationDuration: '4s'
               }}></div>
             </div>
@@ -146,7 +165,7 @@ export default function Home() {
                 Trusted Partnerships
               </span>
               <h2 className="mb-4 sm:mb-6 font-display font-bold text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
-                Trusted <span className="bg-gradient-to-r from-blue-200 to-white bg-clip-text text-transparent">Partners</span>
+                Trusted <span className="bg-gradient-to-r from-ocean-sky via-ocean-aqua to-white bg-clip-text text-transparent">Partners</span>
               </h2>
               <p className="mx-auto max-w-3xl text-base sm:text-lg md:text-xl leading-relaxed text-white/90 px-2 sm:px-4">
                 We are proud to partner with leading pharmaceutical companies including Aristo, Blue Cross, JB Chemicals, RPG Life, Indoco, Lividus, Win Medi Care, and Chethana. Together, we deliver quality healthcare products to every corner of Alappuzha.
@@ -160,29 +179,36 @@ export default function Home() {
         <FAQ />
 
         {/* Contact Section */}
-        <section id="contact" className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 py-20 px-4" aria-label="Contact">
+        <section id="contact" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-20 px-4" aria-label="Contact">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
-            {/* Floating orbs */}
-            <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full bg-white/5 blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full bg-blue-300/10 blur-3xl" style={{ animationDelay: '1s', animationDuration: '6s' }}></div>
-            <div className="absolute top-1/2 left-0 h-64 w-64 animate-float rounded-full bg-white/5 blur-3xl" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
-            <div className="absolute bottom-1/4 left-1/2 h-80 w-80 animate-float rounded-full bg-blue-200/10 blur-3xl" style={{ animationDelay: '0.5s', animationDuration: '7s' }}></div>
+            {/* Floating orbs with new colors */}
+            <div className="absolute top-0 left-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(168, 216, 240, 0.15), transparent)' }}></div>
+            <div className="absolute bottom-0 right-1/4 h-96 w-96 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.2), transparent)', animationDelay: '1s', animationDuration: '6s' }}></div>
+            <div className="absolute top-1/2 left-0 h-64 w-64 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(122, 211, 246, 0.15), transparent)', animationDelay: '2s', animationDuration: '8s' }}></div>
+            <div className="absolute bottom-1/4 left-1/2 h-80 w-80 animate-float rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(31, 143, 201, 0.2), transparent)', animationDelay: '0.5s', animationDuration: '7s' }}></div>
+            
+            {/* Gradient stripes pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to top, #0D4A7A, transparent)' }}></div>
+              <div className="absolute bottom-16 left-0 right-0 h-24" style={{ background: 'linear-gradient(to top, #156DA3, transparent)' }}></div>
+              <div className="absolute top-0 left-0 right-0 h-40" style={{ background: 'linear-gradient(to bottom, #A8D8F0, transparent)' }}></div>
+            </div>
             
             {/* Grid Pattern Overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,216,240,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,216,240,0.05)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
             
             {/* Animated gradient mesh */}
             <div className="absolute inset-0 opacity-20">
               <div className="absolute h-full w-full animate-spin-slow" style={{
-                background: 'conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                background: 'conic-gradient(from 0deg, transparent, rgba(59, 180, 232, 0.3), transparent, rgba(122, 211, 246, 0.2), transparent)',
               }}></div>
             </div>
             
-            {/* Light beams */}
+            {/* Light beams with cyan */}
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute top-1/4 left-0 h-full w-full animate-pulse-slow opacity-10" style={{
-                background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                background: 'linear-gradient(45deg, transparent, rgba(59, 180, 232, 0.2), transparent)',
                 animationDuration: '4s'
               }}></div>
             </div>

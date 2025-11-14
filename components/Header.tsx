@@ -114,11 +114,11 @@ export default function Header() {
         <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Link
             href="/"
-            className="group flex items-center space-x-3 transition-transform duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-lg"
+            className="group flex items-center space-x-3 transition-transform duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ocean-cyan focus:ring-offset-2 rounded-lg"
             aria-label={`${siteConfig.name} Home`}
           >
             <div className="relative h-10 w-10 sm:h-12 sm:w-12 transition-transform duration-300 group-hover:rotate-12">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 opacity-0 blur transition-opacity duration-300 group-hover:opacity-50"></div>
+              <div className="absolute inset-0 rounded-full opacity-0 blur transition-opacity duration-300 group-hover:opacity-50" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.6), rgba(122, 211, 246, 0.4))' }}></div>
               <div className="relative h-full w-full">
                 <Image
                   src="/logo.svg"
@@ -131,8 +131,8 @@ export default function Header() {
             </div>
             <span className={`text-lg sm:text-xl font-display font-bold transition-all duration-300 ${
               shouldUseBlueText
-                ? 'text-primary-700'
-                : 'bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent'
+                ? 'bg-gradient-to-r from-ocean-royal via-ocean-teal to-ocean-cyan bg-clip-text text-transparent'
+                : 'bg-gradient-to-r from-white via-ocean-sky to-white/90 bg-clip-text text-transparent'
             }`}>
               {siteConfig.name}
             </span>
@@ -146,16 +146,16 @@ export default function Header() {
                 onClick={(e) => handleNavClick(e, link.href)}
                 className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
                   shouldUseBlueText
-                    ? 'text-primary-700 hover:bg-primary-50/50 hover:text-primary-800 focus:ring-primary-500'
+                    ? 'bg-gradient-to-r from-ocean-royal via-ocean-teal to-ocean-cyan bg-clip-text text-transparent hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                     : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
                 }`}
               >
                 <span className="relative z-10">{link.label}</span>
-                <span className={`absolute inset-x-0 bottom-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${
-                  shouldUseBlueText
-                    ? 'bg-gradient-to-r from-primary-700/0 via-primary-700 to-primary-700/0'
-                    : 'bg-gradient-to-r from-white/0 via-white to-white/0'
-                }`}></span>
+                    <span className={`absolute inset-x-0 bottom-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${
+                      shouldUseBlueText
+                        ? 'bg-gradient-to-r from-ocean-cyan/0 via-ocean-cyan to-ocean-cyan/0'
+                        : 'bg-gradient-to-r from-white/0 via-ocean-aqua to-white/0'
+                    }`}></span>
               </a>
             ))}
           </div>
