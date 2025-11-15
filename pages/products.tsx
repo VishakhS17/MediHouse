@@ -108,14 +108,14 @@ export default function Products() {
       <main id="main-content" role="main" className="pt-24">
         <section className="relative overflow-hidden py-12 px-4 bg-gradient-to-b from-white via-ocean-aqua/20 to-ocean-sky/10">
           <div className="container-custom relative z-10">
-            <div className="mb-8 text-center animate-fade-in-up">
-              <span className="mb-4 inline-block rounded-full bg-gradient-to-r from-ocean-cyan/20 via-ocean-aqua/20 to-ocean-sky/20 px-4 py-2 text-sm font-semibold text-ocean-royal border border-ocean-cyan/30">
+            <div className="mb-6 sm:mb-8 text-center animate-fade-in-up px-2">
+              <span className="mb-4 inline-block rounded-full bg-gradient-to-r from-ocean-cyan/20 via-ocean-aqua/20 to-ocean-sky/20 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-ocean-royal border border-ocean-cyan/30">
                 Our Inventory
               </span>
-              <h1 className="mb-6 font-display font-bold text-gray-900 text-4xl md:text-5xl">
+              <h1 className="mb-4 sm:mb-6 font-display font-bold text-gray-900 text-2xl sm:text-4xl md:text-5xl">
                 Product <span className="bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal bg-clip-text text-transparent">Catalog</span>
               </h1>
-              <p className="mx-auto max-w-3xl text-lg leading-relaxed text-gray-600">
+              <p className="mx-auto max-w-3xl text-sm sm:text-lg leading-relaxed text-gray-600 px-2">
                 Browse our complete inventory of pharmaceutical products from trusted manufacturers
               </p>
             </div>
@@ -128,14 +128,14 @@ export default function Products() {
                   placeholder="Search products or brands..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
                 />
               </div>
-              <div className="md:w-64">
+              <div className="w-full md:w-64">
                 <select
                   value={selectedBrand}
                   onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
                 >
                   <option value="all">All Brands</option>
                   {productsData?.brands.map(brand => (
@@ -179,16 +179,16 @@ export default function Products() {
                       >
                         <button
                           onClick={() => toggleBrand(brand)}
-                          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                          className="w-full px-4 sm:px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors touch-manipulation"
                         >
-                          <div className="flex items-center space-x-4">
-                            <h2 className="text-xl font-bold text-ocean-royal">{brand}</h2>
-                            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                          <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+                            <h2 className="text-lg sm:text-xl font-bold text-ocean-royal truncate">{brand}</h2>
+                            <span className="text-xs sm:text-sm text-gray-500 bg-gray-100 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0">
                               {products.length} {products.length === 1 ? 'product' : 'products'}
                             </span>
                           </div>
                           <svg
-                            className={`w-5 h-5 text-ocean-cyan transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            className={`w-5 h-5 text-ocean-cyan transition-transform flex-shrink-0 ml-2 ${isExpanded ? 'rotate-180' : ''}`}
                             fill="none"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -201,7 +201,7 @@ export default function Products() {
                         </button>
 
                         {isExpanded && (
-                          <div className="px-6 py-4 border-t border-gray-200">
+                          <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {products.map((product) => {
                                 const cartItem = getCartItem(product.id)
@@ -212,46 +212,48 @@ export default function Products() {
                                     key={product.id}
                                     className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                                   >
-                                    <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-                                    <p className="text-sm text-gray-500 mb-4">{product.manufacturer}</p>
+                                    <h3 className="font-semibold text-gray-900 mb-2 text-base sm:text-lg break-words">{product.name}</h3>
+                                    <p className="text-xs sm:text-sm text-gray-500 mb-4">{product.manufacturer}</p>
                                     
-                                    <div className="flex items-center space-x-2">
-                                      <button
-                                        onClick={() => {
-                                          if (quantity > 0) {
-                                            updateQuantity(product.id, quantity - 1)
-                                          }
-                                        }}
-                                        disabled={quantity === 0}
-                                        className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                      >
-                                        -
-                                      </button>
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={quantity}
-                                        onChange={(e) => {
-                                          const newQuantity = parseInt(e.target.value) || 0
-                                          updateQuantity(product.id, newQuantity)
-                                        }}
-                                        className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                                      />
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
+                                      <div className="flex items-center justify-center sm:justify-start space-x-2">
+                                        <button
+                                          onClick={() => {
+                                            if (quantity > 0) {
+                                              updateQuantity(product.id, quantity - 1)
+                                            }
+                                          }}
+                                          disabled={quantity === 0}
+                                          className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-lg font-semibold"
+                                        >
+                                          -
+                                        </button>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          value={quantity}
+                                          onChange={(e) => {
+                                            const newQuantity = parseInt(e.target.value) || 0
+                                            updateQuantity(product.id, newQuantity)
+                                          }}
+                                          className="w-20 px-2 py-2 border border-gray-300 rounded text-center text-base"
+                                        />
+                                        <button
+                                          onClick={() => handleAddToCart(product, 1)}
+                                          className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 touch-manipulation text-lg font-semibold"
+                                        >
+                                          +
+                                        </button>
+                                      </div>
                                       <button
                                         onClick={() => handleAddToCart(product, 1)}
-                                        className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
-                                      >
-                                        +
-                                      </button>
-                                      <button
-                                        onClick={() => handleAddToCart(product, 1)}
-                                        className="flex-1 bg-ocean-cyan text-white px-4 py-2 rounded-lg hover:bg-ocean-teal transition-colors font-medium"
+                                        className="flex-1 bg-ocean-cyan text-white px-4 py-3 rounded-lg hover:bg-ocean-teal transition-colors font-medium text-sm sm:text-base touch-manipulation min-h-[44px]"
                                       >
                                         {quantity > 0 ? 'Update Cart' : 'Add to Cart'}
                                       </button>
                                     </div>
                                     {quantity > 0 && (
-                                      <p className="text-sm text-ocean-cyan mt-2">In cart: {quantity}</p>
+                                      <p className="text-xs sm:text-sm text-ocean-cyan mt-2 text-center sm:text-left">In cart: {quantity}</p>
                                     )}
                                   </div>
                                 )
