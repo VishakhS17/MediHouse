@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import '@/styles/globals.css'
 import { defaultMeta } from '@/lib/siteMeta'
 import Preloader from '@/components/Preloader'
+import { CartProvider } from '@/lib/cart'
 
 export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
@@ -23,8 +24,10 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="icon" href="/logo.svg" />
         <meta name="theme-color" content="#2563eb" />
       </Head>
-      <Preloader />
-      <Component {...pageProps} />
+      <CartProvider>
+        <Preloader />
+        <Component {...pageProps} />
+      </CartProvider>
     </>
   )
 }

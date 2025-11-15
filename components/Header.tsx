@@ -4,12 +4,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { siteConfig } from '@/data/site'
+import { useCart } from '@/lib/cart'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [shouldUseBlueText, setShouldUseBlueText] = useState(false)
+  const { getTotalItems } = useCart()
 
   const navLinks = [
+    { href: '/products', label: 'Products' },
     { href: '#services', label: 'Services' },
     { href: '#testimonials', label: 'Testimonials' },
     { href: '#partners', label: 'Partners' },
@@ -149,24 +152,64 @@ export default function Header() {
 
           <div className="hidden md:flex md:items-center md:space-x-1">
             {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={(e) => handleNavClick(e, link.href)}
-                className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
-                  shouldUseBlueText
-                    ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
-                    : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
-                }`}
-              >
-                <span className="relative z-10">{link.label}</span>
-                    <span className={`absolute inset-x-0 bottom-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${
-                      shouldUseBlueText
-                        ? 'bg-gradient-to-r from-ocean-cyan/0 via-ocean-cyan to-ocean-cyan/0'
-                        : 'bg-gradient-to-r from-white/0 via-ocean-aqua to-white/0'
-                    }`}></span>
-              </a>
+              link.href.startsWith('#') ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => handleNavClick(e, link.href)}
+                  className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
+                    shouldUseBlueText
+                      ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
+                      : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
+                  }`}
+                >
+                  <span className="relative z-10">{link.label}</span>
+                      <span className={`absolute inset-x-0 bottom-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${
+                        shouldUseBlueText
+                          ? 'bg-gradient-to-r from-ocean-cyan/0 via-ocean-cyan to-ocean-cyan/0'
+                          : 'bg-gradient-to-r from-white/0 via-ocean-aqua to-white/0'
+                      }`}></span>
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
+                    shouldUseBlueText
+                      ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
+                      : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
+                  }`}
+                >
+                  <span className="relative z-10">{link.label}</span>
+                      <span className={`absolute inset-x-0 bottom-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${
+                        shouldUseBlueText
+                          ? 'bg-gradient-to-r from-ocean-cyan/0 via-ocean-cyan to-ocean-cyan/0'
+                          : 'bg-gradient-to-r from-white/0 via-ocean-aqua to-white/0'
+                      }`}></span>
+                </Link>
+              )
             ))}
+            <Link
+              href="/cart"
+              className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
+                shouldUseBlueText
+                  ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
+                  : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
+              }`}
+            >
+              <span className="relative z-10 flex items-center space-x-2">
+                <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                {getTotalItems() > 0 && (
+                  <span className={`absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                    shouldUseBlueText ? 'bg-ocean-cyan text-white' : 'bg-ocean-aqua text-ocean-navy'
+                  }`}>
+                    {getTotalItems()}
+                  </span>
+                )}
+              </span>
+            </Link>
           </div>
 
           <button
@@ -203,19 +246,55 @@ export default function Header() {
           }`}>
             <div className="flex flex-col space-y-3">
               {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => handleNavClick(e, link.href)}
-                  className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer ${
-                    shouldUseBlueText
-                      ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
-                      : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
-                  }`}
-                >
-                  {link.label}
-                </a>
+                link.href.startsWith('#') ? (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleNavClick(e, link.href)}
+                    className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer ${
+                      shouldUseBlueText
+                        ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
+                        : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
+                    }`}
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer ${
+                      shouldUseBlueText
+                        ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
+                        : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                )
               ))}
+              <Link
+                href="/cart"
+                onClick={() => setIsMenuOpen(false)}
+                className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer flex items-center space-x-2 ${
+                  shouldUseBlueText
+                    ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
+                    : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span>Cart</span>
+                {getTotalItems() > 0 && (
+                  <span className={`ml-auto h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                    shouldUseBlueText ? 'bg-ocean-cyan text-white' : 'bg-ocean-aqua text-ocean-navy'
+                  }`}>
+                    {getTotalItems()}
+                  </span>
+                )}
+              </Link>
             </div>
           </div>
         )}

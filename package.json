@@ -9,12 +9,18 @@
     "export": "next build && npm run sitemap",
     "lint": "next lint",
     "format": "prettier --write .",
-    "sitemap": "node scripts/generate-sitemap.js"
+    "sitemap": "node scripts/generate-sitemap.js",
+    "migrate": "node scripts/run-migration.js",
+    "check-db": "node scripts/check-database.js"
   },
   "dependencies": {
+    "@types/pg": "^8.15.6",
+    "dotenv": "^17.2.3",
     "next": "^14.2.0",
+    "pg": "^8.16.3",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -29,4 +35,3 @@
     "typescript": "^5.3.3"
   }
 }
-

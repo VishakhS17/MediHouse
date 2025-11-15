@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import AnimatedCounter from '@/components/AnimatedCounter'
 
 export default function Hero() {
@@ -127,12 +128,12 @@ export default function Hero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row opacity-0 animate-fade-in" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
-            <a
-              href="#services"
+            <Link
+              href="/products"
               className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal px-8 py-3 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-ocean-cyan/50"
             >
               <span className="relative z-10 flex items-center gap-2">
-                Our Services
+                Browse Products
                 <svg
                   className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
                   fill="none"
@@ -148,6 +149,27 @@ export default function Hero() {
                 </svg>
               </span>
               <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-ocean-aqua/30 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]"></div>
+            </Link>
+            <a
+              href="#services"
+              className="group rounded-lg border-2 border-white/50 bg-white/10 px-8 py-3 text-base font-semibold text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-white hover:bg-white/20"
+            >
+              <span className="flex items-center gap-2">
+                Our Services
+                <svg
+                  className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              </span>
             </a>
             <a
               href="#contact"
