@@ -3,13 +3,16 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import { siteConfig } from '@/data/site'
 import { useCart } from '@/lib/cart'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [shouldUseBlueText, setShouldUseBlueText] = useState(false)
+  const [isProductsPage, setIsProductsPage] = useState(false)
   const { getTotalItems } = useCart()
+  const router = useRouter()
 
   const navLinks = [
     { href: '/products', label: 'Products' },
@@ -20,6 +23,16 @@ export default function Header() {
   ]
 
   useEffect(() => {
+    // Check if we're on products or cart page
+    const path = router.pathname
+    setIsProductsPage(path === '/products' || path === '/cart')
+    
+    // On products/cart pages, always use white text (blue glass navbar)
+    if (path === '/products' || path === '/cart') {
+      setShouldUseBlueText(false)
+      return
+    }
+
     const handleScroll = () => {
       // Sections with white backgrounds (should have blue text): services, partners, about, faq
       // Sections with dark backgrounds (should have white text): testimonials, contact
@@ -88,7 +101,7 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll)
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [router.pathname])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('#')) {
@@ -108,11 +121,18 @@ export default function Header() {
       </a>
       <nav 
         className={`mx-auto max-w-7xl rounded-2xl shadow-2xl transition-all duration-300 ${
-          shouldUseBlueText
+          isProductsPage
+            ? 'border border-ocean-cyan/30 bg-gradient-to-r from-ocean-royal/80 via-ocean-teal/80 to-ocean-royal/80 hover:from-ocean-royal/90 hover:via-ocean-teal/90 hover:to-ocean-royal/90 backdrop-blur-3xl'
+            : shouldUseBlueText
             ? 'border border-gray-200/40 bg-white/50 hover:bg-white/60 backdrop-blur-3xl'
             : 'border border-white/40 bg-white/20 hover:bg-white/25 backdrop-blur-3xl'
         }`}
-        style={shouldUseBlueText ? {
+        style={isProductsPage ? {
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          boxShadow: '0 8px 32px 0 rgba(21, 109, 163, 0.4)',
+          background: 'linear-gradient(135deg, rgba(21, 109, 163, 0.85) 0%, rgba(31, 143, 201, 0.85) 50%, rgba(21, 109, 163, 0.85) 100%)',
+        } : shouldUseBlueText ? {
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
           boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)'
@@ -142,7 +162,9 @@ export default function Header() {
               </div>
             </div>
             <span className={`text-lg sm:text-xl font-display font-bold transition-all duration-300 ${
-              shouldUseBlueText
+              isProductsPage
+                ? 'text-white'
+                : shouldUseBlueText
                 ? 'bg-gradient-to-r from-ocean-royal via-ocean-teal to-ocean-cyan bg-clip-text text-transparent'
                 : 'bg-gradient-to-r from-white via-ocean-sky to-white/90 bg-clip-text text-transparent'
             }`}>
@@ -158,14 +180,18 @@ export default function Header() {
                   href={link.href}
                   onClick={(e) => handleNavClick(e, link.href)}
                   className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
-                    shouldUseBlueText
+                    isProductsPage
+                      ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
+                      : shouldUseBlueText
                       ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                       : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
                   }`}
                 >
                   <span className="relative z-10">{link.label}</span>
                       <span className={`absolute inset-x-0 bottom-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${
-                        shouldUseBlueText
+                        isProductsPage
+                          ? 'bg-gradient-to-r from-white/0 via-white to-white/0'
+                          : shouldUseBlueText
                           ? 'bg-gradient-to-r from-ocean-cyan/0 via-ocean-cyan to-ocean-cyan/0'
                           : 'bg-gradient-to-r from-white/0 via-ocean-aqua to-white/0'
                       }`}></span>
@@ -175,14 +201,18 @@ export default function Header() {
                   key={link.href}
                   href={link.href}
                   className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
-                    shouldUseBlueText
+                    isProductsPage
+                      ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
+                      : shouldUseBlueText
                       ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                       : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
                   }`}
                 >
                   <span className="relative z-10">{link.label}</span>
                       <span className={`absolute inset-x-0 bottom-0 h-0.5 scale-x-0 transition-transform duration-300 group-hover:scale-x-100 ${
-                        shouldUseBlueText
+                        isProductsPage
+                          ? 'bg-gradient-to-r from-white/0 via-white to-white/0'
+                          : shouldUseBlueText
                           ? 'bg-gradient-to-r from-ocean-cyan/0 via-ocean-cyan to-ocean-cyan/0'
                           : 'bg-gradient-to-r from-white/0 via-ocean-aqua to-white/0'
                       }`}></span>
@@ -192,7 +222,9 @@ export default function Header() {
             <Link
               href="/cart"
               className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent group cursor-pointer ${
-                shouldUseBlueText
+                isProductsPage
+                  ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
+                  : shouldUseBlueText
                   ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                   : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
               }`}
@@ -203,7 +235,7 @@ export default function Header() {
                 </svg>
                 {getTotalItems() > 0 && (
                   <span className={`absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                    shouldUseBlueText ? 'bg-ocean-cyan text-white' : 'bg-ocean-aqua text-ocean-navy'
+                    isProductsPage ? 'bg-white text-ocean-royal' : shouldUseBlueText ? 'bg-ocean-cyan text-white' : 'bg-ocean-aqua text-ocean-navy'
                   }`}>
                     {getTotalItems()}
                   </span>
@@ -214,7 +246,9 @@ export default function Header() {
 
           <button
             className={`md:hidden rounded-lg p-2 transition-colors focus:outline-none focus:ring-2 ${
-              shouldUseBlueText
+              isProductsPage
+                ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
+                : shouldUseBlueText
                 ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                 : 'text-white/90 hover:bg-white/10 focus:ring-white/50'
             }`}
@@ -242,7 +276,7 @@ export default function Header() {
 
         {isMenuOpen && (
           <div className={`border-t px-4 py-4 md:hidden transition-colors duration-300 ${
-            shouldUseBlueText ? 'border-gray-200/30' : 'border-white/10'
+            isProductsPage ? 'border-white/20' : shouldUseBlueText ? 'border-gray-200/30' : 'border-white/10'
           }`}>
             <div className="flex flex-col space-y-3">
               {navLinks.map((link) => (
@@ -252,7 +286,9 @@ export default function Header() {
                     href={link.href}
                     onClick={(e) => handleNavClick(e, link.href)}
                     className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer ${
-                      shouldUseBlueText
+                      isProductsPage
+                        ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
+                        : shouldUseBlueText
                         ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                         : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
                     }`}
@@ -265,7 +301,9 @@ export default function Header() {
                     href={link.href}
                     onClick={() => setIsMenuOpen(false)}
                     className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer ${
-                      shouldUseBlueText
+                      isProductsPage
+                        ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
+                        : shouldUseBlueText
                         ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                         : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
                     }`}
@@ -278,7 +316,9 @@ export default function Header() {
                 href="/cart"
                 onClick={() => setIsMenuOpen(false)}
                 className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer flex items-center space-x-2 ${
-                  shouldUseBlueText
+                  isProductsPage
+                    ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
+                    : shouldUseBlueText
                     ? 'text-ocean-royal hover:text-ocean-cyan hover:bg-ocean-aqua/20 focus:ring-ocean-cyan'
                     : 'text-white/90 hover:bg-white/10 hover:text-white focus:ring-white/50'
                 }`}
@@ -289,7 +329,7 @@ export default function Header() {
                 <span>Cart</span>
                 {getTotalItems() > 0 && (
                   <span className={`ml-auto h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                    shouldUseBlueText ? 'bg-ocean-cyan text-white' : 'bg-ocean-aqua text-ocean-navy'
+                    isProductsPage ? 'bg-white text-ocean-royal' : shouldUseBlueText ? 'bg-ocean-cyan text-white' : 'bg-ocean-aqua text-ocean-navy'
                   }`}>
                     {getTotalItems()}
                   </span>

@@ -10,6 +10,15 @@ export default async function handler(
   }
 
   try {
+    // Check if DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL environment variable is not set')
+      return res.status(500).json({
+        error: 'Database configuration error',
+        message: 'DATABASE_URL environment variable is not set. Please configure it in Vercel environment variables.',
+      })
+    }
+
     // Get all active products
     const productsResult = await query(
       `SELECT id, name, manufacturer 
@@ -70,9 +79,26 @@ export default async function handler(
     res.status(200).json(response)
   } catch (error: any) {
     console.error('Error fetching products:', error)
-    res.status(500).json({
+    
+    // Provide more specific error messages
+    let errorMessage = error.message || 'Unknown error'
+    let statusCode = 500
+    
+    if (error.message?.includes('DATABASE_URL')) {
+      errorMessage = 'Database connection string is not configured. Please set DATABASE_URL in environment variables.'
+      statusCode = 500
+    } else if (error.message?.includes('does not exist') || error.message?.includes('relation')) {
+      errorMessage = 'Products table does not exist. Please run the database migration first.'
+      statusCode = 500
+    } else if (error.message?.includes('timeout') || error.message?.includes('ECONNREFUSED')) {
+      errorMessage = 'Cannot connect to database. Please check your DATABASE_URL and ensure the database is accessible.'
+      statusCode = 503
+    }
+    
+    res.status(statusCode).json({
       error: 'Failed to fetch products',
-      message: error.message,
+      message: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     })
   }
 }

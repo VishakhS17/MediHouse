@@ -48,8 +48,9 @@ export default function Products() {
       .catch(err => {
         console.error('Error loading products:', err)
         setLoading(false)
-        // Show error message to user
-        alert('Failed to load products. Please refresh the page.')
+        // Show more detailed error message
+        const errorMsg = err.message || 'Unknown error occurred'
+        alert(`Failed to load products: ${errorMsg}\n\nPlease check:\n1. Database connection is configured\n2. Products table exists\n3. Network connection is working`)
       })
   }, [])
 
@@ -151,7 +152,13 @@ export default function Products() {
               </div>
             ) : !productsData ? (
               <div className="text-center py-12">
-                <p className="text-gray-600">No products found. Please run the generate-products-json script.</p>
+                <p className="text-gray-600 mb-4">No products found.</p>
+                <p className="text-sm text-gray-500">Please check:</p>
+                <ul className="text-sm text-gray-500 mt-2 list-disc list-inside">
+                  <li>Database connection is configured (DATABASE_URL)</li>
+                  <li>Products table exists (run migration)</li>
+                  <li>Products have been imported to database</li>
+                </ul>
               </div>
             ) : Object.keys(filteredProducts).length === 0 ? (
               <div className="text-center py-12">
