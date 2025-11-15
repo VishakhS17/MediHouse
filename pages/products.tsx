@@ -281,9 +281,29 @@ export default function Products() {
                                       </div>
                                       <button
                                         onClick={() => {
-                                          handleAddToCart(product, 1)
-                                          const newQuantity = quantity + 1
-                                          setInputValues(prev => ({ ...prev, [product.id]: newQuantity.toString() }))
+                                          // Get the value from input field, or use current quantity + 1 if input is empty/invalid
+                                          const inputVal = inputValues[product.id]
+                                          let targetQuantity: number
+                                          
+                                          if (inputVal !== undefined && inputVal !== '') {
+                                            const parsed = parseInt(inputVal, 10)
+                                            if (!isNaN(parsed) && parsed >= 0) {
+                                              targetQuantity = parsed
+                                            } else {
+                                              targetQuantity = quantity > 0 ? quantity : 1
+                                            }
+                                          } else {
+                                            // If no custom input, add 1 to current quantity
+                                            targetQuantity = quantity > 0 ? quantity + 1 : 1
+                                          }
+                                          
+                                          // If item doesn't exist in cart, use addToCart, otherwise updateQuantity
+                                          if (quantity === 0) {
+                                            handleAddToCart(product, targetQuantity)
+                                          } else {
+                                            updateQuantity(product.id, targetQuantity)
+                                          }
+                                          setInputValues(prev => ({ ...prev, [product.id]: targetQuantity.toString() }))
                                         }}
                                         className="flex-1 bg-ocean-cyan text-white px-4 py-3 rounded-lg hover:bg-ocean-teal transition-colors font-medium text-sm sm:text-base touch-manipulation min-h-[44px]"
                                       >
