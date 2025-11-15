@@ -18,6 +18,7 @@ interface CustomerDetails {
 export default function Cart() {
   const { items, updateQuantity, removeFromCart, clearCart, getTotalItems } = useCart()
   const [showCustomerForm, setShowCustomerForm] = useState(false)
+  const [inputValues, setInputValues] = useState<Record<string, string>>({})
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
     name: '',
     phone: '',
@@ -129,10 +130,9 @@ export default function Cart() {
     // Open WhatsApp with customer details and order
     window.open(getWhatsAppUrl(customerDetails), '_blank')
     
-    // Close form and optionally clear cart
+    // Close form and clear cart after order
     setShowCustomerForm(false)
-    // Uncomment the line below if you want to clear cart after order
-    // clearCart()
+    clearCart()
   }
 
   const handleInputChange = (field: keyof CustomerDetails, value: string) => {
@@ -194,7 +194,10 @@ export default function Cart() {
                   </div>
 
                   <div className="divide-y divide-gray-200">
-                    {items.map((item) => (
+                    {items.map((item) => {
+                      const inputValue = inputValues[item.id] !== undefined ? inputValues[item.id] : item.quantity.toString()
+                      
+                      return (
                       <div key={item.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
                         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                           <div className="flex-1 w-full min-w-0">
@@ -204,7 +207,11 @@ export default function Cart() {
                             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                               <div className="flex items-center justify-center sm:justify-start space-x-2">
                                 <button
-                                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                  onClick={() => {
+                                    const newQuantity = item.quantity - 1
+                                    updateQuantity(item.id, newQuantity)
+                                    setInputValues(prev => ({ ...prev, [item.id]: newQuantity.toString() }))
+                                  }}
                                   className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 touch-manipulation text-lg font-semibold"
                                 >
                                   -
@@ -212,22 +219,59 @@ export default function Cart() {
                                 <input
                                   type="number"
                                   min="0"
-                                  value={item.quantity}
+                                  value={inputValue}
                                   onChange={(e) => {
-                                    const newQuantity = parseInt(e.target.value) || 0
-                                    updateQuantity(item.id, newQuantity)
+                                    const value = e.target.value
+                                    // Store the raw input value to allow free typing
+                                    setInputValues(prev => ({ ...prev, [item.id]: value }))
+                                    
+                                    // Only update cart if value is a valid number
+                                    if (value !== '' && value !== '-') {
+                                      const newQuantity = parseInt(value, 10)
+                                      if (!isNaN(newQuantity) && newQuantity >= 0) {
+                                        updateQuantity(item.id, newQuantity)
+                                      }
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    // When input loses focus, ensure we have a valid quantity
+                                    const value = e.target.value
+                                    const numValue = parseInt(value, 10)
+                                    
+                                    if (value === '' || isNaN(numValue) || numValue < 0) {
+                                      updateQuantity(item.id, 0)
+                                      setInputValues(prev => ({ ...prev, [item.id]: '0' }))
+                                    } else {
+                                      updateQuantity(item.id, numValue)
+                                      setInputValues(prev => ({ ...prev, [item.id]: numValue.toString() }))
+                                    }
+                                  }}
+                                  onFocus={(e) => {
+                                    // When input is focused, sync with current quantity
+                                    setInputValues(prev => ({ ...prev, [item.id]: item.quantity.toString() }))
                                   }}
                                   className="w-20 px-2 py-2 border border-gray-300 rounded text-center text-base"
                                 />
                                 <button
-                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  onClick={() => {
+                                    const newQuantity = item.quantity + 1
+                                    updateQuantity(item.id, newQuantity)
+                                    setInputValues(prev => ({ ...prev, [item.id]: newQuantity.toString() }))
+                                  }}
                                   className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 touch-manipulation text-lg font-semibold"
                                 >
                                   +
                                 </button>
                               </div>
                               <button
-                                onClick={() => removeFromCart(item.id)}
+                                onClick={() => {
+                                  removeFromCart(item.id)
+                                  setInputValues(prev => {
+                                    const newValues = { ...prev }
+                                    delete newValues[item.id]
+                                    return newValues
+                                  })
+                                }}
                                 className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium touch-manipulation px-3 py-2 min-h-[44px] self-center sm:self-auto"
                               >
                                 Remove
@@ -236,7 +280,8 @@ export default function Cart() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
 
                   <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">

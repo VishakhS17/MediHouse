@@ -27,6 +27,7 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBrand, setSelectedBrand] = useState<string>('all')
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
+  const [inputValues, setInputValues] = useState<Record<string, string>>({})
   const { addToCart, getCartItem, updateQuantity } = useCart()
 
   useEffect(() => {
@@ -206,6 +207,7 @@ export default function Products() {
                               {products.map((product) => {
                                 const cartItem = getCartItem(product.id)
                                 const quantity = cartItem?.quantity || 0
+                                const inputValue = inputValues[product.id] !== undefined ? inputValues[product.id] : quantity.toString()
 
                                 return (
                                   <div
@@ -220,7 +222,9 @@ export default function Products() {
                                         <button
                                           onClick={() => {
                                             if (quantity > 0) {
-                                              updateQuantity(product.id, quantity - 1)
+                                              const newQuantity = quantity - 1
+                                              updateQuantity(product.id, newQuantity)
+                                              setInputValues(prev => ({ ...prev, [product.id]: newQuantity.toString() }))
                                             }
                                           }}
                                           disabled={quantity === 0}
@@ -231,22 +235,56 @@ export default function Products() {
                                         <input
                                           type="number"
                                           min="0"
-                                          value={quantity}
+                                          value={inputValue}
                                           onChange={(e) => {
-                                            const newQuantity = parseInt(e.target.value) || 0
-                                            updateQuantity(product.id, newQuantity)
+                                            const value = e.target.value
+                                            // Store the raw input value to allow free typing
+                                            setInputValues(prev => ({ ...prev, [product.id]: value }))
+                                            
+                                            // Only update cart if value is a valid number
+                                            if (value !== '' && value !== '-') {
+                                              const newQuantity = parseInt(value, 10)
+                                              if (!isNaN(newQuantity) && newQuantity >= 0) {
+                                                updateQuantity(product.id, newQuantity)
+                                              }
+                                            }
+                                          }}
+                                          onBlur={(e) => {
+                                            // When input loses focus, ensure we have a valid quantity
+                                            const value = e.target.value
+                                            const numValue = parseInt(value, 10)
+                                            
+                                            if (value === '' || isNaN(numValue) || numValue < 0) {
+                                              updateQuantity(product.id, 0)
+                                              setInputValues(prev => ({ ...prev, [product.id]: '0' }))
+                                            } else {
+                                              updateQuantity(product.id, numValue)
+                                              setInputValues(prev => ({ ...prev, [product.id]: numValue.toString() }))
+                                            }
+                                          }}
+                                          onFocus={(e) => {
+                                            // When input is focused, sync with current quantity
+                                            setInputValues(prev => ({ ...prev, [product.id]: quantity.toString() }))
                                           }}
                                           className="w-20 px-2 py-2 border border-gray-300 rounded text-center text-base"
                                         />
                                         <button
-                                          onClick={() => handleAddToCart(product, 1)}
+                                          onClick={() => {
+                                            const newQuantity = quantity + 1
+                                            handleAddToCart(product, 1)
+                                            setInputValues(prev => ({ ...prev, [product.id]: newQuantity.toString() }))
+                                          }}
                                           className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 touch-manipulation text-lg font-semibold"
                                         >
                                           +
                                         </button>
                                       </div>
                                       <button
-                                        onClick={() => handleAddToCart(product, 1)}
+                                        onClick={() => {
+                                          handleAddToCart(product, 1)
+                                          const newQuantity = quantity + 1
+                                          setInputValues(prev => ({ ...prev, [product.id]: newQuantity.toString() }))
+                                        }}
                                         className="flex-1 bg-ocean-cyan text-white px-4 py-3 rounded-lg hover:bg-ocean-teal transition-colors font-medium text-sm sm:text-base touch-manipulation min-h-[44px]"
                                       >
                                         {quantity > 0 ? 'Update Cart' : 'Add to Cart'}
