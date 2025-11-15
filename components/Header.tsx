@@ -122,16 +122,16 @@ export default function Header() {
       <nav 
         className={`mx-auto max-w-7xl rounded-2xl shadow-2xl transition-all duration-300 ${
           isProductsPage
-            ? 'border border-ocean-cyan/30 bg-gradient-to-r from-ocean-royal/80 via-ocean-teal/80 to-ocean-royal/80 hover:from-ocean-royal/90 hover:via-ocean-teal/90 hover:to-ocean-royal/90 backdrop-blur-3xl'
+            ? 'border border-ocean-cyan/30 bg-gradient-to-r from-ocean-teal/50 via-ocean-cyan/50 to-ocean-teal/50 hover:from-ocean-teal/60 hover:via-ocean-cyan/60 hover:to-ocean-teal/60 backdrop-blur-3xl'
             : shouldUseBlueText
             ? 'border border-gray-200/40 bg-white/50 hover:bg-white/60 backdrop-blur-3xl'
             : 'border border-white/40 bg-white/20 hover:bg-white/25 backdrop-blur-3xl'
         }`}
         style={isProductsPage ? {
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          boxShadow: '0 8px 32px 0 rgba(21, 109, 163, 0.4)',
-          background: 'linear-gradient(135deg, rgba(21, 109, 163, 0.85) 0%, rgba(31, 143, 201, 0.85) 50%, rgba(21, 109, 163, 0.85) 100%)',
+          backdropFilter: 'blur(24px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+          boxShadow: '0 8px 32px 0 rgba(59, 180, 232, 0.3)',
+          background: 'linear-gradient(135deg, rgba(31, 143, 201, 0.5) 0%, rgba(59, 180, 232, 0.5) 50%, rgba(31, 143, 201, 0.5) 100%)',
         } : shouldUseBlueText ? {
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
