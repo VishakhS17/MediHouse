@@ -16,7 +16,7 @@ npm run migrate-orders
 
 ### Step 2: Create Admin User
 
-Create the admin user in your database:
+**Option A: Using the script (local development)**
 ```bash
 npm run create-admin
 ```
@@ -24,6 +24,37 @@ npm run create-admin
 This will create an admin user with:
 - **Email:** `admin@medihouse.com`
 - **Password:** `MediHouse@170303`
+
+To create a different admin user:
+```bash
+node scripts/create-admin-user.js newadmin@medihouse.com SecurePassword123 "Admin Name"
+```
+
+**Option B: Using the API endpoint (production/Vercel)**
+
+Make a POST request to `/api/admin/setup`:
+```bash
+curl -X POST https://your-app.vercel.app/api/admin/setup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "newadmin@medihouse.com",
+    "password": "SecurePassword123",
+    "name": "Admin Name"
+  }'
+```
+
+Or use browser console:
+```javascript
+fetch('/api/admin/setup', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'newadmin@medihouse.com',
+    password: 'SecurePassword123',
+    name: 'Admin Name'
+  })
+}).then(r => r.json()).then(console.log)
+```
 
 ### Step 3: Access Admin Panel
 

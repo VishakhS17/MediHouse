@@ -15,9 +15,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Query database for admin user
+    // Query database for admin user (handle both old and new schema)
     const result = await query(
-      'SELECT id, email, password_hash, name, is_active FROM admin_users WHERE email = $1',
+      `SELECT id, email, password_hash, name, 
+       COALESCE(is_active, true) as is_active 
+       FROM admin_users 
+       WHERE email = $1`,
       [email.toLowerCase().trim()]
     )
 
@@ -28,8 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const adminUser = result.rows[0]
 
-    // Check if user is active
-    if (!adminUser.is_active) {
+    // Check if user is active (if column exists)
+    if (adminUser.is_active === false) {
       return res.status(403).json({ message: 'Account is disabled' })
     }
 

@@ -10,12 +10,12 @@ if (fs.existsSync('.env.local')) {
   process.exit(1);
 }
 
-// Admin credentials - read from environment variables for security
-// NOTE: This script is for one-time setup only. Credentials are stored securely in the database after this.
-// For production, always use environment variables: ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || (process.argv[2] || 'admin@medihouse.com');
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (process.argv[3] || 'MediHouse@170303');
-const ADMIN_NAME = process.env.ADMIN_NAME || (process.argv[4] || 'Admin User');
+// Admin credentials - read from environment variables or command line arguments
+// Usage: node create-admin-user.js [email] [password] [name]
+// Or set: ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME environment variables
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.argv[2] || 'admin@medihouse.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.argv[3] || 'MediHouse@170303';
+const ADMIN_NAME = process.env.ADMIN_NAME || process.argv[4] || 'Admin User';
 
 // Get and clean connection string
 let connectionString = process.env.DATABASE_URL;
@@ -89,7 +89,8 @@ async function createAdminUser() {
       console.log('⚠️  Admin user already exists!');
       console.log(`   Email: ${existingUser.rows[0].email}`);
       console.log(`   ID: ${existingUser.rows[0].id}`);
-      console.log('\n   To update the password, delete the user first or update manually.');
+      console.log('\n   To create a different user, use a different email address.');
+      console.log('   Usage: node create-admin-user.js newuser@example.com NewPassword123 "New User Name"');
       process.exit(0);
     }
     

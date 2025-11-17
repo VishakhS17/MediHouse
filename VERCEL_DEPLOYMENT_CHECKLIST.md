@@ -84,6 +84,20 @@ After redeploying:
    - Email: `admin@medihouse.com`
    - Password: `MediHouse@170303`
 
+## 🔍 Step 6: Run Database Diagnostics
+
+After deployment, check your database connection and table status:
+
+1. Visit: `https://your-domain.vercel.app/api/admin/diagnose`
+2. This will show you:
+   - Whether DATABASE_URL is set
+   - Database connection status
+   - Which tables exist
+   - Table row counts
+   - Any errors
+
+**This diagnostic endpoint will help identify the exact issue!**
+
 ## 🐛 Common Issues
 
 ### Build Fails
@@ -97,14 +111,37 @@ After redeploying:
 - Verify the deployment includes all files
 
 ### Database Connection Errors
-- Verify `DATABASE_URL` is set correctly in Vercel
+- **CRITICAL:** Verify `DATABASE_URL` is set correctly in Vercel
+  - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+  - Make sure `DATABASE_URL` is set for **Production** environment
+  - The value should be your Neon connection string (the one you provided: `postgresql://neondb_owner:npg_6SchiOP0DCUL@ep-broad-math-a1c0bik1-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`)
 - Check that your Neon database allows connections from Vercel IPs
 - Ensure SSL is enabled (Neon requires it)
+- **Run the diagnostic endpoint** to see exact error messages
 
-### Login Not Working
-- Make sure migrations were run on production database
-- Verify admin user exists in `admin_users` table
-- Check API route `/api/admin/login` is accessible
+### Login Not Working / Stock Updates Not Working / Products Not Showing
+**This usually means:**
+1. **DATABASE_URL is not set on Vercel** - Check Vercel environment variables
+2. **Database tables don't exist** - Run migrations on production database
+3. **Wrong database** - DATABASE_URL might point to a different database than local
+
+**Solution:**
+1. First, run the diagnostic: `https://your-domain.vercel.app/api/admin/diagnose`
+2. If DATABASE_URL is missing, add it in Vercel settings
+3. If tables don't exist, run migrations on your production database:
+   ```bash
+   # Set your production DATABASE_URL
+   export DATABASE_URL="postgresql://neondb_owner:npg_6SchiOP0DCUL@ep-broad-math-a1c0bik1-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+   
+   # Run migrations
+   npm run migrate-admin
+   npm run migrate-orders
+   
+   # Create admin users
+   npm run create-admin
+   node scripts/create-admin-user.js siva@medihouse.com "Siva@0403" "Siva"
+   ```
+4. Redeploy on Vercel after setting environment variables
 
 ## 📝 Quick Fix Commands
 
