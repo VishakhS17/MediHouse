@@ -19,9 +19,9 @@ export default async function handler(
       })
     }
 
-    // Get all active products
+    // Get all active products with stock quantity
     const productsResult = await query(
-      `SELECT id, name, manufacturer 
+      `SELECT id, name, manufacturer, stock_quantity 
        FROM products 
        WHERE is_active = true 
        ORDER BY manufacturer, name`
@@ -47,6 +47,7 @@ export default async function handler(
         id: productId,
         name: product.name,
         manufacturer: manufacturer,
+        stock_quantity: product.stock_quantity || 0,
       }
 
       allProducts.push(productData)

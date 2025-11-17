@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SEO from '@/components/SEO'
@@ -10,6 +11,7 @@ interface Product {
   id: string
   name: string
   manufacturer: string
+  stock_quantity?: number
 }
 
 interface ProductsData {
@@ -26,6 +28,7 @@ export default function Products() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBrand, setSelectedBrand] = useState<string>('all')
+  const [hideOutOfStock, setHideOutOfStock] = useState(false)
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
   const [inputValues, setInputValues] = useState<Record<string, string>>({})
   const { addToCart, getCartItem, updateQuantity } = useCart()
@@ -71,7 +74,7 @@ export default function Products() {
     addToCart(product, quantity)
   }
 
-  // Filter products based on search and brand
+  // Filter products based on search, brand, and stock availability
   const getFilteredProducts = () => {
     if (!productsData) return {}
 
@@ -80,10 +83,17 @@ export default function Products() {
     Object.entries(productsData.productsByBrand).forEach(([brand, products]) => {
       if (selectedBrand !== 'all' && brand !== selectedBrand) return
 
-      const filteredProducts = products.filter(product =>
+      let filteredProducts = products.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         brand.toLowerCase().includes(searchTerm.toLowerCase())
       )
+
+      // Filter out of stock products if hideOutOfStock is enabled
+      if (hideOutOfStock) {
+        filteredProducts = filteredProducts.filter(product => 
+          (product.stock_quantity || 0) > 0
+        )
+      }
 
       if (filteredProducts.length > 0) {
         filtered[brand] = filteredProducts
@@ -122,27 +132,43 @@ export default function Products() {
             </div>
 
             {/* Search and Filter */}
-            <div className="mb-8 space-y-4 md:flex md:space-y-0 md:space-x-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search products or brands..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
-                />
+            <div className="mb-8 space-y-4">
+              <div className="md:flex md:space-y-0 md:space-x-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search products or brands..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
+                  />
+                </div>
+                <div className="w-full md:w-64">
+                  <select
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
+                  >
+                    <option value="all">All Brands</option>
+                    {productsData?.brands.map(brand => (
+                      <option key={brand} value={brand}>{brand}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="w-full md:w-64">
-                <select
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
-                >
-                  <option value="all">All Brands</option>
-                  {productsData?.brands.map(brand => (
-                    <option key={brand} value={brand}>{brand}</option>
-                  ))}
-                </select>
+              {/* Hide Out of Stock Toggle */}
+              <div className="flex items-center space-x-3">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={hideOutOfStock}
+                    onChange={(e) => setHideOutOfStock(e.target.checked)}
+                    className="w-5 h-5 text-ocean-cyan border-gray-300 rounded focus:ring-ocean-cyan focus:ring-2 cursor-pointer"
+                  />
+                  <span className="ml-2 text-sm font-medium text-gray-700">
+                    Hide out of stock products
+                  </span>
+                </label>
               </div>
             </div>
 
@@ -215,7 +241,19 @@ export default function Products() {
                                     className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                                   >
                                     <h3 className="font-semibold text-gray-900 mb-2 text-base sm:text-lg break-words">{product.name}</h3>
-                                    <p className="text-xs sm:text-sm text-gray-500 mb-4">{product.manufacturer}</p>
+                                    <p className="text-xs sm:text-sm text-gray-500 mb-2">{product.manufacturer}</p>
+                                    {/* Stock Count */}
+                                    <div className="mb-4">
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                        (product.stock_quantity || 0) === 0 
+                                          ? 'bg-red-100 text-red-800' 
+                                          : (product.stock_quantity || 0) < 10
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : 'bg-green-100 text-green-800'
+                                      }`}>
+                                        Stock: {product.stock_quantity || 0}
+                                      </span>
+                                    </div>
                                     
                                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
                                       <div className="flex items-center justify-center sm:justify-start space-x-2">
@@ -235,6 +273,7 @@ export default function Products() {
                                         <input
                                           type="number"
                                           min="0"
+                                          max={product.stock_quantity || 0}
                                           value={inputValue}
                                           onChange={(e) => {
                                             const value = e.target.value
@@ -244,8 +283,13 @@ export default function Products() {
                                             // Only update cart if value is a valid number
                                             if (value !== '' && value !== '-') {
                                               const newQuantity = parseInt(value, 10)
+                                              const maxStock = product.stock_quantity || 0
                                               if (!isNaN(newQuantity) && newQuantity >= 0) {
-                                                updateQuantity(product.id, newQuantity)
+                                                const clampedQuantity = Math.min(newQuantity, maxStock)
+                                                updateQuantity(product.id, clampedQuantity)
+                                                if (clampedQuantity !== newQuantity) {
+                                                  setInputValues(prev => ({ ...prev, [product.id]: clampedQuantity.toString() }))
+                                                }
                                               }
                                             }
                                           }}
@@ -253,13 +297,18 @@ export default function Products() {
                                             // When input loses focus, ensure we have a valid quantity
                                             const value = e.target.value
                                             const numValue = parseInt(value, 10)
+                                            const maxStock = product.stock_quantity || 0
                                             
                                             if (value === '' || isNaN(numValue) || numValue < 0) {
                                               updateQuantity(product.id, 0)
                                               setInputValues(prev => ({ ...prev, [product.id]: '0' }))
                                             } else {
-                                              updateQuantity(product.id, numValue)
-                                              setInputValues(prev => ({ ...prev, [product.id]: numValue.toString() }))
+                                              const clampedQuantity = Math.min(numValue, maxStock)
+                                              updateQuantity(product.id, clampedQuantity)
+                                              setInputValues(prev => ({ ...prev, [product.id]: clampedQuantity.toString() }))
+                                              if (clampedQuantity < numValue) {
+                                                alert(`Only ${maxStock} units available in stock.`)
+                                              }
                                             }
                                           }}
                                           onFocus={(e) => {
@@ -270,45 +319,71 @@ export default function Products() {
                                         />
                                         <button
                                           onClick={() => {
-                                            const newQuantity = quantity + 1
-                                            handleAddToCart(product, 1)
-                                            setInputValues(prev => ({ ...prev, [product.id]: newQuantity.toString() }))
+                                            const maxStock = product.stock_quantity || 0
+                                            if (maxStock === 0) {
+                                              alert('This product is out of stock.')
+                                              return
+                                            }
+                                            const newQuantity = Math.min(quantity + 1, maxStock)
+                                            if (newQuantity > quantity) {
+                                              handleAddToCart(product, 1)
+                                              setInputValues(prev => ({ ...prev, [product.id]: newQuantity.toString() }))
+                                            } else {
+                                              alert(`Only ${maxStock} units available in stock.`)
+                                            }
                                           }}
-                                          className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 touch-manipulation text-lg font-semibold"
+                                          disabled={(product.stock_quantity || 0) === 0 || quantity >= (product.stock_quantity || 0)}
+                                          className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-lg font-semibold"
                                         >
                                           +
                                         </button>
                                       </div>
-                                      <button
-                                        onClick={() => {
-                                          // Get the value from input field, or use current quantity + 1 if input is empty/invalid
-                                          const inputVal = inputValues[product.id]
-                                          let targetQuantity: number
-                                          
-                                          if (inputVal !== undefined && inputVal !== '') {
-                                            const parsed = parseInt(inputVal, 10)
-                                            if (!isNaN(parsed) && parsed >= 0) {
-                                              targetQuantity = parsed
+                                      {quantity > 0 ? (
+                                        <Link
+                                          href="/cart"
+                                          className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium text-sm sm:text-base touch-manipulation min-h-[44px] flex items-center justify-center"
+                                        >
+                                          Go to Cart
+                                        </Link>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            // Get the value from input field, or use current quantity + 1 if input is empty/invalid
+                                            const inputVal = inputValues[product.id]
+                                            let targetQuantity: number
+                                            
+                                            if (inputVal !== undefined && inputVal !== '') {
+                                              const parsed = parseInt(inputVal, 10)
+                                              if (!isNaN(parsed) && parsed >= 0) {
+                                                targetQuantity = parsed
+                                              } else {
+                                                targetQuantity = 1
+                                              }
                                             } else {
-                                              targetQuantity = quantity > 0 ? quantity : 1
+                                              // If no custom input, add 1
+                                              targetQuantity = 1
                                             }
-                                          } else {
-                                            // If no custom input, add 1 to current quantity
-                                            targetQuantity = quantity > 0 ? quantity + 1 : 1
-                                          }
-                                          
-                                          // If item doesn't exist in cart, use addToCart, otherwise updateQuantity
-                                          if (quantity === 0) {
+                                            
+                                            // Check stock availability
+                                            const availableStock = product.stock_quantity || 0
+                                            if (availableStock === 0) {
+                                              alert('This product is currently out of stock.')
+                                              return
+                                            }
+                                            if (targetQuantity > availableStock) {
+                                              alert(`Only ${availableStock} units available in stock.`)
+                                              targetQuantity = availableStock
+                                            }
+                                            
                                             handleAddToCart(product, targetQuantity)
-                                          } else {
-                                            updateQuantity(product.id, targetQuantity)
-                                          }
-                                          setInputValues(prev => ({ ...prev, [product.id]: targetQuantity.toString() }))
-                                        }}
-                                        className="flex-1 bg-ocean-cyan text-white px-4 py-3 rounded-lg hover:bg-ocean-teal transition-colors font-medium text-sm sm:text-base touch-manipulation min-h-[44px]"
-                                      >
-                                        {quantity > 0 ? 'Update Cart' : 'Add to Cart'}
-                                      </button>
+                                            setInputValues(prev => ({ ...prev, [product.id]: targetQuantity.toString() }))
+                                          }}
+                                          disabled={(product.stock_quantity || 0) === 0}
+                                          className="flex-1 bg-ocean-cyan text-white px-4 py-3 rounded-lg hover:bg-ocean-teal transition-colors font-medium text-sm sm:text-base touch-manipulation min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                          Add to Cart
+                                        </button>
+                                      )}
                                     </div>
                                     {quantity > 0 && (
                                       <p className="text-xs sm:text-sm text-ocean-cyan mt-2 text-center sm:text-left">In cart: {quantity}</p>

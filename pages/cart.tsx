@@ -120,19 +120,58 @@ export default function Cart() {
     setShowCustomerForm(true)
   }
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!validateForm()) {
       return
     }
     
-    // Open WhatsApp with customer details and order
-    window.open(getWhatsAppUrl(customerDetails), '_blank')
-    
-    // Close form and clear cart after order
-    setShowCustomerForm(false)
-    clearCart()
+    // Update stock in database before opening WhatsApp
+    try {
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerName: customerDetails.name,
+          customerPhone: customerDetails.phone,
+          customerAddress: customerDetails.address,
+          customerEmail: customerDetails.email,
+          items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            manufacturer: item.manufacturer,
+            quantity: item.quantity,
+          })),
+        }),
+      })
+
+      const orderData = await orderResponse.json()
+
+      if (!orderResponse.ok) {
+        alert(`Error processing order: ${orderData.message || 'Unknown error'}`)
+        return
+      }
+
+      // Check for stock errors
+      if (orderData.errors && orderData.errors.length > 0) {
+        const errorMessage = orderData.errors.join('\n')
+        alert(`Some items could not be processed:\n\n${errorMessage}\n\nPlease check stock availability.`)
+        // Still proceed to WhatsApp but warn user
+      }
+
+      // Open WhatsApp with customer details and order
+      window.open(getWhatsAppUrl(customerDetails), '_blank')
+      
+      // Close form and clear cart after order
+      setShowCustomerForm(false)
+      clearCart()
+    } catch (error: any) {
+      console.error('Error processing order:', error)
+      alert('Error processing order. Please try again or contact support.')
+    }
   }
 
   const handleInputChange = (field: keyof CustomerDetails, value: string) => {
