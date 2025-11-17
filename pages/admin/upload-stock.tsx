@@ -275,7 +275,7 @@ export default function UploadStock() {
               <li className="flex items-start">
                 <span className="text-blue-500 mr-2">•</span>
                 <span>
-                  The system will automatically detect these columns (looks for "Product", "Stock", "Quantity" keywords)
+                  The system will automatically detect these columns (looks for &quot;Product&quot;, &quot;Stock&quot;, &quot;Quantity&quot; keywords)
                 </span>
               </li>
               <li className="flex items-start">
