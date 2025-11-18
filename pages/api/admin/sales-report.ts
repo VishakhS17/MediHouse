@@ -74,17 +74,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
       
       return {
-      'Sl No': index + 1,
-      'Order ID': row.order_id,
-      'Order Date': formattedDate,
-      'Customer Name': row.customer_name,
-      'Customer Phone': row.customer_phone,
-      'Customer Address': row.customer_address,
-      'Customer Email': row.customer_email || '',
-      'Product Name': row.product_name,
-      'Manufacturer': row.product_manufacturer,
-      'Quantity Sold': row.quantity,
-    }))
+        'Sl No': index + 1,
+        'Order ID': row.order_id,
+        'Order Date': formattedDate,
+        'Customer Name': row.customer_name,
+        'Customer Phone': row.customer_phone,
+        'Customer Address': row.customer_address,
+        'Customer Email': row.customer_email || '',
+        'Product Name': row.product_name,
+        'Manufacturer': row.product_manufacturer,
+        'Quantity Sold': row.quantity,
+      }
+    })
 
     // Create workbook and worksheet
     const workbook = XLSX.utils.book_new()
