@@ -9,12 +9,8 @@ const nextConfig = {
   // Performance optimizations
   compress: true, // Enable gzip compression
   poweredByHeader: false, // Remove X-Powered-By header for security
-  // Optimize production builds
-  swcMinify: true, // Use SWC minifier (faster than Terser)
-  // Experimental features for better performance
-  experimental: {
-    optimizeCss: true, // Optimize CSS
-  },
+  // Note: swcMinify is enabled by default in Next.js 16, no need to specify
+  // Note: optimizeCss requires critters package, removed to avoid build errors
 }
 
 module.exports = nextConfig
