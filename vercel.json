@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "pages/api/admin/upload-stock.ts": {
+      "maxDuration": 60
+    }
+  }
+}
+

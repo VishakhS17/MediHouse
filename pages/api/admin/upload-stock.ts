@@ -228,37 +228,90 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       stockByProduct.set(productName, currentStock + update.stockQuantity)
     }
 
-    // Update database
+    // Update database using optimized batch processing
     let updated = 0
     let notFound = 0
     const errors: string[] = []
-
+    
+    // Get all product names to find in one query
+    const productNames = Array.from(stockByProduct.keys())
+    
+    // Find all matching products in one query (much faster)
+    const findProductsResult = await query(
+      `SELECT id, LOWER(name) as lower_name, name 
+       FROM products 
+       WHERE LOWER(name) = ANY($1::text[])`,
+      [productNames.map(n => n.toLowerCase())]
+    )
+    
+    // Create a map of found products by lowercase name
+    const productMap = new Map<string, { id: number; name: string }>()
+    for (const row of findProductsResult.rows) {
+      const lowerName = row.lower_name
+      if (!productMap.has(lowerName)) {
+        productMap.set(lowerName, { id: row.id, name: row.name })
+      }
+    }
+    
+    // Prepare batch updates - group by product ID
+    const updatesByProductId = new Map<number, number>()
+    const notFoundProducts: string[] = []
+    
     for (const [productName, totalStock] of stockByProduct.entries()) {
+      const lowerName = productName.toLowerCase()
+      const product = productMap.get(lowerName)
+      
+      if (product) {
+        // If multiple products with same name, use the first one
+        updatesByProductId.set(product.id, totalStock)
+      } else {
+        notFoundProducts.push(productName)
+        notFound++
+        errors.push(`Product not found: "${productName}"`)
+      }
+    }
+    
+    // Perform batch update using VALUES and JOIN (much faster than individual updates)
+    if (updatesByProductId.size > 0) {
       try {
-        // Find product by name (case-insensitive, exact match first, then partial)
-        const result = await query(
-          `SELECT id, name FROM products 
-           WHERE LOWER(name) = LOWER($1) 
-           OR LOWER(name) LIKE LOWER($2)
-           ORDER BY CASE WHEN LOWER(name) = LOWER($1) THEN 0 ELSE 1 END
-           LIMIT 1`,
-          [productName, `%${productName}%`]
-        )
-
-        if (result.rows.length > 0) {
-          await query(
-            `UPDATE products 
-             SET stock_quantity = $1, updated_at = NOW() 
-             WHERE id = $2`,
-            [totalStock, result.rows[0].id]
-          )
-          updated++
-        } else {
-          notFound++
-          errors.push(`Product not found: "${productName}"`)
+        // Build VALUES clause for batch update
+        const values: any[] = []
+        const valueStrings: string[] = []
+        let paramIndex = 1
+        
+        for (const [productId, stock] of updatesByProductId.entries()) {
+          valueStrings.push(`($${paramIndex}, $${paramIndex + 1})`)
+          values.push(productId, stock)
+          paramIndex += 2
         }
-      } catch (error: any) {
-        errors.push(`Error updating "${productName}": ${error.message}`)
+        
+        // Single batch update query
+        const batchUpdateQuery = `
+          UPDATE products p
+          SET stock_quantity = v.stock,
+              updated_at = NOW()
+          FROM (VALUES ${valueStrings.join(', ')}) AS v(id, stock)
+          WHERE p.id = v.id
+        `
+        
+        await query(batchUpdateQuery, values)
+        updated = updatesByProductId.size
+      } catch (batchError: any) {
+        console.error('Batch update failed, falling back to individual updates:', batchError)
+        // Fallback to individual updates if batch fails
+        for (const [productId, stock] of updatesByProductId.entries()) {
+          try {
+            await query(
+              `UPDATE products 
+               SET stock_quantity = $1, updated_at = NOW() 
+               WHERE id = $2`,
+              [stock, productId]
+            )
+            updated++
+          } catch (individualError: any) {
+            errors.push(`Error updating product ID ${productId}: ${individualError.message}`)
+          }
+        }
       }
     }
 
