@@ -9,12 +9,7 @@
     "export": "next build && npm run sitemap",
     "lint": "next lint",
     "format": "prettier --write .",
-    "sitemap": "node scripts/generate-sitemap.js",
-    "migrate": "node scripts/run-migration.js",
-    "migrate-admin": "node scripts/run-admin-migration.js",
-    "migrate-orders": "node scripts/run-orders-migration.js",
-    "create-admin": "node scripts/create-admin-user.js",
-    "check-db": "node scripts/check-database.js"
+    "sitemap": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",

@@ -25,12 +25,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    // Get user details from request body or use defaults
+    // Get user details from request body (all required for security)
     const { email, password, name } = req.body
     
-    const ADMIN_EMAIL = (email || 'admin@medihouse.com').toLowerCase().trim()
-    const ADMIN_PASSWORD = password || 'MediHouse@170303'
-    const ADMIN_NAME = name || 'Admin User'
+    // Require all fields - no defaults for security
+    if (!email || !password || !name) {
+      return res.status(400).json({ 
+        message: 'Email, password, and name are all required',
+        usage: 'POST to /api/admin/setup with body: { "email": "user@example.com", "password": "securePassword123", "name": "User Name" }'
+      })
+    }
+    
+    const ADMIN_EMAIL = email.toLowerCase().trim()
+    const ADMIN_PASSWORD = password
+    const ADMIN_NAME = name.trim()
 
     // Check if admin user already exists
     const existingUser = await query(
@@ -70,10 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: newUser.name,
         created_at: newUser.created_at,
       },
-      credentials: {
-        email: ADMIN_EMAIL,
-        password: ADMIN_PASSWORD,
-      },
+      // Credentials not returned for security - user was created with provided password
       note: 'Please delete or disable this endpoint after setup for security',
       usage: 'POST to /api/admin/setup with optional body: { "email": "user@example.com", "password": "password123", "name": "User Name" }',
     })
