@@ -272,6 +272,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const elapsedTime = endTime - startTime
     const elapsedSeconds = (elapsedTime / 1000).toFixed(2)
     const elapsedMs = elapsedTime
+    
+    // Calculate minutes and seconds
+    const totalSeconds = Math.floor(elapsedTime / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    
+    // Format as "X minutes Y seconds" or "Y seconds" if less than a minute
+    let formattedMinutesSeconds = ''
+    if (minutes > 0) {
+      formattedMinutesSeconds = `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`
+    } else {
+      formattedMinutesSeconds = `${seconds} second${seconds !== 1 ? 's' : ''}`
+    }
 
     res.status(200).json({
       success: true,
@@ -285,11 +298,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       timing: {
         elapsedMs,
         elapsedSeconds: parseFloat(elapsedSeconds),
+        minutes,
+        seconds,
         formatted: elapsedTime < 1000 
           ? `${elapsedMs}ms` 
           : elapsedTime < 60000 
             ? `${elapsedSeconds}s` 
-            : `${(elapsedTime / 60000).toFixed(2)}min`
+            : `${minutes}m ${seconds}s`,
+        formattedMinutesSeconds
       },
       errors: errors.slice(0, 10), // Limit to first 10 errors
     })

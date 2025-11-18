@@ -290,6 +290,48 @@ export default function UploadStock() {
                   </p>
                 </div>
               )}
+
+              {/* Processing Time Summary - Prominent Display at End */}
+              {result.timing && (
+                <div className="mt-6 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-6 h-6 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Processing Time</p>
+                        <p className="text-3xl font-bold text-indigo-700">
+                          {result.timing.formattedMinutesSeconds || 
+                           (result.timing.minutes !== undefined && result.timing.seconds !== undefined
+                             ? `${result.timing.minutes} minute${result.timing.minutes !== 1 ? 's' : ''} ${result.timing.seconds} second${result.timing.seconds !== 1 ? 's' : ''}`
+                             : result.timing.elapsedSeconds
+                               ? `${Math.floor(result.timing.elapsedSeconds / 60)} minute${Math.floor(result.timing.elapsedSeconds / 60) !== 1 ? 's' : ''} ${Math.floor(result.timing.elapsedSeconds % 60)} second${Math.floor(result.timing.elapsedSeconds % 60) !== 1 ? 's' : ''}`
+                               : 'N/A')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Database Update</p>
+                      <p className="text-sm font-semibold text-gray-700">
+                        {result.timing.elapsedMs ? `${result.timing.elapsedMs}ms` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
