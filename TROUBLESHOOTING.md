@@ -32,7 +32,7 @@ This will show you:
 1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
 2. Add new variable:
    - **Name:** `DATABASE_URL`
-   - **Value:** `postgresql://neondb_owner:npg_6SchiOP0DCUL@ep-broad-math-a1c0bik1-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+   - **Value:** `postgresql://username:password@host:port/database?sslmode=require` (use your actual Neon connection string)
    - **Environment:** Select "Production" (and Preview/Development if needed)
 3. Click "Save"
 4. **Redeploy** your project (Vercel → Deployments → Redeploy)
@@ -48,7 +48,7 @@ Run migrations on your production database:
 
 ```bash
 # Set your production DATABASE_URL
-export DATABASE_URL="postgresql://neondb_owner:npg_6SchiOP0DCUL@ep-broad-math-a1c0bik1-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+export DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"  # Use your actual Neon connection string
 
 # Run migrations
 npm run migrate-admin
@@ -67,7 +67,7 @@ node scripts/create-admin-user.js siva@medihouse.com "Siva@0403" "Siva"
 
 **Fix:**
 - Make sure DATABASE_URL on Vercel points to the same database as your local `.env.local`
-- Your production database URL should be: `postgresql://neondb_owner:npg_6SchiOP0DCUL@ep-broad-math-a1c0bik1-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+- Your production database URL should match your Neon connection string (found in Neon Console → Connection Details)
 
 ## 📋 Quick Checklist
 
