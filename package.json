@@ -12,6 +12,7 @@
     "sitemap": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
     "@types/bcrypt": "^6.0.0",
     "@types/formidable": "^3.4.6",
     "@types/multer": "^2.0.0",
@@ -20,23 +21,23 @@
     "dotenv": "^17.2.3",
     "formidable": "^3.5.4",
     "multer": "^2.0.2",
-    "next": "^14.2.0",
+    "next": "^16.0.3",
     "pg": "^8.16.3",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
-    "autoprefixer": "^10.4.17",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.18",
-    "postcss": "^8.4.33",
-    "prettier": "^3.2.4",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3"
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "autoprefixer": "^10.4.22",
+    "eslint": "^9.15.0",
+    "eslint-config-next": "^16.0.3",
+    "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "rimraf": "^5.0.0",

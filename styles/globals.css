@@ -1,6 +1,73 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Font Families */
+  --font-sans: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Primary Colors */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  /* Medical Colors */
+  --color-medical-blue: #2563eb;
+  --color-medical-blue-dark: #1e40af;
+  --color-medical-gray: #6b7280;
+  --color-medical-gray-light: #f3f4f6;
+
+  /* Ocean Colors */
+  --color-ocean-navy: #0D4A7A;
+  --color-ocean-royal: #156DA3;
+  --color-ocean-sky: #A8D8F0;
+  --color-ocean-cyan: #3BB4E8;
+  --color-ocean-teal: #1F8FC9;
+  --color-ocean-aqua: #7AD3F6;
+
+  /* Animations */
+  --animate-spin-slow: spin 8s linear infinite;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-slide-up: slideUp 0.8s ease-out;
+  --animate-slide-down: slideDown 0.8s ease-out;
+  --animate-fade-in: fadeIn 1s ease-out;
+  --animate-scale-in: scaleIn 0.6s ease-out;
+
+  /* Backdrop Blur */
+  --backdrop-blur-xs: 2px;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(100px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  0% { transform: translateY(-50px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 @layer base {
   html {
