@@ -52,117 +52,124 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const orderId = orderResult.rows[0].id
 
-    // Process each item and update stock
+    // OPTIMIZATION: Batch fetch all products at once instead of N queries
+    const productNames = [...new Set(orderData.items.map(item => item.name.toLowerCase()))]
+    
+    // Fetch all matching products in a single query - much faster than N queries
+    const allProductsResult = await query(
+      `SELECT id, name, manufacturer, stock_quantity 
+       FROM products 
+       WHERE LOWER(name) = ANY($1::text[])
+       ORDER BY name, manufacturer`,
+      [productNames]
+    )
+
+    // Create lookup maps for fast access
+    const productMap = new Map<string, any>()
+    allProductsResult.rows.forEach(product => {
+      const key = `${product.name.toLowerCase()}|${product.manufacturer.toLowerCase()}`
+      if (!productMap.has(key)) {
+        productMap.set(key, product)
+      }
+    })
+
+    // Also create a name-only map for fallback matching
+    const productNameMap = new Map<string, any>()
+    allProductsResult.rows.forEach(product => {
+      const key = product.name.toLowerCase()
+      if (!productNameMap.has(key)) {
+        productNameMap.set(key, product)
+      }
+    })
+
+    // Validate and prepare batch updates
     const results = []
     const errors: string[] = []
     const orderItems: Array<{ productId: number; productName: string; productManufacturer: string; quantity: number }> = []
+    const stockUpdates: Array<{ productId: number; newStock: number }> = []
+    const orderItemInserts: Array<{ orderId: number; productId: number; productName: string; productManufacturer: string; quantity: number }> = []
 
+    // Validate all items first
     for (const item of orderData.items) {
-      try {
-        // Find product by name and manufacturer
-        // The item.id format is "manufacturer-productname" but we'll match by actual name and manufacturer
-        const productResult = await query(
-          `SELECT id, name, manufacturer, stock_quantity 
-           FROM products 
-           WHERE LOWER(name) = LOWER($1) 
-           AND LOWER(manufacturer) = LOWER($2)
-           LIMIT 1`,
-          [item.name, item.manufacturer]
-        )
+      const key = `${item.name.toLowerCase()}|${item.manufacturer.toLowerCase()}`
+      let product = productMap.get(key)
 
-        if (productResult.rows.length === 0) {
-          // Try matching by name only (case-insensitive)
-          const altResult = await query(
-            `SELECT id, name, manufacturer, stock_quantity 
-             FROM products 
-             WHERE LOWER(name) = LOWER($1)
-             ORDER BY CASE WHEN LOWER(manufacturer) = LOWER($2) THEN 0 ELSE 1 END
-             LIMIT 1`,
-            [item.name, item.manufacturer]
-          )
-
-          if (altResult.rows.length === 0) {
-            errors.push(`Product not found: ${item.name} (${item.manufacturer})`)
-            continue
-          }
-
-          const product = altResult.rows[0]
-          const currentStock = product.stock_quantity || 0
-
-          if (currentStock < item.quantity) {
-            errors.push(`Insufficient stock for ${item.name}. Available: ${currentStock}, Requested: ${item.quantity}`)
-            continue
-          }
-
-          // Update stock
-          const newStock = Math.max(0, currentStock - item.quantity)
-          await query(
-            `UPDATE products 
-             SET stock_quantity = $1, updated_at = NOW() 
-             WHERE id = $2`,
-            [newStock, product.id]
-          )
-
-          // Save order item
-          await query(
-            `INSERT INTO order_items (order_id, product_id, product_name, product_manufacturer, quantity)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [orderId, product.id, product.name, product.manufacturer, item.quantity]
-          )
-
-          orderItems.push({
-            productId: product.id,
-            productName: product.name,
-            productManufacturer: product.manufacturer,
-            quantity: item.quantity,
-          })
-
-          results.push({
-            product: item.name,
-            quantity: item.quantity,
-            status: 'success',
-          })
-        } else {
-          const product = productResult.rows[0]
-          const currentStock = product.stock_quantity || 0
-
-          if (currentStock < item.quantity) {
-            errors.push(`Insufficient stock for ${item.name}. Available: ${currentStock}, Requested: ${item.quantity}`)
-            continue
-          }
-
-          // Update stock
-          const newStock = Math.max(0, currentStock - item.quantity)
-          await query(
-            `UPDATE products 
-             SET stock_quantity = $1, updated_at = NOW() 
-             WHERE id = $2`,
-            [newStock, product.id]
-          )
-
-          // Save order item
-          await query(
-            `INSERT INTO order_items (order_id, product_id, product_name, product_manufacturer, quantity)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [orderId, product.id, product.name, product.manufacturer, item.quantity]
-          )
-
-          orderItems.push({
-            productId: product.id,
-            productName: product.name,
-            productManufacturer: product.manufacturer,
-            quantity: item.quantity,
-          })
-
-          results.push({
-            product: item.name,
-            quantity: item.quantity,
-            status: 'success',
-          })
-        }
-      } catch (error: any) {
-        errors.push(`Error processing ${item.name}: ${error.message}`)
+      // Fallback: try name-only match
+      if (!product) {
+        product = productNameMap.get(item.name.toLowerCase())
       }
+
+      if (!product) {
+        errors.push(`Product not found: ${item.name} (${item.manufacturer})`)
+        continue
+      }
+
+      const currentStock = product.stock_quantity || 0
+      if (currentStock < item.quantity) {
+        errors.push(`Insufficient stock for ${item.name}. Available: ${currentStock}, Requested: ${item.quantity}`)
+        continue
+      }
+
+      const newStock = Math.max(0, currentStock - item.quantity)
+      stockUpdates.push({ productId: product.id, newStock })
+      orderItemInserts.push({
+        orderId,
+        productId: product.id,
+        productName: product.name,
+        productManufacturer: product.manufacturer,
+        quantity: item.quantity,
+      })
+      orderItems.push({
+        productId: product.id,
+        productName: product.name,
+        productManufacturer: product.manufacturer,
+        quantity: item.quantity,
+      })
+      results.push({
+        product: item.name,
+        quantity: item.quantity,
+        status: 'success',
+      })
+    }
+
+    // OPTIMIZATION: Batch update stock in a single query using VALUES
+    if (stockUpdates.length > 0) {
+      const stockUpdateValues = stockUpdates.map((update, idx) => {
+        const baseIdx = idx * 2
+        return `($${baseIdx + 1}::int, $${baseIdx + 2}::int)`
+      }).join(', ')
+      
+      const stockUpdateParams = stockUpdates.flatMap(update => [update.productId, update.newStock])
+      
+      await query(
+        `UPDATE products p
+         SET stock_quantity = v.stock, updated_at = NOW()
+         FROM (VALUES ${stockUpdateValues}) AS v(id, stock)
+         WHERE p.id = v.id`,
+        stockUpdateParams
+      )
+    }
+
+    // OPTIMIZATION: Batch insert order items in a single query
+    if (orderItemInserts.length > 0) {
+      const insertValues = orderItemInserts.map((item, idx) => {
+        const baseIdx = idx * 5
+        return `($${baseIdx + 1}::int, $${baseIdx + 2}::int, $${baseIdx + 3}::text, $${baseIdx + 4}::text, $${baseIdx + 5}::int)`
+      }).join(', ')
+      
+      const insertParams = orderItemInserts.flatMap(item => [
+        item.orderId,
+        item.productId,
+        item.productName,
+        item.productManufacturer,
+        item.quantity,
+      ])
+      
+      await query(
+        `INSERT INTO order_items (order_id, product_id, product_name, product_manufacturer, quantity)
+         VALUES ${insertValues}`,
+        insertParams
+      )
     }
 
     // No caching - ensure real-time responses

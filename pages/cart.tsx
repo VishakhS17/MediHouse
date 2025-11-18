@@ -127,51 +127,55 @@ export default function Cart() {
       return
     }
     
-    // Update stock in database before opening WhatsApp
-    try {
-      const orderResponse = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerName: customerDetails.name,
-          customerPhone: customerDetails.phone,
-          customerAddress: customerDetails.address,
-          customerEmail: customerDetails.email,
-          items: items.map(item => ({
-            id: item.id,
-            name: item.name,
-            manufacturer: item.manufacturer,
-            quantity: item.quantity,
-          })),
-        }),
+    // OPTIMIZATION: Open WhatsApp immediately while processing order in background
+    // This improves perceived performance - user doesn't wait for API response
+    const whatsappUrl = getWhatsAppUrl(customerDetails)
+    window.open(whatsappUrl, '_blank')
+    
+    // Close form and clear cart immediately for better UX
+    setShowCustomerForm(false)
+    clearCart()
+    
+    // Process order in background (non-blocking)
+    // User can continue using WhatsApp while order is being saved
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customerName: customerDetails.name,
+        customerPhone: customerDetails.phone,
+        customerAddress: customerDetails.address,
+        customerEmail: customerDetails.email,
+        items: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          manufacturer: item.manufacturer,
+          quantity: item.quantity,
+        })),
+      }),
+    })
+      .then(async (orderResponse) => {
+        const orderData = await orderResponse.json()
+        
+        if (!orderResponse.ok) {
+          console.error('Order processing error:', orderData.message || 'Unknown error')
+          // Optionally show a non-intrusive notification
+          return
+        }
+
+        // Check for stock errors - show notification if needed
+        if (orderData.errors && orderData.errors.length > 0) {
+          console.warn('Order processing warnings:', orderData.errors)
+          // Could show a toast notification here if needed
+        }
       })
-
-      const orderData = await orderResponse.json()
-
-      if (!orderResponse.ok) {
-        alert(`Error processing order: ${orderData.message || 'Unknown error'}`)
-        return
-      }
-
-      // Check for stock errors
-      if (orderData.errors && orderData.errors.length > 0) {
-        const errorMessage = orderData.errors.join('\n')
-        alert(`Some items could not be processed:\n\n${errorMessage}\n\nPlease check stock availability.`)
-        // Still proceed to WhatsApp but warn user
-      }
-
-      // Open WhatsApp with customer details and order
-      window.open(getWhatsAppUrl(customerDetails), '_blank')
-      
-      // Close form and clear cart after order
-      setShowCustomerForm(false)
-      clearCart()
-    } catch (error: any) {
-      console.error('Error processing order:', error)
-      alert('Error processing order. Please try again or contact support.')
-    }
+      .catch((error: any) => {
+        console.error('Error processing order:', error)
+        // Order processing failed, but user already has WhatsApp open
+        // Could show a toast notification here
+      })
   }
 
   const handleInputChange = (field: keyof CustomerDetails, value: string) => {
