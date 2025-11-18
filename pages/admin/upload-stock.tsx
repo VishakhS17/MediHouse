@@ -47,7 +47,26 @@ export default function UploadStock() {
         body: formData,
       })
 
-      const data = await response.json()
+      // Try to parse JSON response, with fallback for errors
+      let data: any = null
+      try {
+        const text = await response.text()
+        if (text) {
+          try {
+            data = JSON.parse(text)
+          } catch (parseError) {
+            // If JSON parsing fails, use the text as error message
+            setError(text || 'Failed to parse server response')
+            return
+          }
+        } else {
+          setError('Empty response from server')
+          return
+        }
+      } catch (readError) {
+        setError('Failed to read server response')
+        return
+      }
 
       if (response.ok) {
         setResult(data)
@@ -56,9 +75,10 @@ export default function UploadStock() {
         const fileInput = document.getElementById('file-input') as HTMLInputElement
         if (fileInput) fileInput.value = ''
       } else {
-        setError(data.message || 'Upload failed')
+        setError(data?.message || data?.error || 'Upload failed')
       }
     } catch (err: any) {
+      console.error('Upload error:', err)
       setError(err.message || 'An error occurred while uploading the file')
     } finally {
       setUploading(false)
