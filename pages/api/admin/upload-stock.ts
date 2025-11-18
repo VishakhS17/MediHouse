@@ -339,6 +339,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       formattedMinutesSeconds = `${seconds} second${seconds !== 1 ? 's' : ''}`
     }
 
+    // No caching - ensure real-time responses
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    res.setHeader('Pragma', 'no-cache')
+    res.setHeader('Expires', '0')
+    
     res.status(200).json({
       success: true,
       message: 'Stock update completed',

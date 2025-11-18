@@ -24,12 +24,38 @@ export default function AdminProducts() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
-    fetchProducts()
+    fetchProducts(true) // Initial load with loading spinner
+    
+    // Refresh when page becomes visible (user returns from other pages)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchProducts(false) // Refresh silently when page becomes visible
+      }
+    }
+    
+    // Refresh when window gains focus (user switches back to tab)
+    const handleFocus = () => {
+      fetchProducts(false) // Refresh silently when window gains focus
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (showLoading = true) => {
+    if (showLoading) setLoading(true)
     try {
-      const response = await fetch('/api/admin/products')
+      // Add cache-busting query parameter and no-store cache option
+      const timestamp = new Date().getTime()
+      const response = await fetch(`/api/admin/products?t=${timestamp}`, {
+        cache: 'no-store', // Ensure we don't use cached responses
+      })
       if (response.ok) {
         const data = await response.json()
         setProducts(data.products || [])
@@ -82,9 +108,30 @@ export default function AdminProducts() {
       <AdminLayout>
         <div className="space-y-6">
           {/* Page Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-            <p className="text-gray-600 mt-1">Manage your product inventory and stock levels</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+              <p className="text-gray-600 mt-1">Manage your product inventory and stock levels</p>
+            </div>
+            <button
+              onClick={() => fetchProducts(true)}
+              disabled={loading}
+              className="flex items-center space-x-2 px-4 py-2 bg-ocean-cyan text-white rounded-lg hover:bg-ocean-teal transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              title="Refresh products data"
+            >
+              <svg
+                className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
           </div>
 
           {/* Stats Cards */}

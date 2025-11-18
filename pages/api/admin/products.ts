@@ -13,6 +13,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        ORDER BY manufacturer, name`
     )
 
+    // No caching - ensure real-time data updates
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    res.setHeader('Pragma', 'no-cache')
+    res.setHeader('Expires', '0')
+    
     res.status(200).json({
       success: true,
       products: productsResult.rows,

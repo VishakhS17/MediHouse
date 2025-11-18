@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SEO from '@/components/SEO'
@@ -24,6 +25,7 @@ interface ProductsData {
 }
 
 export default function Products() {
+  const router = useRouter()
   const [productsData, setProductsData] = useState<ProductsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -33,29 +35,64 @@ export default function Products() {
   const [inputValues, setInputValues] = useState<Record<string, string>>({})
   const { addToCart, getCartItem, updateQuantity } = useCart()
 
-  useEffect(() => {
-    // Load products from API (which fetches from database)
-    fetch('/api/products')
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch products: ${res.statusText}`)
-        }
-        return res.json()
+  const fetchProducts = async (showLoading = true, isInitialLoad = false) => {
+    if (showLoading) setLoading(true)
+    try {
+      // Add cache-busting query parameter to ensure fresh data
+      const timestamp = new Date().getTime()
+      const res = await fetch(`/api/products?t=${timestamp}`, {
+        cache: 'no-store', // Ensure we don't use cached responses
       })
-      .then(data => {
-        setProductsData(data)
-        setLoading(false)
-        // Expand first 5 brands by default
+      if (!res.ok) {
+        throw new Error(`Failed to fetch products: ${res.statusText}`)
+      }
+      const data = await res.json()
+      setProductsData(data)
+      setLoading(false)
+      // Expand first 5 brands by default (only on initial load)
+      if (isInitialLoad) {
         const firstBrands = data.brands.slice(0, 5)
         setExpandedBrands(new Set(firstBrands))
-      })
-      .catch(err => {
-        console.error('Error loading products:', err)
-        setLoading(false)
-        // Show more detailed error message
-        const errorMsg = err.message || 'Unknown error occurred'
-        alert(`Failed to load products: ${errorMsg}\n\nPlease check:\n1. Database connection is configured\n2. Products table exists\n3. Network connection is working`)
-      })
+      }
+    } catch (err: any) {
+      console.error('Error loading products:', err)
+      setLoading(false)
+      // Show more detailed error message
+      const errorMsg = err.message || 'Unknown error occurred'
+      alert(`Failed to load products: ${errorMsg}\n\nPlease check:\n1. Database connection is configured\n2. Products table exists\n3. Network connection is working`)
+    }
+  }
+
+  useEffect(() => {
+    fetchProducts(true, true) // Initial load with loading spinner
+    
+    // Refresh when page becomes visible (user returns from cart/other pages)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchProducts(false, false) // Refresh silently when page becomes visible
+      }
+    }
+    
+    // Refresh when window gains focus (user switches back to tab)
+    const handleFocus = () => {
+      fetchProducts(false, false) // Refresh silently when window gains focus
+    }
+    
+    // Refresh when route changes (user navigates back from cart)
+    const handleRouteChangeComplete = () => {
+      fetchProducts(false, false) // Refresh silently on route change
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+    router.events.on('routeChangeComplete', handleRouteChangeComplete)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+      router.events.off('routeChangeComplete', handleRouteChangeComplete)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const toggleBrand = (brand: string) => {
@@ -129,6 +166,29 @@ export default function Products() {
               <p className="mx-auto max-w-3xl text-sm sm:text-lg leading-relaxed text-gray-600 px-2">
                 Browse our complete inventory of pharmaceutical products from trusted manufacturers
               </p>
+            </div>
+
+            {/* Refresh Button */}
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={() => fetchProducts()}
+                disabled={loading}
+                className="flex items-center space-x-2 px-4 py-2 bg-ocean-cyan text-white rounded-lg hover:bg-ocean-teal transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                title="Refresh product stock"
+              >
+                <svg
+                  className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>{loading ? 'Refreshing...' : 'Refresh Stock'}</span>
+              </button>
             </div>
 
             {/* Search and Filter */}

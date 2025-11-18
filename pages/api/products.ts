@@ -75,8 +75,10 @@ export default async function handler(
       brands: sortedBrands,
     }
 
-    // Cache for 5 minutes
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    // No caching - stock must be real-time and update immediately after orders
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    res.setHeader('Pragma', 'no-cache')
+    res.setHeader('Expires', '0')
     res.status(200).json(response)
   } catch (error: any) {
     console.error('Error fetching products:', error)

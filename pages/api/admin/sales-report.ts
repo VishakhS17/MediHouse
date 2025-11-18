@@ -13,10 +13,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const endDate = req.query.endDate as string | undefined
 
     // Build query for sales data
+    // Convert order_date to IST (Asia/Kolkata) timezone at database level
+    // Assuming order_date is stored as timestamptz (timestamp with time zone) in UTC
+    // AT TIME ZONE converts timestamptz to timestamp in the specified timezone
     let salesQuery = `
       SELECT 
         o.id as order_id,
-        o.order_date,
+        o.order_date AT TIME ZONE 'Asia/Kolkata' as order_date,
         o.customer_name,
         o.customer_phone,
         o.customer_address,
@@ -54,16 +57,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Prepare data for Excel
-    const excelData = salesResult.rows.map((row, index) => ({
-      'Sl No': index + 1,
-      'Order ID': row.order_id,
-      'Order Date': new Date(row.order_date).toLocaleDateString('en-IN', {
+    const excelData = salesResult.rows.map((row, index) => {
+      // Parse the date from database (already converted to IST by PostgreSQL)
+      const dbDate = new Date(row.order_date)
+      
+      // Format date and time in IST (already in IST from database query)
+      const formattedDate = dbDate.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata', // Ensure IST formatting
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-      }),
+        second: '2-digit',
+        hour12: true, // Use 12-hour format with AM/PM
+      })
+      
+      return {
+      'Sl No': index + 1,
+      'Order ID': row.order_id,
+      'Order Date': formattedDate,
       'Customer Name': row.customer_name,
       'Customer Phone': row.customer_phone,
       'Customer Address': row.customer_address,
