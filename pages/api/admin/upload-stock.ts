@@ -172,6 +172,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // }
 
   try {
+    // Start timing
+    const startTime = Date.now()
+    
     // Parse the form data
     const uploadDir = path.join(os.tmpdir(), 'medihouse-uploads')
     if (!fs.existsSync(uploadDir)) {
@@ -264,6 +267,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fs.unlinkSync(filePath)
     }
 
+    // Calculate elapsed time
+    const endTime = Date.now()
+    const elapsedTime = endTime - startTime
+    const elapsedSeconds = (elapsedTime / 1000).toFixed(2)
+    const elapsedMs = elapsedTime
+
     res.status(200).json({
       success: true,
       message: 'Stock update completed',
@@ -272,6 +281,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         uniqueProducts: stockByProduct.size,
         updated,
         notFound,
+      },
+      timing: {
+        elapsedMs,
+        elapsedSeconds: parseFloat(elapsedSeconds),
+        formatted: elapsedTime < 1000 
+          ? `${elapsedMs}ms` 
+          : elapsedTime < 60000 
+            ? `${elapsedSeconds}s` 
+            : `${(elapsedTime / 60000).toFixed(2)}min`
       },
       errors: errors.slice(0, 10), // Limit to first 10 errors
     })

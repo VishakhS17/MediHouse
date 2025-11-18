@@ -215,7 +215,7 @@ export default function UploadStock() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Upload Results</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-gray-600 mb-1">Total Records</p>
                   <p className="text-2xl font-bold text-blue-600">{result.stats.total}</p>
@@ -231,6 +231,17 @@ export default function UploadStock() {
                 <div className="bg-yellow-50 rounded-lg p-4">
                   <p className="text-sm text-gray-600 mb-1">Not Found</p>
                   <p className="text-2xl font-bold text-yellow-600">{result.stats.notFound}</p>
+                </div>
+                <div className="bg-indigo-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-1">Processing Time</p>
+                  <p className="text-2xl font-bold text-indigo-600">
+                    {result.timing?.formatted || 
+                     (result.timing?.elapsedMs 
+                       ? result.timing.elapsedMs < 1000 
+                         ? `${result.timing.elapsedMs}ms` 
+                         : `${result.timing.elapsedSeconds}s`
+                       : 'N/A')}
+                  </p>
                 </div>
               </div>
 
