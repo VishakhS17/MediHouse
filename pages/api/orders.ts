@@ -106,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const currentStock = product.stock_quantity || 0
       if (currentStock < item.quantity) {
-        errors.push(`Insufficient stock for ${item.name}. Available: ${currentStock}, Requested: ${item.quantity}`)
+        errors.push(`The quantity you want (${item.quantity}) for ${item.name} is not available. Only ${currentStock} unit${currentStock === 1 ? '' : 's'} available in stock.`)
         continue
       }
 

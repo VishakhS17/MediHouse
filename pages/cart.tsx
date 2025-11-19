@@ -161,14 +161,17 @@ export default function Cart() {
         
         if (!orderResponse.ok) {
           console.error('Order processing error:', orderData.message || 'Unknown error')
-          // Optionally show a non-intrusive notification
+          if (orderData.errors && orderData.errors.length > 0) {
+            alert(`Order Error:\n\n${orderData.errors.join('\n')}`)
+          } else {
+            alert(`Order Error: ${orderData.message || 'Unknown error'}`)
+          }
           return
         }
 
-        // Check for stock errors - show notification if needed
+        // Check for stock errors - show alert with available stock
         if (orderData.errors && orderData.errors.length > 0) {
-          console.warn('Order processing warnings:', orderData.errors)
-          // Could show a toast notification here if needed
+          alert(`Stock Availability Issue:\n\n${orderData.errors.join('\n')}\n\nPlease adjust your order quantities.`)
         }
       })
       .catch((error: any) => {

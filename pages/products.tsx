@@ -174,7 +174,7 @@ export default function Products() {
                 onClick={() => fetchProducts()}
                 disabled={loading}
                 className="flex items-center space-x-2 px-4 py-2 bg-ocean-cyan text-white rounded-lg hover:bg-ocean-teal transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                title="Refresh product stock"
+                title="Refresh products"
               >
                 <svg
                   className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
@@ -187,7 +187,7 @@ export default function Products() {
                 >
                   <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <span>{loading ? 'Refreshing...' : 'Refresh Stock'}</span>
+                <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
               </button>
             </div>
 
@@ -302,16 +302,14 @@ export default function Products() {
                                   >
                                     <h3 className="font-semibold text-gray-900 mb-2 text-base sm:text-lg break-words">{product.name}</h3>
                                     <p className="text-xs sm:text-sm text-gray-500 mb-2">{product.manufacturer}</p>
-                                    {/* Stock Count */}
+                                    {/* Stock Status */}
                                     <div className="mb-4">
                                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                                         (product.stock_quantity || 0) === 0 
                                           ? 'bg-red-100 text-red-800' 
-                                          : (product.stock_quantity || 0) < 10
-                                          ? 'bg-yellow-100 text-yellow-800'
                                           : 'bg-green-100 text-green-800'
                                       }`}>
-                                        Stock: {product.stock_quantity || 0}
+                                        {(product.stock_quantity || 0) === 0 ? 'Out of Stock' : 'In Stock'}
                                       </span>
                                     </div>
                                     
@@ -345,10 +343,16 @@ export default function Products() {
                                               const newQuantity = parseInt(value, 10)
                                               const maxStock = product.stock_quantity || 0
                                               if (!isNaN(newQuantity) && newQuantity >= 0) {
+                                                if (maxStock === 0 && newQuantity > 0) {
+                                                  alert('This product is out of stock.')
+                                                  setInputValues(prev => ({ ...prev, [product.id]: '0' }))
+                                                  updateQuantity(product.id, 0)
+                                                  return
+                                                }
                                                 const clampedQuantity = Math.min(newQuantity, maxStock)
                                                 updateQuantity(product.id, clampedQuantity)
-                                                if (clampedQuantity !== newQuantity) {
-                                                  setInputValues(prev => ({ ...prev, [product.id]: clampedQuantity.toString() }))
+                                                if (clampedQuantity !== newQuantity && newQuantity > maxStock) {
+                                                  // Don't show alert on every keystroke, only when user finishes typing
                                                 }
                                               }
                                             }
@@ -362,12 +366,16 @@ export default function Products() {
                                             if (value === '' || isNaN(numValue) || numValue < 0) {
                                               updateQuantity(product.id, 0)
                                               setInputValues(prev => ({ ...prev, [product.id]: '0' }))
+                                            } else if (maxStock === 0) {
+                                              alert('This product is currently out of stock.')
+                                              updateQuantity(product.id, 0)
+                                              setInputValues(prev => ({ ...prev, [product.id]: '0' }))
                                             } else {
                                               const clampedQuantity = Math.min(numValue, maxStock)
                                               updateQuantity(product.id, clampedQuantity)
                                               setInputValues(prev => ({ ...prev, [product.id]: clampedQuantity.toString() }))
                                               if (clampedQuantity < numValue) {
-                                                alert(`Only ${maxStock} units available in stock.`)
+                                                alert(`The quantity you requested (${numValue}) is not available. Only ${maxStock} unit${maxStock === 1 ? '' : 's'} available in stock.`)
                                               }
                                             }
                                           }}
@@ -389,7 +397,7 @@ export default function Products() {
                                               handleAddToCart(product, 1)
                                               setInputValues(prev => ({ ...prev, [product.id]: newQuantity.toString() }))
                                             } else {
-                                              alert(`Only ${maxStock} units available in stock.`)
+                                              alert(`The quantity you want is not available. Only ${maxStock} unit${maxStock === 1 ? '' : 's'} available in stock.`)
                                             }
                                           }}
                                           disabled={(product.stock_quantity || 0) === 0 || quantity >= (product.stock_quantity || 0)}
@@ -431,7 +439,7 @@ export default function Products() {
                                               return
                                             }
                                             if (targetQuantity > availableStock) {
-                                              alert(`Only ${availableStock} units available in stock.`)
+                                              alert(`The quantity you want (${targetQuantity}) is not available. Only ${availableStock} unit${availableStock === 1 ? '' : 's'} available in stock.`)
                                               targetQuantity = availableStock
                                             }
                                             
