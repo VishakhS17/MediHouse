@@ -104,7 +104,7 @@ export default function Cart() {
   // Get WhatsApp URL
   const getWhatsAppUrl = (customer: CustomerDetails): string => {
     // Use specific WhatsApp number
-    const phoneNumber = formatPhoneNumber('9961042506')
+    const phoneNumber = formatPhoneNumber('9497449918')
     const message = generateWhatsAppMessage(customer)
     const encodedMessage = encodeURIComponent(message)
     return `https://wa.me/${phoneNumber}?text=${encodedMessage}`
