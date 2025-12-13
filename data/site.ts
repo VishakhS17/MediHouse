@@ -71,7 +71,7 @@ export const companyInfo = {
 }
 
 export const contact: Contact = {
-  address: 'Cullen Road, Pitchu Iyer Junction, Alappuzha - 688 001',
+  address: '24/220 A, Cullen Road, Pitchu Iyer Junction, Alappuzha - 688001',
   mobile: ['75948 99099', '98470 28510'],
   email: 'medihousealpy@gmail.com',
   office: ['9947 123450', '6235 123450'],

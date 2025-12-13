@@ -1,47 +1,70 @@
 'use client'
 
 import { useState } from 'react'
-import { contact } from '@/data/site'
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
     message: '',
   })
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Format phone number for WhatsApp (remove spaces, add country code if needed)
+  const formatPhoneNumber = (phone: string): string => {
+    // Remove all spaces and non-digit characters
+    const cleaned = phone.replace(/\D/g, '')
+    // If it doesn't start with country code, assume India (+91)
+    if (cleaned.length === 10) {
+      return '91' + cleaned
+    }
+    // If it already has country code, return as is
+    return cleaned
+  }
+
+  // Generate WhatsApp message for contact form
+  const generateWhatsAppMessage = (): string => {
+    let message = `Hello! I would like to get in touch.\n\n`
+    message += `*Contact Form Submission:*\n`
+    message += `━━━━━━━━━━━━━━━━━━━━\n`
+    message += `Name: ${formData.name}\n`
+    message += `Phone: ${formData.phone}\n`
+    message += `\n`
+    message += `*Message:*\n`
+    message += `━━━━━━━━━━━━━━━━━━━━\n`
+    message += `${formData.message}\n\n`
+    message += `Thank you!`
+    
+    return message
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setStatus('submitting')
 
-    // Formspree endpoint - replace with your Formspree form ID
-    const formId = process.env.NEXT_PUBLIC_FORMSPREE_FORM_ID || 'YOUR_FORM_ID'
-    const formspreeUrl = `https://formspree.io/f/${formId}`
-
     try {
-      const response = await fetch(formspreeUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (response.ok) {
-        setStatus('success')
-        setFormData({ name: '', email: '', phone: '', message: '' })
-      } else {
-        setStatus('error')
-      }
-    } catch (error) {
-      // Fallback to mailto if Formspree fails
-      const mailtoLink = `mailto:${contact.email}?subject=Website Contact&body=${encodeURIComponent(
-        `Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\n\nMessage:\n${formData.message}`
-      )}`
-      window.location.href = mailtoLink
+      // Use the same WhatsApp number as ordering
+      const phoneNumber = formatPhoneNumber('9497449918')
+      const message = generateWhatsAppMessage()
+      const encodedMessage = encodeURIComponent(message)
+      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`
+      
+      // Open WhatsApp in new tab
+      window.open(whatsappUrl, '_blank')
+      
       setStatus('success')
+      setFormData({ name: '', phone: '', message: '' })
+      
+      // Reset status after 3 seconds
+      setTimeout(() => {
+        setStatus('idle')
+      }, 3000)
+    } catch (error) {
+      setStatus('error')
+      // Reset error status after 3 seconds
+      setTimeout(() => {
+        setStatus('idle')
+      }, 3000)
     }
   }
 
@@ -79,33 +102,18 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <label htmlFor="email" className="mb-2 block font-semibold text-white">
-          Email <span className="text-red-400">*</span>
-        </label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          required
-          value={formData.email}
-          onChange={handleChange}
-          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 touch-manipulation"
-          aria-required="true"
-          placeholder="your.email@example.com"
-        />
-      </div>
-
-      <div>
         <label htmlFor="phone" className="mb-2 block font-semibold text-white">
-          Phone
+          Phone <span className="text-red-400">*</span>
         </label>
         <input
           type="tel"
           id="phone"
           name="phone"
+          required
           value={formData.phone}
           onChange={handleChange}
           className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 touch-manipulation"
+          aria-required="true"
           placeholder="+91 1234567890"
         />
       </div>
@@ -135,8 +143,7 @@ export default function ContactForm() {
 
       {status === 'error' && (
         <div className="rounded-lg bg-red-500/20 border border-red-400/50 p-4 text-red-100" role="alert">
-          There was an error sending your message. Please try again or email us
-          directly.
+          There was an error. Please try again.
         </div>
       )}
 
@@ -159,14 +166,7 @@ export default function ContactForm() {
 
       <noscript>
         <p className="text-sm text-white/80">
-          JavaScript is disabled. Please{' '}
-          <a
-            href={`mailto:${contact.email}?subject=Website Contact`}
-            className="text-white underline hover:text-white"
-          >
-            email us directly
-          </a>
-          .
+          JavaScript is disabled. Please contact us via phone.
         </p>
       </noscript>
     </form>

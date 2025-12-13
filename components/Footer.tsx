@@ -128,7 +128,7 @@ export default function Footer() {
             <h3 className="mb-6 text-xl font-bold text-white">Location</h3>
             <div className="h-48 w-full overflow-hidden rounded-lg border border-gray-700/50 shadow-lg">
               <iframe
-                src={`https://www.google.com/maps?q=${encodeURIComponent(contact.address)}&output=embed&hl=en&z=15`}
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4309.157736492258!2d76.3355502109359!3d9.49857868142185!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b0885d164564717%3A0x160c8bb7822b0544!2smedi-house!5e1!3m2!1sen!2sus!4v1765650415697!5m2!1sen!2sus"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
@@ -136,11 +136,11 @@ export default function Footer() {
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 className="h-full w-full"
-                title="Medi House Location"
+                title="medi-house Location"
               ></iframe>
             </div>
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}`}
+              href="https://maps.app.goo.gl/H3ST3t3qWFtc8SVP8"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center gap-2 text-xs text-gray-400 transition-colors hover:text-primary-400"

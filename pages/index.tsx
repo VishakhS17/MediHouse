@@ -227,7 +227,7 @@ export default function Home() {
                   Get in Touch
                 </h2>
                 <p className="mb-8 text-xl leading-relaxed text-white/90">
-                  Located at Cullen Road, Pitchu Iyer Junction, Alappuzha - 688 001. Contact us today for reliable pharmaceutical distribution services. Our team is ready to serve you with excellence, dedication, and a commitment to quality healthcare delivery.
+                  Located at 24/220 A, Cullen Road, Pitchu Iyer Junction, Alappuzha - 688001. Contact us today for reliable pharmaceutical distribution services. Our team is ready to serve you with excellence, dedication, and a commitment to quality healthcare delivery.
                 </p>
                 
                 <div className="space-y-6">
@@ -258,16 +258,6 @@ export default function Home() {
                         </a>
                       ))}
                     </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-white">Email</h3>
-                    <a
-                      href={`mailto:${contact.email}`}
-                      className="text-white/80 transition-colors hover:text-white"
-                    >
-                      {contact.email}
-                    </a>
                   </div>
                 </div>
               </div>
