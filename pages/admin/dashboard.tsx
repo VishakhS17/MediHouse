@@ -7,9 +7,11 @@ export default function AdminDashboard() {
   const { hasPermission } = useAdminAuth()
 
   const quickLinks = [
-    { name: 'Manage Products', href: '/admin/products', icon: '💊', permission: 'manage_products', color: 'from-ocean-royal to-ocean-cyan' },
+    { name: 'Outstanding Bills', href: '/admin/outstanding-bills', icon: '📋', permission: 'manage_outstanding_bills', color: 'from-ocean-royal to-ocean-cyan' },
+    { name: 'Upload DRS', href: '/admin/upload-drs', icon: '📄', permission: 'manage_outstanding_bills', color: 'from-ocean-royal to-ocean-teal' },
+    { name: 'Products', href: '/admin/products', icon: '💊', permission: 'manage_products', color: 'from-ocean-royal to-ocean-cyan' },
     { name: 'Upload Stock', href: '/admin/upload-stock', icon: '📤', permission: 'manage_stock', color: 'from-ocean-teal to-ocean-cyan' },
-    { name: 'Sales Report', href: '/admin/sales-report', icon: '📊', permission: 'view_sales', color: 'from-ocean-aqua to-ocean-sky' },
+    { name: 'Sales Report', href: '/admin/sales-report', icon: '📈', permission: 'view_sales', color: 'from-ocean-aqua to-ocean-sky' },
     { name: 'Orders', href: '/admin/orders', icon: '📦', permission: 'manage_orders', color: 'from-ocean-royal to-ocean-teal' },
     { name: 'Invoice Collection', href: '/admin/invoice-collection', icon: '🧾', permission: 'collect_invoices', color: 'from-ocean-royal to-ocean-teal' },
     { name: 'Invoice Checking', href: '/admin/invoice-checking', icon: '✓', permission: 'check_invoices', color: 'from-ocean-teal to-ocean-cyan' },
