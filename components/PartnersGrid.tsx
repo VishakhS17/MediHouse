@@ -15,9 +15,15 @@ export default function PartnersGrid({ partners }: PartnersGridProps) {
           style={{ animationDelay: `${index * 0.1}s` }}
         >
           {/* Glass-morphic inner box with blue shadow */}
-          <div className="relative z-10 flex items-center justify-center rounded-lg bg-white/20 backdrop-blur-md p-3 sm:p-4 md:p-6 w-full shadow-[0_8px_32px_rgba(255,255,255,0.3)] border border-white/30 transition-all duration-300 group-hover:shadow-[0_12px_48px_rgba(255,255,255,0.5)] group-hover:scale-105 group-hover:bg-white/30">
-            <div className="text-center text-sm sm:text-base md:text-lg lg:text-xl font-bold uppercase tracking-tight text-white drop-shadow-lg leading-tight break-words px-1">
-              {partner.name}
+          <div className="relative z-10 flex items-center justify-center rounded-lg bg-white/20 backdrop-blur-md p-3 sm:p-4 md:p-6 w-full h-full shadow-[0_8px_32px_rgba(255,255,255,0.3)] border border-white/30 transition-all duration-300 group-hover:shadow-[0_12px_48px_rgba(255,255,255,0.5)] group-hover:scale-105 group-hover:bg-white/30">
+            <div className="relative w-full h-full min-h-[60px] sm:min-h-[80px] md:min-h-[100px]">
+              <Image
+                src={partner.logo}
+                alt={partner.alt}
+                fill
+                className="object-contain"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
             </div>
           </div>
           

@@ -78,34 +78,34 @@ export const contact: Contact = {
 }
 
 export const partners: Partner[] = [
-  { name: 'Aristo', logo: '/partners/aristo.svg', alt: 'Aristo Pharmaceuticals' },
+  { name: 'Aristo', logo: '/aristo.webp', alt: 'Aristo Pharmaceuticals' },
   {
     name: 'Blue Cross',
-    logo: '/partners/blue-cross.svg',
+    logo: '/bluecross.webp',
     alt: 'Blue Cross Laboratories',
   },
   {
     name: 'JB Chemicals',
-    logo: '/partners/jb-chemicals.svg',
+    logo: '/jbchemicals.webp',
     alt: 'JB Chemicals & Pharmaceuticals',
   },
   {
     name: 'RPG Life',
-    logo: '/partners/rpg-life.svg',
+    logo: '/rpg.webp',
     alt: 'RPG Life Sciences',
   },
   {
     name: 'Indoco',
-    logo: '/partners/indoco.svg',
+    logo: '/indoco.webp',
     alt: 'Indoco Remedies',
   },
-  { name: 'Lividus', logo: '/partners/lividus.svg', alt: 'Lividus Pharmaceuticals' },
+  { name: 'Lividus', logo: '/lividus.png', alt: 'Lividus Pharmaceuticals' },
   {
     name: 'Win Medi Care',
-    logo: '/partners/win-medi-care.svg',
+    logo: '/winmedicare.webp',
     alt: 'Win Medi Care',
   },
-  { name: 'Chethana', logo: '/partners/chethana.svg', alt: 'Chethana Pharmaceuticals' },
+  { name: 'Chethana', logo: '/CHETHPHARMA-270x300.png', alt: 'Chethana Pharmaceuticals' },
 ]
 
 export const services: Service[] = [
