@@ -218,13 +218,13 @@ export default function OutstandingBills() {
         <title>Outstanding Bills - MediHouse Admin</title>
       </Head>
       <AdminLayout>
-        <div className="p-6 max-w-7xl mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-800">Outstanding Bills (DRS)</h1>
+        <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Outstanding Bills (DRS)</h1>
               <a
                 href="/admin/upload-drs"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                className="bg-blue-600 text-white px-4 py-2.5 sm:py-2 rounded-md hover:bg-blue-700 transition-colors min-h-[44px] touch-manipulation text-sm sm:text-base whitespace-nowrap w-full sm:w-auto text-center"
               >
                 Upload DRS File
               </a>
@@ -232,33 +232,35 @@ export default function OutstandingBills() {
 
             {/* Search Form */}
             <form onSubmit={handleSearch} className="mb-6">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by Customer Number, Name, or Invoice Number... (Type to search)"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Search by Customer, Name, or Invoice..."
+                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
-                >
-                  {loading ? 'Searching...' : 'Search'}
-                </button>
-                {searchTerm && (
+                <div className="flex gap-2">
                   <button
-                    type="button"
-                    onClick={handleClear}
-                    className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition-colors"
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 sm:flex-none bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors min-h-[44px] touch-manipulation text-sm sm:text-base"
                   >
-                    Clear
+                    {loading ? 'Searching...' : 'Search'}
                   </button>
-                )}
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={handleClear}
+                      className="bg-gray-500 text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-md hover:bg-gray-600 transition-colors min-h-[44px] touch-manipulation text-sm sm:text-base"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
               {!searchTerm && (
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-xs sm:text-sm text-gray-500">
                   Enter a search term above to view outstanding bills. Search by customer number, customer name, or invoice number.
                 </p>
               )}
@@ -266,15 +268,15 @@ export default function OutstandingBills() {
 
             {/* Summary */}
             {summary.totalRecords > 0 && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <p className="text-sm text-blue-700">Total Records</p>
-                    <p className="text-2xl font-bold text-blue-900">{summary.totalRecords}</p>
+                    <p className="text-xs sm:text-sm text-blue-700">Total Records</p>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-900">{summary.totalRecords}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-blue-700">Total Pending Balance</p>
-                    <p className="text-2xl font-bold text-blue-900">
+                    <p className="text-xs sm:text-sm text-blue-700">Total Pending Balance</p>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-900">
                       {formatCurrency(summary.totalPendingBalance)}
                     </p>
                   </div>
@@ -318,13 +320,13 @@ export default function OutstandingBills() {
                           </select>
                         </div>
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Invoice No
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Customer Name
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <div className="flex flex-col gap-1">
                           <span>REF</span>
                           <select
@@ -333,7 +335,7 @@ export default function OutstandingBills() {
                               setRefFilter(e.target.value)
                               setCurrentPage(1)
                             }}
-                            className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white min-w-[100px]"
+                            className="px-1.5 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white min-w-[90px] sm:min-w-[100px]"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <option value="">All REF</option>
@@ -369,32 +371,34 @@ export default function OutstandingBills() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {bills.map((bill) => (
                       <tr key={bill.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {formatDate(bill.bill_date)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">
                           {bill.invoice_number}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {bill.customer_name}
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                          <div className="max-w-[120px] sm:max-w-none truncate sm:whitespace-normal" title={bill.customer_name}>
+                            {bill.customer_name}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {bill.ref || '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-right text-gray-900">
                           {formatCurrency(bill.total_amount)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-green-600">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-right font-semibold text-green-600">
                           {formatCurrency(bill.received_amount)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-red-600">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-right font-semibold text-red-600">
                           {formatCurrency(bill.pending_balance)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {formatDate(bill.as_of_date)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900">
-                          {bill.credit_days || 0} days
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-center text-gray-900">
+                          {bill.credit_days !== null ? `${bill.credit_days} days` : '-'}
                         </td>
                       </tr>
                     ))}
@@ -405,26 +409,26 @@ export default function OutstandingBills() {
 
             {/* Pagination */}
             {!loading && bills.length > 0 && totalRecords > itemsPerPage && (
-              <div className="mt-6 flex items-center justify-between">
-                <div className="text-sm text-gray-700">
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
                   {Math.min(currentPage * itemsPerPage, totalRecords)} of {totalRecords} results
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
                   >
                     Previous
                   </button>
-                  <span className="px-4 py-2 text-sm text-gray-700">
+                  <span className="px-3 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm text-gray-700 self-center">
                     Page {currentPage} of {Math.ceil(totalRecords / itemsPerPage)}
                   </span>
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={!hasMore}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
                   >
                     Next
                   </button>

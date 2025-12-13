@@ -25,26 +25,26 @@ export default function AdminDashboard() {
         <meta name="description" content="MediHouse Admin Dashboard" />
       </Head>
       <AdminLayout>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Page Header */}
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Welcome back! Use the navigation menu to access different sections.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">Welcome back! Use the navigation menu to access different sections.</p>
           </div>
 
           {/* Quick Links */}
           {quickLinks.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Links</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Quick Links</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {quickLinks.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center space-x-3 p-4 bg-gradient-to-br ${link.color} text-white rounded-lg hover:shadow-lg transition-all`}
+                    className={`flex items-center space-x-3 p-3 sm:p-4 bg-gradient-to-br ${link.color} text-white rounded-lg hover:shadow-lg transition-all min-h-[60px] sm:min-h-[80px] touch-manipulation`}
                   >
-                    <span className="text-2xl">{link.icon}</span>
-                    <span className="font-medium">{link.name}</span>
+                    <span className="text-xl sm:text-2xl flex-shrink-0">{link.icon}</span>
+                    <span className="font-medium text-sm sm:text-base">{link.name}</span>
                   </a>
                 ))}
               </div>
