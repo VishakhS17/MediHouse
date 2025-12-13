@@ -115,7 +115,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // Override default sorting if sortBy and sortOrder are provided
       if (sortBy === 'bill_date' && sortOrder) {
-        const order = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
+        const sortOrderStr = Array.isArray(sortOrder) ? sortOrder[0] : sortOrder
+        const order = sortOrderStr.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
         orderByClause = `ORDER BY bill_date ${order}, customer_name ASC, invoice_number ASC`
       }
       
