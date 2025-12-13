@@ -8,6 +8,7 @@ import TestimonialCard from '@/components/TestimonialCard'
 import ContactForm from '@/components/ContactForm'
 import AnimatedCounter from '@/components/AnimatedCounter'
 import ValuesSection from '@/components/ValuesSection'
+import Gallery from '@/components/Gallery'
 import FAQ from '@/components/FAQ'
 import SEO from '@/components/SEO'
 import { generatePageMeta } from '@/lib/siteMeta'
@@ -123,6 +124,9 @@ export default function Home() {
 
         {/* Values Section */}
         <ValuesSection />
+
+        {/* Gallery Section */}
+        <Gallery />
 
         {/* Partners Section */}
         <section id="partners" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-12 sm:py-16 md:py-24 px-4" aria-label="Our Partners">
