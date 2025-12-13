@@ -15,8 +15,8 @@ export default function Footer() {
       {/* Grid Pattern Overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808005_1px,transparent_1px),linear-gradient(to_bottom,#80808005_1px,transparent_1px)] bg-[size:20px_20px]"></div>
 
-      <div className="container-custom relative z-10 py-16">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div className="container-custom relative z-10 py-8 sm:py-12 md:py-16">
+        <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="animate-fade-in-up">
             <h3 className="mb-6 text-2xl font-bold bg-gradient-to-r from-ocean-sky via-ocean-aqua to-white bg-clip-text text-transparent">
               {siteConfig.name}
@@ -29,14 +29,14 @@ export default function Footer() {
 
           <div className="animate-fade-in-up-delay">
             <h3 className="mb-6 text-xl font-bold text-white">Quick Links</h3>
-            <nav className="flex flex-col space-y-3" aria-label="Footer navigation">
+            <nav className="flex flex-col space-y-2 sm:space-y-3" aria-label="Footer navigation">
               <a
                 href="#services"
                 onClick={(e) => {
                   e.preventDefault()
                   document.querySelector('#services')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
-                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer"
+                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer min-h-[44px] touch-manipulation"
               >
                 <span className="mr-2 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-[-10px]">→</span>
                 Services
@@ -47,7 +47,7 @@ export default function Footer() {
                   e.preventDefault()
                   document.querySelector('#testimonials')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
-                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer"
+                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer min-h-[44px] touch-manipulation"
               >
                 <span className="mr-2 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-[-10px]">→</span>
                 Testimonials
@@ -58,7 +58,7 @@ export default function Footer() {
                   e.preventDefault()
                   document.querySelector('#partners')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
-                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer"
+                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer min-h-[44px] touch-manipulation"
               >
                 <span className="mr-2 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-[-10px]">→</span>
                 Partners
@@ -69,7 +69,7 @@ export default function Footer() {
                   e.preventDefault()
                   document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }}
-                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer"
+                className="group relative inline-flex items-center text-sm text-gray-400 transition-all duration-300 hover:text-ocean-aqua focus:outline-none focus:ring-2 focus:ring-ocean-cyan rounded cursor-pointer min-h-[44px] touch-manipulation"
               >
                 <span className="mr-2 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 translate-x-[-10px]">→</span>
                 Contact
@@ -153,8 +153,8 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-gray-700/50 pt-8">
-          <div className="flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0">
+        <div className="mt-8 sm:mt-12 border-t border-gray-700/50 pt-6 sm:pt-8">
+          <div className="flex flex-col items-center justify-between space-y-3 sm:space-y-4 md:flex-row md:space-y-0 text-center md:text-left">
             <p className="text-sm text-gray-400">
               &copy; {currentYear} <span className="text-white font-semibold">{siteConfig.name}</span>. All rights reserved.
             </p>

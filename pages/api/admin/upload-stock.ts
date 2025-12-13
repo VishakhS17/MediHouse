@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { query } from '@/lib/db'
+import { checkPermission, getAdminUserIdFromRequest } from '@/lib/adminPermissions'
 import formidable from 'formidable'
 import XLSX from 'xlsx'
 import fs from 'fs'
@@ -19,12 +20,49 @@ interface StockUpdate {
 }
 
 async function parseExcelFile(filePath: string): Promise<StockUpdate[]> {
-  const workbook = XLSX.readFile(filePath)
+  // Ensure file exists before attempting to read
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Uploaded file not found at path: ${filePath}`)
+  }
+
+  // Read the file into a buffer first to avoid path access issues on some platforms
+  let workbook
+  try {
+    const fileBuffer = fs.readFileSync(filePath)
+
+    // Read buffer with options to handle both .xls and .xlsx formats
+    workbook = XLSX.read(fileBuffer, {
+      type: 'buffer',
+      cellDates: false,
+      cellNF: false,
+      cellText: false,
+    })
+  } catch (readError: any) {
+    const errorMsg = readError.message || 'Unknown error reading file'
+    console.error('XLSX.readFile error:', errorMsg)
+    console.error('File path:', filePath)
+    console.error('File exists:', fs.existsSync(filePath))
+    throw new Error(`Failed to read Excel file: ${errorMsg}. Please ensure the file is a valid Excel file (.xls or .xlsx format).`)
+  }
+  
+  if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+    throw new Error('Excel file appears to be empty or invalid - no sheets found')
+  }
+  
   const sheetName = workbook.SheetNames[0]
   const worksheet = workbook.Sheets[sheetName]
   
+  if (!worksheet) {
+    throw new Error(`Failed to read worksheet "${sheetName}" from Excel file`)
+  }
+  
   // Convert to array of arrays
-  const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][]
+  let data: any[][]
+  try {
+    data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][]
+  } catch (parseError: any) {
+    throw new Error(`Failed to parse Excel data: ${parseError.message || 'Unknown parsing error'}`)
+  }
   
   if (data.length === 0) {
     throw new Error('Excel file is empty')
@@ -163,14 +201,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' })
   }
 
-  // Verify admin authentication
-  // Note: In a real app, you'd verify the token from localStorage/cookie
-  // For now, we'll allow it but you should add proper token verification
-  // const isAuthenticated = verifyAdminToken(req)
-  // if (!isAuthenticated) {
-  //   return res.status(401).json({ message: 'Unauthorized' })
-  // }
-
   try {
     // Start timing
     const startTime = Date.now()
@@ -188,6 +218,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     const [fields, files] = await form.parse(req)
+    
+    // Get admin user ID - check headers first, then form fields
+    let userId = getAdminUserIdFromRequest(req)
+    
+    // If not found in headers, check form fields
+    if (!userId && fields.admin && Array.isArray(fields.admin) && fields.admin[0]) {
+      try {
+        const admin = typeof fields.admin[0] === 'string' ? JSON.parse(fields.admin[0]) : fields.admin[0]
+        if (admin && admin.id) {
+          userId = parseInt(admin.id)
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized - Admin user not found' })
+    }
+
+    const hasPermission = await checkPermission(userId, 'manage_stock')
+    if (!hasPermission) {
+      return res.status(403).json({ message: 'Forbidden - You do not have permission to manage stock' })
+    }
     const fileArray = Array.isArray(files.file) ? files.file : files.file ? [files.file] : []
     
     if (fileArray.length === 0 || !fileArray[0]) {
@@ -369,9 +423,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   } catch (error: any) {
     console.error('Upload error:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error name:', error.name)
+    console.error('Error message:', error.message)
+    
+    // Return detailed error message
+    const errorMessage = error.message || 'Unknown error occurred while processing the file'
     res.status(500).json({
       message: 'Error processing file',
-      error: error.message,
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     })
   }
 }

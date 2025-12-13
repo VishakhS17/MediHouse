@@ -120,7 +120,7 @@ export default function Header() {
         Skip to main content
       </a>
       <nav 
-        className={`mx-auto max-w-7xl rounded-2xl shadow-2xl transition-all duration-300 ${
+        className={`mx-auto max-w-7xl rounded-xl sm:rounded-2xl shadow-2xl transition-all duration-300 ${
           isProductsPage
             ? 'border border-ocean-cyan/30 bg-gradient-to-r from-ocean-teal/50 via-ocean-cyan/50 to-ocean-teal/50 hover:from-ocean-teal/60 hover:via-ocean-cyan/60 hover:to-ocean-teal/60 backdrop-blur-3xl'
             : shouldUseBlueText
@@ -143,13 +143,13 @@ export default function Header() {
         }}
         aria-label="Main navigation"
       >
-        <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4">
           <Link
             href="/"
             className="group flex items-center space-x-3 transition-transform duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ocean-cyan focus:ring-offset-2 rounded-lg"
             aria-label={`${siteConfig.name} Home`}
           >
-            <div className="relative h-10 w-10 sm:h-12 sm:w-12 transition-transform duration-300 group-hover:rotate-12">
+            <div className="relative h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 transition-transform duration-300 group-hover:rotate-12">
               <div className="absolute inset-0 rounded-full opacity-0 blur transition-opacity duration-300 group-hover:opacity-50" style={{ background: 'radial-gradient(circle, rgba(59, 180, 232, 0.6), rgba(122, 211, 246, 0.4))' }}></div>
               <div className="relative h-full w-full">
                 <Image
@@ -161,7 +161,7 @@ export default function Header() {
                 />
               </div>
             </div>
-            <span className={`text-lg sm:text-xl font-display font-bold transition-all duration-300 ${
+            <span className={`text-base sm:text-lg md:text-xl font-display font-bold transition-all duration-300 ${
               isProductsPage
                 ? 'text-white'
                 : shouldUseBlueText
@@ -245,7 +245,7 @@ export default function Header() {
           </div>
 
           <button
-            className={`md:hidden rounded-lg p-2 transition-colors focus:outline-none focus:ring-2 ${
+            className={`md:hidden rounded-lg p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors focus:outline-none focus:ring-2 touch-manipulation ${
               isProductsPage
                 ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
                 : shouldUseBlueText
@@ -275,17 +275,17 @@ export default function Header() {
         </div>
 
         {isMenuOpen && (
-          <div className={`border-t px-4 py-4 md:hidden transition-colors duration-300 ${
+          <div className={`border-t px-3 py-3 md:hidden transition-colors duration-300 ${
             isProductsPage ? 'border-white/20' : shouldUseBlueText ? 'border-gray-200/30' : 'border-white/10'
           }`}>
-            <div className="flex flex-col space-y-3">
+            <div className="flex flex-col space-y-2">
               {navLinks.map((link) => (
                 link.href.startsWith('#') ? (
                   <a
                     key={link.href}
                     href={link.href}
                     onClick={(e) => handleNavClick(e, link.href)}
-                    className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer ${
+                    className={`rounded-lg px-3 py-3 min-h-[44px] flex items-center transition-colors focus:outline-none focus:ring-2 cursor-pointer touch-manipulation ${
                       isProductsPage
                         ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
                         : shouldUseBlueText
@@ -300,7 +300,7 @@ export default function Header() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer ${
+                    className={`rounded-lg px-3 py-3 min-h-[44px] flex items-center transition-colors focus:outline-none focus:ring-2 cursor-pointer touch-manipulation ${
                       isProductsPage
                         ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
                         : shouldUseBlueText
@@ -315,7 +315,7 @@ export default function Header() {
               <Link
                 href="/cart"
                 onClick={() => setIsMenuOpen(false)}
-                className={`rounded-lg px-3 py-2 transition-colors focus:outline-none focus:ring-2 cursor-pointer flex items-center space-x-2 ${
+                    className={`rounded-lg px-3 py-3 min-h-[44px] transition-colors focus:outline-none focus:ring-2 cursor-pointer flex items-center space-x-2 touch-manipulation ${
                   isProductsPage
                     ? 'text-white hover:text-white hover:bg-white/20 focus:ring-white/50'
                     : shouldUseBlueText

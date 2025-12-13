@@ -106,17 +106,17 @@ export default function AdminProducts() {
         <meta name="description" content="Manage products and stock" />
       </Head>
       <AdminLayout>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Page Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-              <p className="text-gray-600 mt-1">Manage your product inventory and stock levels</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Products</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your product inventory and stock levels</p>
             </div>
             <button
               onClick={() => fetchProducts(true)}
               disabled={loading}
-              className="flex items-center space-x-2 px-4 py-2 bg-ocean-cyan text-white rounded-lg hover:bg-ocean-teal transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              className="flex items-center space-x-2 px-4 py-2.5 sm:py-2 bg-ocean-cyan text-white rounded-lg hover:bg-ocean-teal transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium min-h-[44px] touch-manipulation w-full sm:w-auto"
               title="Refresh products data"
             >
               <svg
@@ -135,8 +135,8 @@ export default function AdminProducts() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Products</p>
@@ -172,22 +172,22 @@ export default function AdminProducts() {
           </div>
 
           {/* Filters and Search */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="sm:col-span-2 lg:col-span-2">
                 <input
                   type="text"
                   placeholder="Search products or brands..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-ocean-royal focus:border-ocean-royal outline-none"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-ocean-royal focus:border-ocean-royal outline-none touch-manipulation"
                 />
               </div>
               <div>
                 <select
                   value={selectedBrand}
                   onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-ocean-royal focus:border-ocean-royal outline-none"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-ocean-royal focus:border-ocean-royal outline-none touch-manipulation"
                 >
                   <option value="all">All Brands</option>
                   {brands.map(brand => (
@@ -203,7 +203,7 @@ export default function AdminProducts() {
                     setSortBy(by as 'name' | 'stock' | 'manufacturer')
                     setSortOrder(order as 'asc' | 'desc')
                   }}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-ocean-royal focus:border-ocean-royal outline-none"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-ocean-royal focus:border-ocean-royal outline-none touch-manipulation"
                 >
                   <option value="name-asc">Name (A-Z)</option>
                   <option value="name-desc">Name (Z-A)</option>
@@ -228,23 +228,23 @@ export default function AdminProducts() {
                 <p className="text-gray-600">No products found.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-3 sm:mx-0 table-wrapper">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Product Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                         Manufacturer
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Stock Quantity
+                      <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stock
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                         Category
                       </th>
                     </tr>
@@ -257,13 +257,14 @@ export default function AdminProducts() {
 
                       return (
                         <tr key={product.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                            <div className="text-sm font-medium text-gray-900 break-words">{product.name}</div>
+                            <div className="text-xs text-gray-500 sm:hidden mt-1">{product.manufacturer}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap hidden sm:table-cell">
                             <div className="text-sm text-gray-500">{product.manufacturer}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                             <div className={`text-sm font-semibold ${
                               isOutOfStock ? 'text-red-600' : 
                               isLowStock ? 'text-yellow-600' : 
@@ -271,8 +272,23 @@ export default function AdminProducts() {
                             }`}>
                               {stock}
                             </div>
+                            <div className="md:hidden mt-1">
+                              {isOutOfStock ? (
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                  Out of Stock
+                                </span>
+                              ) : isLowStock ? (
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                  Low Stock
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                  In Stock
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 hidden md:table-cell">
                             {isOutOfStock ? (
                               <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
                                 Out of Stock
@@ -287,7 +303,7 @@ export default function AdminProducts() {
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap hidden lg:table-cell">
                             <div className="text-sm text-gray-500">
                               {product.category || '-'}
                             </div>

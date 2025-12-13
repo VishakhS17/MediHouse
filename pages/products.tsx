@@ -192,22 +192,22 @@ export default function Products() {
             </div>
 
             {/* Search and Filter */}
-            <div className="mb-8 space-y-4">
-              <div className="md:flex md:space-y-0 md:space-x-4">
+            <div className="mb-6 sm:mb-8 space-y-3 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row sm:space-y-0 sm:space-x-4 gap-3 sm:gap-4">
                 <div className="flex-1">
                   <input
                     type="text"
                     placeholder="Search products or brands..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20 touch-manipulation"
                   />
                 </div>
-                <div className="w-full md:w-64">
+                <div className="w-full sm:w-64">
                   <select
                     value={selectedBrand}
                     onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-ocean-cyan focus:outline-none focus:ring-2 focus:ring-ocean-cyan/20 touch-manipulation"
                   >
                     <option value="all">All Brands</option>
                     {productsData?.brands.map(brand => (
@@ -218,14 +218,14 @@ export default function Products() {
               </div>
               {/* Hide Out of Stock Toggle */}
               <div className="flex items-center space-x-3">
-                <label className="flex items-center cursor-pointer">
+                <label className="flex items-center cursor-pointer touch-manipulation min-h-[44px]">
                   <input
                     type="checkbox"
                     checked={hideOutOfStock}
                     onChange={(e) => setHideOutOfStock(e.target.checked)}
                     className="w-5 h-5 text-ocean-cyan border-gray-300 rounded focus:ring-ocean-cyan focus:ring-2 cursor-pointer"
                   />
-                  <span className="ml-2 text-sm font-medium text-gray-700">
+                  <span className="ml-2 text-sm sm:text-base font-medium text-gray-700">
                     Hide out of stock products
                   </span>
                 </label>
@@ -288,8 +288,8 @@ export default function Products() {
                         </button>
 
                         {isExpanded && (
-                          <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-gray-200">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                               {products.map((product) => {
                                 const cartItem = getCartItem(product.id)
                                 const quantity = cartItem?.quantity || 0
@@ -324,9 +324,9 @@ export default function Products() {
                                             }
                                           }}
                                           disabled={quantity === 0}
-                                          className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-lg font-semibold"
+                                          className="px-4 py-2 min-w-[44px] min-h-[44px] border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-lg font-semibold flex items-center justify-center"
                                         >
-                                          -
+                                          −
                                         </button>
                                         <input
                                           type="number"
@@ -401,7 +401,7 @@ export default function Products() {
                                             }
                                           }}
                                           disabled={(product.stock_quantity || 0) === 0 || quantity >= (product.stock_quantity || 0)}
-                                          className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-lg font-semibold"
+                                          className="px-4 py-2 min-w-[44px] min-h-[44px] border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-lg font-semibold flex items-center justify-center"
                                         >
                                           +
                                         </button>

@@ -31,7 +31,7 @@ export default function Home() {
         <Hero />
 
         {/* Features Section */}
-        <section id="services" className="relative overflow-hidden py-20 px-4" aria-label="Our Services">
+        <section id="services" className="relative overflow-hidden py-12 sm:py-16 md:py-20 px-4" aria-label="Our Services">
           {/* Background Decoration with new colors */}
           <div className="absolute inset-0 bg-gradient-to-b from-white via-ocean-aqua/20 to-ocean-sky/10"></div>
           
@@ -42,21 +42,21 @@ export default function Home() {
           </div>
           
           <div className="container-custom relative z-10">
-            <div className="mb-16 text-center animate-fade-in-up">
-              <span className="mb-4 inline-block rounded-full bg-gradient-to-r from-ocean-cyan/20 via-ocean-aqua/20 to-ocean-sky/20 px-4 py-2 text-sm font-semibold text-ocean-royal border border-ocean-cyan/30">
+            <div className="mb-8 sm:mb-12 md:mb-16 text-center animate-fade-in-up px-2">
+              <span className="mb-3 sm:mb-4 inline-block rounded-full bg-gradient-to-r from-ocean-cyan/20 via-ocean-aqua/20 to-ocean-sky/20 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-ocean-royal border border-ocean-cyan/30">
                 What We Offer
               </span>
-              <h2 className="mb-6 font-display font-bold text-gray-900">
+              <h2 className="mb-4 sm:mb-6 font-display font-bold text-gray-900 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
                 Our <span className="bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal bg-clip-text text-transparent">Services</span>
               </h2>
-              <p className="mx-auto max-w-3xl text-xl leading-relaxed text-gray-600 mb-4">
+              <p className="mx-auto max-w-3xl text-base sm:text-lg md:text-xl leading-relaxed text-gray-600 mb-3 sm:mb-4 px-2">
                 With a dedicated team of five salesmen and one van salesman, we cover the whole of Alappuzha and suburbs. Our comprehensive distribution network ensures timely delivery of medicines and healthcare products to over 720 satisfied customers.
               </p>
-              <p className="mx-auto max-w-3xl text-lg leading-relaxed text-gray-600">
+              <p className="mx-auto max-w-3xl text-sm sm:text-base md:text-lg leading-relaxed text-gray-600 px-2">
                 We specialize in pharmaceutical distribution, hospital supplies, and maintain a state-of-the-art cold chain facility for temperature-sensitive medications. Our strategic tie-up with Tracon Courier ensures efficient and reliable delivery services throughout the region.
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
               {services.map((service, index) => (
                 <div key={index} className="flex animate-fade-in-up" style={{ animationDelay: `${index * 0.1}s` }}>
                   <FeatureCard service={service} />
@@ -68,7 +68,7 @@ export default function Home() {
 
 
         {/* Testimonials Section */}
-        <section id="testimonials" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-24 px-4" aria-label="Customer Testimonials">
+        <section id="testimonials" className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-teal py-12 sm:py-16 md:py-24 px-4" aria-label="Customer Testimonials">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
             {/* Floating orbs with new colors */}
@@ -104,16 +104,16 @@ export default function Home() {
           </div>
 
           <div className="container-custom relative z-10">
-            <div className="mb-16 text-center animate-fade-in-up">
-              <span className="mb-4 inline-block rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
+            <div className="mb-8 sm:mb-12 md:mb-16 text-center animate-fade-in-up px-2">
+              <span className="mb-3 sm:mb-4 inline-block rounded-full bg-white/20 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white backdrop-blur-sm">
                 Trusted By Healthcare Providers
               </span>
-              <h2 className="mb-6 font-display font-bold text-white">
+              <h2 className="mb-4 sm:mb-6 font-display font-bold text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
                 What Our <span className="bg-gradient-to-r from-ocean-sky via-ocean-aqua to-white bg-clip-text text-transparent">Customers Say</span>
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
               {testimonials.map((testimonial, index) => (
                 <TestimonialCard key={index} testimonial={testimonial} index={index} />
               ))}

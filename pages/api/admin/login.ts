@@ -48,11 +48,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [adminUser.id]
     )
 
+    // Get user role
+    const roleResult = await query(
+      `SELECT r.id, r.name, r.description
+       FROM admin_roles r
+       WHERE r.id = $1`,
+      [adminUser.role_id]
+    )
+
     // Successful authentication
     const admin = {
       id: adminUser.id.toString(),
       email: adminUser.email,
       name: adminUser.name,
+      role: roleResult.rows[0] || null,
     }
 
     // Generate a simple token (in production, use proper JWT with secret)

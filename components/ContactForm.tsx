@@ -72,7 +72,7 @@ export default function ContactForm() {
           required
           value={formData.name}
           onChange={handleChange}
-          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 touch-manipulation"
           aria-required="true"
           placeholder="Your name"
         />
@@ -89,7 +89,7 @@ export default function ContactForm() {
           required
           value={formData.email}
           onChange={handleChange}
-          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 touch-manipulation"
           aria-required="true"
           placeholder="your.email@example.com"
         />
@@ -105,7 +105,7 @@ export default function ContactForm() {
           name="phone"
           value={formData.phone}
           onChange={handleChange}
-          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 touch-manipulation"
           placeholder="+91 1234567890"
         />
       </div>
@@ -118,10 +118,10 @@ export default function ContactForm() {
           id="message"
           name="message"
           required
-          rows={6}
+          rows={5}
           value={formData.message}
           onChange={handleChange}
-          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base text-white placeholder-white/50 backdrop-blur-sm focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 touch-manipulation"
           aria-required="true"
           placeholder="Your message..."
         />
@@ -143,7 +143,7 @@ export default function ContactForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="group relative overflow-hidden w-full rounded-xl bg-white px-8 py-4 text-lg font-bold text-primary-600 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+        className="group relative overflow-hidden w-full rounded-xl bg-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-primary-600 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] touch-manipulation"
         aria-busy={status === 'submitting'}
       >
         <span className="relative z-10 flex items-center justify-center gap-2">

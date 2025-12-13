@@ -304,7 +304,7 @@ export default function Cart() {
                                     updateQuantity(item.id, newQuantity)
                                     setInputValues(prev => ({ ...prev, [item.id]: newQuantity.toString() }))
                                   }}
-                                  className="px-4 py-2 min-w-[44px] border border-gray-300 rounded hover:bg-gray-50 touch-manipulation text-lg font-semibold"
+                                  className="px-4 py-2 min-w-[44px] min-h-[44px] border border-gray-300 rounded hover:bg-gray-50 touch-manipulation text-lg font-semibold flex items-center justify-center"
                                 >
                                   +
                                 </button>
@@ -366,8 +366,8 @@ export default function Cart() {
 
       {/* Customer Details Modal */}
       {showCustomerForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="p-4 sm:p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Customer Details</h2>
@@ -385,7 +385,7 @@ export default function Cart() {
 
             <form onSubmit={handleSubmitOrder} className="p-4 sm:p-6 space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -393,7 +393,7 @@ export default function Cart() {
                   id="name"
                   value={customerDetails.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-ocean-cyan focus:border-transparent ${
+                  className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-ocean-cyan focus:border-transparent touch-manipulation ${
                     formErrors.name ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your full name"
@@ -404,7 +404,7 @@ export default function Cart() {
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="phone" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
                   Phone Number <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -412,7 +412,7 @@ export default function Cart() {
                   id="phone"
                   value={customerDetails.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-ocean-cyan focus:border-transparent ${
+                  className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-ocean-cyan focus:border-transparent touch-manipulation ${
                     formErrors.phone ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your 10-digit phone number"
@@ -423,7 +423,7 @@ export default function Cart() {
               </div>
 
               <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="address" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
                   Delivery Address <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -431,7 +431,7 @@ export default function Cart() {
                   value={customerDetails.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   rows={3}
-                  className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-ocean-cyan focus:border-transparent ${
+                  className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-ocean-cyan focus:border-transparent touch-manipulation ${
                     formErrors.address ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your complete delivery address"
@@ -442,7 +442,7 @@ export default function Cart() {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
                   Email (Optional)
                 </label>
                 <input
@@ -450,7 +450,7 @@ export default function Cart() {
                   id="email"
                   value={customerDetails.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-cyan focus:border-transparent"
+                  className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-cyan focus:border-transparent touch-manipulation"
                   placeholder="Enter your email address"
                 />
               </div>

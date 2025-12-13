@@ -12,7 +12,7 @@ export default function Hero() {
   }, [])
 
   return (
-    <section className="relative min-h-[90vh] overflow-hidden bg-gradient-to-b from-ocean-navy via-ocean-royal to-ocean-teal pt-24 sm:pt-28">
+    <section className="relative min-h-[90vh] sm:min-h-[95vh] overflow-hidden bg-gradient-to-b from-ocean-navy via-ocean-royal to-ocean-teal pt-24 sm:pt-28 pb-16 sm:pb-20">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Floating orbs with new colors */}
@@ -60,28 +60,8 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center animate-bounce">
-        <div className="flex flex-col items-center gap-2 text-white/60">
-          <span className="text-xs font-medium uppercase tracking-wider">Scroll Down</span>
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            />
-          </svg>
-        </div>
-      </div>
-
-      <div className="container-custom relative z-10 flex min-h-[90vh] items-center justify-center py-16 px-4 sm:py-20">
-        <div className={`mx-auto max-w-4xl text-center transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+      <div className="container-custom relative z-10 flex min-h-[85vh] sm:min-h-[90vh] items-center justify-center py-12 px-4 sm:py-16 md:py-20 pb-20 sm:pb-24 md:pb-28">
+        <div className={`mx-auto max-w-4xl text-center transition-all duration-1000 px-2 sm:px-4 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           {/* Badge */}
           <div className="mb-6 animate-slide-down opacity-0" style={{ animationFillMode: 'forwards' }}>
             <span className="inline-block rounded-full border border-white/30 bg-white/10 px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur-md transition-all duration-300 hover:bg-white/20">
@@ -127,10 +107,10 @@ export default function Hero() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row opacity-0 animate-fade-in" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
+          <div className="flex flex-col items-stretch sm:items-center justify-center gap-3 sm:gap-4 sm:flex-row opacity-0 animate-fade-in" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
             <Link
               href="/products"
-              className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal px-8 py-3 text-base font-semibold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-ocean-cyan/50"
+              className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal px-6 py-3 sm:px-8 text-sm sm:text-base font-semibold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-ocean-cyan/50 min-h-[48px] flex items-center justify-center touch-manipulation"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Browse Products
@@ -152,7 +132,7 @@ export default function Hero() {
             </Link>
             <a
               href="#services"
-              className="group rounded-lg border-2 border-white/50 bg-white/10 px-8 py-3 text-base font-semibold text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-white hover:bg-white/20"
+              className="group rounded-lg border-2 border-white/50 bg-white/10 px-6 py-3 sm:px-8 text-sm sm:text-base font-semibold text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-white hover:bg-white/20 min-h-[48px] flex items-center justify-center touch-manipulation"
             >
               <span className="flex items-center gap-2">
                 Our Services
@@ -173,7 +153,7 @@ export default function Hero() {
             </a>
             <a
               href="#contact"
-              className="group rounded-lg border-2 border-white/50 bg-white/10 px-8 py-3 text-base font-semibold text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-white hover:bg-white/20"
+              className="group rounded-lg border-2 border-white/50 bg-white/10 px-6 py-3 sm:px-8 text-sm sm:text-base font-semibold text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-white hover:bg-white/20 min-h-[48px] flex items-center justify-center touch-manipulation"
             >
               <span className="flex items-center gap-2">
                 Contact Us
@@ -193,6 +173,26 @@ export default function Hero() {
               </span>
             </a>
           </div>
+        </div>
+      </div>
+
+      {/* Scroll Indicator - positioned below content */}
+      <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 left-0 right-0 z-20 flex justify-center animate-bounce">
+        <div className="flex flex-col items-center gap-2 text-white/60">
+          <span className="text-xs font-medium uppercase tracking-wider">Scroll Down</span>
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
+          </svg>
         </div>
       </div>
     </section>

@@ -5,6 +5,12 @@ interface AdminUser {
   id: string
   email: string
   name: string
+  permissions?: string[]
+  role?: {
+    id: number
+    name: string
+    description: string
+  }
 }
 
 interface AdminAuthContextType {
@@ -13,6 +19,7 @@ interface AdminAuthContextType {
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   isAuthenticated: boolean
+  hasPermission: (permission: string) => boolean
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined)
@@ -57,10 +64,31 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json()
+        
+        // Fetch user permissions
+        let permissions: string[] = []
+        let role = null
+        try {
+          const permResponse = await fetch(`/api/admin/permissions?userId=${data.admin.id}`)
+          if (permResponse.ok) {
+            const permData = await permResponse.json()
+            permissions = permData.permissions || []
+            role = permData.role
+          }
+        } catch (permError) {
+          console.error('Failed to fetch permissions:', permError)
+        }
+        
+        const adminWithPerms = {
+          ...data.admin,
+          permissions,
+          role,
+        }
+        
         // Store token and admin data
         localStorage.setItem('admin_token', data.token)
-        localStorage.setItem('admin_data', JSON.stringify(data.admin))
-        setAdmin(data.admin)
+        localStorage.setItem('admin_data', JSON.stringify(adminWithPerms))
+        setAdmin(adminWithPerms)
         return true
       } else {
         // Handle error response
@@ -81,6 +109,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     router.push('/admin/login')
   }
 
+  const hasPermission = (permission: string): boolean => {
+    if (!admin || !admin.permissions) return false
+    // Super admin has all permissions
+    if (admin.role?.name === 'super_admin') return true
+    return admin.permissions.includes(permission)
+  }
+
   return (
     <AdminAuthContext.Provider
       value={{
@@ -89,6 +124,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         isAuthenticated: !!admin,
+        hasPermission,
       }}
     >
       {children}

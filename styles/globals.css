@@ -73,11 +73,18 @@
   html {
     @apply scroll-smooth;
     scroll-padding-top: 5rem;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-white text-gray-900 antialiased font-sans;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+    /* Better text rendering on mobile */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body.preload {
@@ -86,6 +93,34 @@
 
   a {
     @apply transition-all duration-300;
+    /* Ensure touch targets are at least 44x44px */
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  button {
+    /* Ensure touch targets are at least 44x44px */
+    min-height: 44px;
+    min-width: 44px;
+    /* Better touch handling */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input, select, textarea {
+    /* Better touch handling */
+    touch-action: manipulation;
+    /* Prevent zoom on iOS when focusing inputs */
+    font-size: 16px;
+  }
+
+  @media (max-width: 640px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
   }
 
   h1,
@@ -98,17 +133,17 @@
   }
 
   h1 {
-    @apply text-5xl md:text-6xl lg:text-7xl;
+    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl;
     letter-spacing: -0.02em;
   }
 
   h2 {
-    @apply text-4xl md:text-5xl lg:text-6xl;
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl;
     letter-spacing: -0.02em;
   }
 
   h3 {
-    @apply text-3xl md:text-4xl;
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
   }
 
   p {
@@ -123,6 +158,33 @@
 
   .container-custom {
     @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Mobile-optimized table wrapper */
+  .table-wrapper {
+    @apply overflow-x-auto -mx-4 sm:mx-0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-wrapper table {
+    @apply min-w-full;
+  }
+
+  /* Touch-friendly interactive elements */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile-optimized spacing */
+  @media (max-width: 640px) {
+    .mobile-padding {
+      @apply px-4;
+    }
+    
+    .mobile-text-sm {
+      @apply text-sm;
+    }
   }
 
   .btn-primary {

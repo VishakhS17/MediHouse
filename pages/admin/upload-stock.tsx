@@ -2,8 +2,10 @@ import { useState } from 'react'
 import Head from 'next/head'
 import AdminLayout from '@/components/AdminLayout'
 import AdminProtectedRoute from '@/components/AdminProtectedRoute'
+import { useAdminAuth } from '@/lib/adminAuth'
 
 export default function UploadStock() {
+  const { admin } = useAdminAuth()
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -38,12 +40,21 @@ export default function UploadStock() {
     setError('')
     setResult(null)
 
+    if (!admin) {
+      setError('Admin session not found. Please log in again.')
+      return
+    }
+
     try {
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('admin', JSON.stringify(admin))
 
       const response = await fetch('/api/admin/upload-stock', {
         method: 'POST',
+        headers: {
+          'x-admin-data': JSON.stringify(admin),
+        },
         body: formData,
       })
 
@@ -75,7 +86,11 @@ export default function UploadStock() {
         const fileInput = document.getElementById('file-input') as HTMLInputElement
         if (fileInput) fileInput.value = ''
       } else {
-        setError(data?.message || data?.error || 'Upload failed')
+        // Show detailed error message
+        const errorMsg = data?.error || data?.message || 'Upload failed'
+        const details = data?.details ? `\n\nDetails: ${data.details}` : ''
+        setError(`${errorMsg}${details}`)
+        console.error('Upload failed:', data)
       }
     } catch (err: any) {
       console.error('Upload error:', err)
@@ -92,34 +107,34 @@ export default function UploadStock() {
         <meta name="description" content="Upload stock quantities from Excel file" />
       </Head>
       <AdminLayout>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Page Header */}
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Upload Stock</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Upload Stock</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
               Upload an Excel file to update product stock quantities
             </p>
           </div>
 
           {/* Upload Form */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* File Input */}
               <div>
                 <label
                   htmlFor="file-input"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm sm:text-base font-medium text-gray-700 mb-2"
                 >
                   Excel File (.xls or .xlsx)
                 </label>
                 <div className="mt-1 flex items-center space-x-4">
                   <label
                     htmlFor="file-input"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                    className="flex flex-col items-center justify-center w-full h-28 sm:h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors touch-manipulation"
                   >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <div className="flex flex-col items-center justify-center pt-4 pb-4 sm:pt-5 sm:pb-6 px-2">
                       <svg
-                        className="w-10 h-10 mb-3 text-gray-400"
+                        className="w-8 h-8 sm:w-10 sm:h-10 mb-2 sm:mb-3 text-gray-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -131,10 +146,10 @@ export default function UploadStock() {
                           d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                         />
                       </svg>
-                      <p className="mb-2 text-sm text-gray-500">
+                      <p className="mb-1 sm:mb-2 text-xs sm:text-sm text-gray-500 text-center">
                         <span className="font-semibold">Click to upload</span> or drag and drop
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 text-center">
                         Excel files only (.xls, .xlsx) - Max 10MB
                       </p>
                     </div>
