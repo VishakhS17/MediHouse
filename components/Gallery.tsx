@@ -1,93 +1,147 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 
 const galleryImages = [
-  { 
-    src: '/IMG_3945.webp', 
-    colSpan: 1,
-    rowSpan: 2,
-    aspect: '3/4'
-  },
-  { 
-    src: '/IMG_3949.webp', 
-    colSpan: 2,
-    rowSpan: 1,
-    aspect: '16/9'
-  },
-  { 
-    src: '/IMG_3957.webp', 
-    colSpan: 1,
-    rowSpan: 1,
-    aspect: '1/1'
-  },
-  { 
-    src: '/IMG_3960.webp', 
-    colSpan: 1,
-    rowSpan: 2,
-    aspect: '3/4'
-  },
-  { 
-    src: '/md.webp', 
-    colSpan: 2,
-    rowSpan: 1,
-    aspect: '16/9'
-  },
+  { src: '/md.webp' },
+  { src: '/IMG_3945.webp' },
+  { src: '/IMG_3949.webp' },
+  { src: '/IMG_3957.webp' },
+  { src: '/IMG_3960.webp' },
 ]
 
 export default function Gallery() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({})
+
+  useEffect(() => {
+    // Load images to get their natural dimensions
+    const loadImageDimensions = async () => {
+      const dimensions: Record<string, { width: number; height: number }> = {}
+      
+      for (const img of galleryImages) {
+        try {
+          const imgElement = new window.Image()
+          imgElement.src = img.src
+          await new Promise((resolve, reject) => {
+            imgElement.onload = () => {
+              dimensions[img.src] = {
+                width: imgElement.naturalWidth,
+                height: imgElement.naturalHeight,
+              }
+              resolve(null)
+            }
+            imgElement.onerror = reject
+          })
+        } catch (error) {
+          console.error(`Failed to load image ${img.src}:`, error)
+        }
+      }
+      
+      setImageDimensions(dimensions)
+    }
+
+    loadImageDimensions()
+  }, [])
+
+  const getImageClasses = (src: string) => {
+    const dims = imageDimensions[src]
+    if (!dims) return 'col-span-2 row-span-3'
+
+    const aspectRatio = dims.width / dims.height
+
+    // Determine column and row spans based on aspect ratio
+    // Portrait images (taller): fewer cols, more rows
+    // Landscape images (wider): more cols, fewer rows
+    if (aspectRatio < 0.8) {
+      // Very tall/portrait
+      return 'col-span-1 row-span-4'
+    } else if (aspectRatio < 1.0) {
+      // Portrait
+      return 'col-span-1 row-span-3'
+    } else if (aspectRatio < 1.3) {
+      // Square-ish
+      return 'col-span-2 row-span-2'
+    } else if (aspectRatio < 1.8) {
+      // Landscape
+      return 'col-span-2 row-span-2'
+    } else {
+      // Very wide/panoramic
+      return 'col-span-3 row-span-2'
+    }
+  }
+
+  const selectedIndex = selectedImage ? galleryImages.findIndex(img => img.src === selectedImage) : -1
+  const prevIndex = selectedIndex > 0 ? selectedIndex - 1 : galleryImages.length - 1
+  const nextIndex = selectedIndex < galleryImages.length - 1 ? selectedIndex + 1 : 0
 
   return (
     <>
-      <section id="gallery" className="relative overflow-hidden py-12 sm:py-16 md:py-20 px-4" aria-label="Photo Gallery">
-        {/* Background Decoration */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-ocean-aqua/20 to-ocean-sky/10"></div>
-        
-        {/* Decorative gradient stripes */}
+      <section id="gallery" className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50 py-16 sm:py-20 md:py-24 px-4" aria-label="Gallery">
+        {/* Background decoration */}
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 left-0 right-0 h-24" style={{ background: 'linear-gradient(to bottom, #7AD3F6, transparent)' }}></div>
-          <div className="absolute bottom-0 left-0 right-0 h-24" style={{ background: 'linear-gradient(to top, #A8D8F0, transparent)' }}></div>
+          <div className="absolute top-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to bottom, rgba(31, 143, 201, 0.3), transparent)' }}></div>
+          <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to top, rgba(59, 180, 232, 0.3), transparent)' }}></div>
         </div>
-        
+
         <div className="container-custom relative z-10">
-          <div className="mb-8 sm:mb-12 md:mb-16 text-center animate-fade-in-up px-2">
+          <div className="mb-8 sm:mb-12 md:mb-16 text-center animate-fade-in-up">
             <span className="mb-3 sm:mb-4 inline-block rounded-full bg-gradient-to-r from-ocean-cyan/20 via-ocean-aqua/20 to-ocean-sky/20 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-ocean-royal border border-ocean-cyan/30">
-              Our Facilities
+              Our Facility
             </span>
             <h2 className="mb-4 sm:mb-6 font-display font-bold text-gray-900 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
-              Photo <span className="bg-gradient-to-r from-ocean-cyan via-ocean-teal to-ocean-royal bg-clip-text text-transparent">Gallery</span>
+              Gallery
             </h2>
-            <p className="mx-auto max-w-3xl text-base sm:text-lg md:text-xl leading-relaxed text-gray-600 px-2">
-              Take a look at our facilities and operations. We take pride in maintaining state-of-the-art infrastructure for pharmaceutical distribution.
+            <p className="mx-auto max-w-2xl text-base sm:text-lg text-gray-600">
+              A glimpse into our state-of-the-art pharmaceutical distribution facility
             </p>
           </div>
 
-          {/* Poster Wall - Perfect Grid Alignment */}
+          {/* Gallery Grid */}
           <div className="mx-auto max-w-6xl">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6" style={{ gridAutoRows: '250px' }}>
+            {/* Desktop: 2-column grid | Mobile: 1-column grid (all images stack) */}
+            <div 
+              className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6"
+              style={{ 
+                gridAutoRows: 'auto',
+              }}
+            >
               {galleryImages.map((item, index) => {
-                const colSpanClasses = {
-                  1: 'col-span-1',
-                  2: 'col-span-2',
-                  3: 'col-span-3',
-                  4: 'col-span-4',
-                }[item.colSpan] || 'col-span-1'
+                const dims = imageDimensions[item.src]
                 
-                const rowSpanClasses = {
-                  1: 'row-span-1',
-                  2: 'row-span-2',
-                  3: 'row-span-3',
-                  4: 'row-span-4',
-                }[item.rowSpan] || 'row-span-1'
+                // Desktop layout:
+                // - md.webp (index 0): col 1, spans 3 rows, width = 1 column
+                // - Images 1-3 (indices 1-3): col 2, stacked vertically
+                // - Image 4 (index 4): spans both columns (full width)
                 
+                // Mobile layout:
+                // - All images stack vertically, each taking full width
+                
+                let colSpan = ''
+                let rowSpan = ''
+                
+                if (index === 0) {
+                  // md.webp: Mobile - full width, Desktop - 1 column, 3 rows tall
+                  colSpan = 'col-span-1 md:col-span-1'
+                  rowSpan = 'md:row-span-3'
+                } else if (index < 4) {
+                  // Images 1-3: Mobile - full width, Desktop - right column
+                  colSpan = 'col-span-1 md:col-span-1'
+                  rowSpan = ''
+                } else {
+                  // Image 4 (last): Mobile - full width, Desktop - spans both columns
+                  colSpan = 'col-span-1 md:col-span-2'
+                  rowSpan = ''
+                }
+
                 return (
                   <div
                     key={item.src}
-                    className={`group relative overflow-hidden rounded-lg shadow-lg cursor-pointer transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 hover:z-10 animate-fade-in-up ${colSpanClasses} ${rowSpanClasses}`}
+                    className={`group relative overflow-hidden rounded-lg shadow-xl cursor-pointer transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 hover:z-10 animate-fade-in-up ${colSpan} ${rowSpan}`}
                     style={{ 
                       animationDelay: `${index * 0.1}s`,
+                      aspectRatio: dims ? `${dims.width} / ${dims.height}` : 'auto',
                     }}
                     onClick={() => setSelectedImage(item.src)}
                   >
@@ -95,35 +149,21 @@ export default function Gallery() {
                       src={item.src}
                       alt={`Gallery image ${index + 1}`}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      style={{ objectFit: 'cover' }}
+                      className="object-contain transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 50vw"
                     />
                     
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+                    {/* Overlay on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     
-                    {/* Hover Icon */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                      <div className="rounded-full bg-white/90 p-4 shadow-xl backdrop-blur-sm">
-                        <svg
-                          className="h-8 w-8 text-ocean-royal"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
-                          />
+                    {/* Hover indicator */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div className="bg-white/20 backdrop-blur-md rounded-full p-3 transform scale-75 group-hover:scale-100 transition-transform duration-500">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                         </svg>
                       </div>
                     </div>
-                    
-                    {/* Border Glow Effect */}
-                    <div className="absolute inset-0 rounded-lg border-2 border-ocean-cyan/0 transition-all duration-500 group-hover:border-ocean-cyan/50"></div>
                   </div>
                 )
               })}
@@ -135,94 +175,64 @@ export default function Gallery() {
       {/* Lightbox Modal */}
       {selectedImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in"
           onClick={() => setSelectedImage(null)}
         >
-          {/* Close Button */}
           <button
             onClick={() => setSelectedImage(null)}
             className="absolute top-4 right-4 z-10 rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-all hover:bg-white/20 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50"
             aria-label="Close gallery"
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
-          {/* Image */}
-          <div className="relative max-h-[90vh] max-w-[90vw] animate-scale-in">
-            <Image
-              src={selectedImage}
-              alt="Gallery image"
-              width={1200}
-              height={900}
-              className="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-
-          {/* Navigation Arrows */}
+          {/* Navigation buttons */}
           <button
             onClick={(e) => {
               e.stopPropagation()
-              const currentIndex = galleryImages.findIndex(img => img.src === selectedImage)
-              const prevIndex = currentIndex > 0 ? currentIndex - 1 : galleryImages.length - 1
               setSelectedImage(galleryImages[prevIndex].src)
             }}
             className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-all hover:bg-white/20 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50"
             aria-label="Previous image"
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
           <button
             onClick={(e) => {
               e.stopPropagation()
-              const currentIndex = galleryImages.findIndex(img => img.src === selectedImage)
-              const nextIndex = currentIndex < galleryImages.length - 1 ? currentIndex + 1 : 0
               setSelectedImage(galleryImages[nextIndex].src)
             }}
             className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-all hover:bg-white/20 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50"
             aria-label="Next image"
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+
+          {/* Image */}
+          <div
+            className="relative flex items-center justify-center px-4"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '90vh', maxWidth: '90vw' }}
+          >
+            <div className="relative" style={{ width: 'auto', height: 'auto', maxHeight: '90vh', maxWidth: '90vw' }}>
+              <img
+                src={selectedImage}
+                alt="Gallery image"
+                className="object-contain rounded-lg shadow-2xl"
+                style={{ maxWidth: '100%', maxHeight: '90vh', width: 'auto', height: 'auto' }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </>
   )
 }
+
