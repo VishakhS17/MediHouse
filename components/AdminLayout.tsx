@@ -38,6 +38,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Orders', href: '/admin/orders', icon: '📦', permission: 'manage_orders' },
     { name: 'Invoice Collection', href: '/admin/invoice-collection', icon: '🧾', permission: 'collect_invoices' },
     { name: 'Invoice Checking', href: '/admin/invoice-checking', icon: '✓', permission: 'check_invoices' },
+    { name: 'Outstanding Bills', href: '/admin/outstanding-bills', icon: '📋', permission: 'manage_outstanding_bills' },
+    { name: 'Upload DRS', href: '/admin/upload-drs', icon: '📄', permission: 'manage_outstanding_bills' },
     { name: 'Supply', href: '/admin/supply', icon: '📦', permission: 'manage_supply' },
     { name: 'Attendance', href: '/admin/attendance', icon: '📅', permission: 'manage_attendance' },
     { name: 'Admin Users', href: '/admin/users', icon: '👤', permission: 'manage_admins' },

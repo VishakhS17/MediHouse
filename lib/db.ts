@@ -27,7 +27,7 @@ function isNeonDatabase(connString: string): boolean {
 // Create a connection pool
 let pool: Pool | null = null
 
-function getPool(): Pool {
+export function getPool(): Pool {
   if (pool) {
     return pool
   }
