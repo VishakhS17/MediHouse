@@ -102,7 +102,7 @@ export default function AdminProducts() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Products - Admin | MediHouse</title>
+        <title>Products - Admin | medi-house</title>
         <meta name="description" content="Manage products and stock" />
       </Head>
       <AdminLayout>

@@ -1,6 +1,6 @@
 # Role-Based Access Control (RBAC) and Invoice Collection System
 
-This migration adds role-based access control and invoice collection tracking to the MediHouse admin system.
+This migration adds role-based access control and invoice collection tracking to the medi-house admin system.
 
 ## What This Migration Does
 

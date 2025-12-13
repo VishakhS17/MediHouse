@@ -59,15 +59,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+          <a href="https://medi-house.in" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 bg-gradient-to-br from-ocean-royal to-ocean-cyan rounded-lg flex items-center justify-center">
-              <span className="text-white text-xl font-bold">M</span>
+              <span className="text-white text-xl font-bold">m</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">MediHouse</h1>
+              <h1 className="text-lg font-bold text-gray-900">medi-house</h1>
               <p className="text-xs text-gray-500">Admin Panel</p>
             </div>
-          </div>
+          </a>
           <button
             onClick={() => {
               // Only toggle on mobile

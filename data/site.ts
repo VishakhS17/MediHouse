@@ -18,18 +18,18 @@ export interface Service {
 }
 
 export const siteConfig = {
-  name: 'Medi House',
+  name: 'medi-house',
   tagline: 'Leading Pharmaceutical Distribution in Alappuzha',
   location: 'Alappuzha',
   description:
-    'Medi House is a leading firm in Alappuzha that has been creating waves for over 12 years in pharmaceutical distribution, serving the community with dedication and excellence.',
+    'medi-house is a leading firm in Alappuzha that has been creating waves for over 12 years in pharmaceutical distribution, serving the community with dedication and excellence.',
 }
 
 export const companyInfo = {
   intro:
-    'Medi House is a leading firm in Alappuzha that has been creating waves for over 12 years in pharmaceutical distribution. We have established ourselves as a trusted partner in healthcare delivery, serving the community with dedication and excellence.',
+    'medi-house is a leading firm in Alappuzha that has been creating waves for over 12 years in pharmaceutical distribution. We have established ourselves as a trusted partner in healthcare delivery, serving the community with dedication and excellence.',
   detailedIntro:
-    'Since our establishment, Medi House has been at the forefront of pharmaceutical distribution in Alappuzha. With a dedicated team of five salesmen and one van salesman, we cover the whole of Alappuzha and suburbs, ensuring timely and reliable delivery of medicines and healthcare products. Our customer base exceeds 720 satisfied clients, a testament to our commitment to quality service and customer satisfaction.',
+    'Since our establishment, medi-house has been at the forefront of pharmaceutical distribution in Alappuzha. With a dedicated team of five salesmen and one van salesman, we cover the whole of Alappuzha and suburbs, ensuring timely and reliable delivery of medicines and healthcare products. Our customer base exceeds 720 satisfied clients, a testament to our commitment to quality service and customer satisfaction.',
   vision: 'To serve the needy, thereby serve them with satisfaction and relief too.',
   mission:
     'To be the most reliable pharmaceutical distribution partner in Alappuzha, ensuring timely and quality healthcare products reach every corner of the region. We strive to maintain the highest standards in pharmaceutical distribution while building lasting relationships with our customers, partners, and the community.',
@@ -165,7 +165,7 @@ export const testimonials: Testimonial[] = [
     role: 'Pharmacy Owner',
     company: 'Health Care Pharmacy',
     content:
-      'Medi House has been our trusted partner for over 5 years. Their timely delivery and quality service have helped us serve our customers better. Highly reliable!',
+      'medi-house has been our trusted partner for over 5 years. Their timely delivery and quality service have helped us serve our customers better. Highly reliable!',
     rating: 5,
   },
   {
@@ -173,21 +173,21 @@ export const testimonials: Testimonial[] = [
     role: 'Hospital Administrator',
     company: 'City Medical Centre',
     content:
-      'The cold chain facility and professional service from Medi House ensures we always receive medications in perfect condition. Excellent partnership!',
+      'The cold chain facility and professional service from medi-house ensures we always receive medications in perfect condition. Excellent partnership!',
     rating: 5,
   },
   {
     name: 'Suresh Pillai',
     role: 'Clinic Owner',
     content:
-      'Daily delivery service covering all of Alappuzha makes Medi House our preferred distributor. Their team is professional and responsive to our needs.',
+      'Daily delivery service covering all of Alappuzha makes medi-house our preferred distributor. Their team is professional and responsive to our needs.',
     rating: 5,
   },
   {
     name: 'Anitha Nair',
     role: 'Pharmacy Manager',
     content:
-      'What sets Medi House apart is their commitment to quality and customer satisfaction. They understand our requirements and deliver consistently.',
+      'What sets medi-house apart is their commitment to quality and customer satisfaction. They understand our requirements and deliver consistently.',
     rating: 5,
   },
 ]

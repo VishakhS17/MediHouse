@@ -46,9 +46,9 @@ export default function Preloader() {
         <div className="relative h-24 w-24 animate-pulse">
           <div className="absolute inset-0 rounded-full bg-white/20 blur-xl"></div>
           <div className="relative h-full w-full">
-            <Image
+              <Image
               src="/logo.svg"
-              alt="Medi House"
+              alt="medi-house"
               fill
               className="object-contain drop-shadow-2xl"
               priority
@@ -59,7 +59,7 @@ export default function Preloader() {
 
       {/* Company Name */}
       <h1 className="relative z-10 mb-12 animate-fade-in-delay text-3xl font-bold text-white drop-shadow-lg sm:text-4xl">
-        Medi House
+        medi-house
       </h1>
 
       {/* Loading Progress Bar */}

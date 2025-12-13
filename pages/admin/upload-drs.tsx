@@ -101,7 +101,7 @@ export default function UploadDRS() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Upload DRS (Outstanding Bills) - MediHouse Admin</title>
+        <title>Upload DRS (Outstanding Bills) - medi-house Admin</title>
       </Head>
       <AdminLayout>
         <div className="p-6 max-w-4xl mx-auto">

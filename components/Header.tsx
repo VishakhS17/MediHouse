@@ -161,14 +161,14 @@ export default function Header() {
                 />
               </div>
             </div>
-            <span className={`text-base sm:text-lg md:text-xl font-display font-bold transition-all duration-300 ${
+            <span className={`text-xl sm:text-2xl md:text-3xl font-display font-black transition-all duration-300 drop-shadow-lg ${
               isProductsPage
-                ? 'text-white'
+                ? 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
                 : shouldUseBlueText
-                ? 'bg-gradient-to-r from-ocean-royal via-ocean-teal to-ocean-cyan bg-clip-text text-transparent'
-                : 'bg-gradient-to-r from-white via-ocean-sky to-white/90 bg-clip-text text-transparent'
+                ? 'bg-gradient-to-r from-ocean-royal via-ocean-teal to-ocean-cyan bg-clip-text text-transparent drop-shadow-[0_2px_4px_rgba(31,143,201,0.3)]'
+                : 'bg-gradient-to-r from-white via-ocean-sky to-white bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]'
             }`}>
-              {siteConfig.name}
+              medi-house
             </span>
           </Link>
 

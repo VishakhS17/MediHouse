@@ -160,7 +160,7 @@ export default function AdminUsers() {
     return (
       <AdminProtectedRoute>
         <Head>
-          <title>Access Denied - Admin | MediHouse</title>
+          <title>Access Denied - Admin | medi-house</title>
         </Head>
         <AdminLayout>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -177,7 +177,7 @@ export default function AdminUsers() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Admin Users - Admin | MediHouse</title>
+        <title>Admin Users - Admin | medi-house</title>
         <meta name="description" content="Manage admin users and roles" />
       </Head>
       <AdminLayout>

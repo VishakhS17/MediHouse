@@ -71,26 +71,19 @@ export default function Hero() {
 
           {/* Main Heading */}
           <h1 className="mb-4 font-display font-black leading-[1.1] tracking-tight text-white">
-            <span className="block animate-slide-up opacity-0 text-4xl sm:text-5xl md:text-6xl" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
-              Crafting Your Perfect
+            <span className="block animate-slide-up opacity-0 text-4xl sm:text-5xl md:text-6xl lg:text-7xl" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
+              Alappuzha's Most Reliable
             </span>
-            <span className="block animate-slide-up bg-gradient-to-r from-white via-ocean-sky to-ocean-aqua bg-clip-text text-transparent opacity-0 text-4xl sm:text-5xl md:text-6xl" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-              Healthcare Distribution Network
+            <span className="block animate-slide-up bg-gradient-to-r from-white via-ocean-sky to-ocean-aqua bg-clip-text text-transparent opacity-0 text-4xl sm:text-5xl md:text-6xl lg:text-7xl" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+              Pharmaceutical Distribution Partner
             </span>
             <span className="mt-4 block animate-slide-up text-2xl font-light text-white/80 sm:text-3xl md:text-4xl opacity-0" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
-              Serving Alappuzha with Excellence for Over 12 Years
+              Serving Alappuzha with Excellence since 2011
             </span>
           </h1>
 
           {/* Stats - Inline */}
           <div className="mx-auto mb-8 flex flex-wrap items-center justify-center gap-8 opacity-0 animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-            <div className="text-center">
-              <div className="text-4xl sm:text-5xl font-display font-bold text-white">
-                <AnimatedCounter end={12} suffix="+" />
-              </div>
-              <div className="text-sm sm:text-base text-white/80 mt-1">Years of Excellence</div>
-            </div>
-            <div className="h-10 w-px bg-white/20"></div>
             <div className="text-center">
               <div className="text-4xl sm:text-5xl font-display font-bold text-white">
                 <AnimatedCounter end={720} suffix="+" />

@@ -167,7 +167,7 @@ export default function InvoiceChecking() {
     return (
       <AdminProtectedRoute>
         <Head>
-          <title>Invoice Checking - Admin | MediHouse</title>
+          <title>Invoice Checking - Admin | medi-house</title>
         </Head>
         <AdminLayout>
           <div className="flex items-center justify-center py-12">
@@ -182,7 +182,7 @@ export default function InvoiceChecking() {
     return (
       <AdminProtectedRoute>
         <Head>
-          <title>Access Denied - Admin | MediHouse</title>
+          <title>Access Denied - Admin | medi-house</title>
         </Head>
         <AdminLayout>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -210,7 +210,7 @@ export default function InvoiceChecking() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Invoice Checking - Admin | MediHouse</title>
+        <title>Invoice Checking - Admin | medi-house</title>
         <meta name="description" content="Check and verify invoice collections" />
       </Head>
       <AdminLayout>

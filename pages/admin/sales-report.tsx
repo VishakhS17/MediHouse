@@ -57,7 +57,7 @@ export default function SalesReport() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Sales Report - Admin | MediHouse</title>
+        <title>Sales Report - Admin | medi-house</title>
         <meta name="description" content="Generate and download sales reports" />
       </Head>
       <AdminLayout>

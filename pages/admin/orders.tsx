@@ -119,7 +119,7 @@ export default function AdminOrders() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Orders - Admin | MediHouse</title>
+        <title>Orders - Admin | medi-house</title>
         <meta name="description" content="View and manage orders" />
       </Head>
       <AdminLayout>

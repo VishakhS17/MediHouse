@@ -40,8 +40,8 @@ export default function AdminLogin() {
   return (
     <>
       <Head>
-        <title>Admin Login - MediHouse</title>
-        <meta name="description" content="Admin login for MediHouse" />
+        <title>Admin Login - medi-house</title>
+        <meta name="description" content="Admin login for medi-house" />
       </Head>
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-ocean-sky/20 via-white to-ocean-aqua/10 px-4">
         {/* Background decoration */}
@@ -265,7 +265,7 @@ export default function AdminLogin() {
             {/* Footer */}
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-500">
-                © {new Date().getFullYear()} MediHouse. All rights reserved.
+                © {new Date().getFullYear()} medi-house. All rights reserved.
               </p>
             </div>
           </div>

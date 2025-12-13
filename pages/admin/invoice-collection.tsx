@@ -143,7 +143,7 @@ export default function InvoiceCollection() {
     return (
       <AdminProtectedRoute>
         <Head>
-          <title>Access Denied - Admin | MediHouse</title>
+          <title>Access Denied - Admin | medi-house</title>
         </Head>
         <AdminLayout>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -160,7 +160,7 @@ export default function InvoiceCollection() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Invoice Collection - Admin | MediHouse</title>
+        <title>Invoice Collection - Admin | medi-house</title>
         <meta name="description" content="Record invoice collections from warehouse" />
       </Head>
       <AdminLayout>

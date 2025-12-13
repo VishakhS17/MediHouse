@@ -191,7 +191,7 @@ export default function Attendance() {
     return (
       <AdminProtectedRoute>
         <Head>
-          <title>Access Denied - Admin | MediHouse</title>
+          <title>Access Denied - Admin | medi-house</title>
         </Head>
         <AdminLayout>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -223,7 +223,7 @@ export default function Attendance() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Attendance - Admin | MediHouse</title>
+        <title>Attendance - Admin | medi-house</title>
         <meta name="description" content="Mark and manage employee attendance" />
       </Head>
       <AdminLayout>
@@ -518,5 +518,6 @@ export default function Attendance() {
     </AdminProtectedRoute>
   )
 }
+
 
 

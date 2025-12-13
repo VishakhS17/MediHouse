@@ -23,8 +23,8 @@ export default function AdminDashboard() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Admin Dashboard - MediHouse</title>
-        <meta name="description" content="MediHouse Admin Dashboard" />
+        <title>Admin Dashboard - medi-house</title>
+        <meta name="description" content="medi-house Admin Dashboard" />
       </Head>
       <AdminLayout>
         <div className="space-y-4 sm:space-y-6">

@@ -103,7 +103,7 @@ export default function UploadStock() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Upload Stock - Admin | MediHouse</title>
+        <title>Upload Stock - Admin | medi-house</title>
         <meta name="description" content="Upload stock quantities from Excel file" />
       </Head>
       <AdminLayout>

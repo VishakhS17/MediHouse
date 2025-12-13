@@ -215,7 +215,7 @@ export default function OutstandingBills() {
   return (
     <AdminProtectedRoute>
       <Head>
-        <title>Outstanding Bills - MediHouse Admin</title>
+        <title>Outstanding Bills - medi-house Admin</title>
       </Head>
       <AdminLayout>
         <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
