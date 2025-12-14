@@ -290,7 +290,8 @@ export default function Supply() {
       return
     }
 
-    if (!formData.latitude || !formData.longitude) {
+    // Location is only required when creating a new record, not when editing
+    if (!showEditModal && (!formData.latitude || !formData.longitude)) {
       setError('Location is required. Please click "Get Current Location" to capture your location.')
       return
     }
@@ -311,9 +312,10 @@ export default function Supply() {
             suppliedBy: formData.suppliedBy.trim(),
             customerName: formData.customerName.trim(),
             deliveryDate: deliveryDate,
-            latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-            longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-            locationAddress: formData.locationAddress.trim() || null,
+            // Location is not editable - keep existing values from the record
+            latitude: selectedRecord.latitude || null,
+            longitude: selectedRecord.longitude || null,
+            locationAddress: selectedRecord.location_address || null,
           }
         : {
             invoiceNumber: formData.invoiceNumber.trim(),
@@ -711,59 +713,99 @@ export default function Supply() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Location <span className="text-red-500">*</span>
+                      Location {!showEditModal && <span className="text-red-500">*</span>}
                     </label>
-                    <div className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={getCurrentLocation}
-                        disabled={gettingLocation || submitting}
-                        className="w-full px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {gettingLocation ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
-                            <span>Getting accurate GPS location...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            <span>Get Current Location</span>
-                          </>
-                        )}
-                      </button>
-                      
-                      {(formData.latitude || formData.longitude) && (
-                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="text-xs text-green-700 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">Coordinates:</span>
-                              <span>{formData.latitude}, {formData.longitude}</span>
-                            </div>
-                            {formData.locationAddress && (
-                              <div className="flex items-start gap-2">
-                                <span className="font-medium">Address:</span>
-                                <span className="flex-1">{formData.locationAddress}</span>
+                    {showEditModal ? (
+                      // Read-only display when editing
+                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="text-xs text-gray-700 space-y-1">
+                          {formData.latitude && formData.longitude ? (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">Coordinates:</span>
+                                <span>{formData.latitude}, {formData.longitude}</span>
                               </div>
-                            )}
-                            <a
-                              href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                              </svg>
-                              View on Google Maps
-                            </a>
-                          </div>
+                              {formData.locationAddress && (
+                                <div className="flex items-start gap-2">
+                                  <span className="font-medium">Address:</span>
+                                  <span className="flex-1">{formData.locationAddress}</span>
+                                </div>
+                              )}
+                              <a
+                                href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                View on Google Maps
+                              </a>
+                            </>
+                          ) : (
+                            <span className="text-gray-500">No location recorded</span>
+                          )}
                         </div>
-                      )}
-                    </div>
+                        <p className="text-xs text-gray-500 mt-2 italic">Location cannot be changed after record creation</p>
+                      </div>
+                    ) : (
+                      // Editable location capture when creating new record
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={getCurrentLocation}
+                          disabled={gettingLocation || submitting}
+                          className="w-full px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          {gettingLocation ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
+                              <span>Getting accurate GPS location...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <span>Get Current Location</span>
+                            </>
+                          )}
+                        </button>
+                        <p className="text-xs text-gray-500 text-center">
+                          ⚠️ Make sure GPS/location services are enabled and you're in an open area for best accuracy
+                        </p>
+                        
+                        {(formData.latitude || formData.longitude) && (
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="text-xs text-green-700 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">Coordinates:</span>
+                                <span>{formData.latitude}, {formData.longitude}</span>
+                              </div>
+                              {formData.locationAddress && (
+                                <div className="flex items-start gap-2">
+                                  <span className="font-medium">Address:</span>
+                                  <span className="flex-1">{formData.locationAddress}</span>
+                                </div>
+                              )}
+                              <a
+                                href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                View on Google Maps
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-3 pt-4">
