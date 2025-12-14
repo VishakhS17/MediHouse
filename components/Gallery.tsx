@@ -147,7 +147,7 @@ export default function Gallery() {
                   >
                     <Image
                       src={item.src}
-                      alt={`Gallery image ${index + 1}`}
+                      alt={`Pharmaceutical distribution facility and warehouse at medi-house Alappuzha - Gallery image ${index + 1}`}
                       fill
                       className="object-contain transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 50vw"
@@ -224,7 +224,7 @@ export default function Gallery() {
             <div className="relative" style={{ width: 'auto', height: 'auto', maxHeight: '90vh', maxWidth: '90vw' }}>
               <img
                 src={selectedImage}
-                alt="Gallery image"
+                alt="medi-house pharmaceutical distribution facility and warehouse in Alappuzha, Kerala"
                 className="object-contain rounded-lg shadow-2xl"
                 style={{ maxWidth: '100%', maxHeight: '90vh', width: 'auto', height: 'auto' }}
               />

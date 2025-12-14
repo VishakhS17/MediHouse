@@ -18,9 +18,20 @@ CREATE TABLE IF NOT EXISTS supply (
 ALTER TABLE supply 
 ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP WITH TIME ZONE;
 
+-- Add location columns for device geolocation tracking
+ALTER TABLE supply 
+ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 8);
+
+ALTER TABLE supply 
+ADD COLUMN IF NOT EXISTS longitude DECIMAL(11, 8);
+
+ALTER TABLE supply 
+ADD COLUMN IF NOT EXISTS location_address TEXT;
+
 -- 2. Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_supply_invoice_number ON supply(invoice_number);
 CREATE INDEX IF NOT EXISTS idx_supply_customer_name ON supply(customer_name);
+CREATE INDEX IF NOT EXISTS idx_supply_location ON supply(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 
 -- 3. Add permission for managing supply
 INSERT INTO admin_permissions (name, description) VALUES

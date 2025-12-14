@@ -11,25 +11,59 @@ import ValuesSection from '@/components/ValuesSection'
 import Gallery from '@/components/Gallery'
 import FAQ from '@/components/FAQ'
 import SEO from '@/components/SEO'
+import StructuredData from '@/components/StructuredData'
 import { generatePageMeta } from '@/lib/siteMeta'
 import { services, partners, contact, companyInfo, testimonials } from '@/data/site'
 
 export default function Home() {
   const meta = generatePageMeta({
-    title: 'Home',
+    title: 'Pharmaceutical Distributor in Kerala | Real-Time Stock – medi-house',
     description:
-      'Leading pharmaceutical distribution in Alappuzha. Serving over 720 customers with reliable cold chain facilities and daily delivery services.',
+      'Trusted pharmaceutical distributor in Kerala offering real-time stock, fast delivery and bulk medicine supply for medical stores & hospitals. Serving Alappuzha since 2011 with 720+ satisfied customers.',
+    keywords: 'pharmaceutical distributor Kerala, medicine wholesale supplier Kerala, pharma distributor Alappuzha, bulk medicine supplier Kerala, medical store supplier Kerala, pharmaceutical distribution Kerala',
   })
 
   return (
     <>
-      <SEO meta={meta} />
+      <SEO meta={meta} canonicalPath="/" />
+      <StructuredData />
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
       <Header />
       <main id="main-content" role="main">
         <Hero />
+
+        {/* Introduction Section - SEO Content */}
+        <section className="relative overflow-hidden bg-white py-12 sm:py-16 px-4">
+          <div className="container-custom relative z-10 max-w-4xl mx-auto">
+            <div className="prose prose-lg max-w-none">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 text-center">
+                Your Trusted Pharmaceutical Distributor in Kerala
+              </h2>
+              <p className="text-gray-700 leading-relaxed mb-4 text-lg">
+                As a leading pharmaceutical distributor in Kerala, medi-house has been serving the healthcare industry in Alappuzha since 2011. We specialize in providing reliable pharmaceutical distribution services, real-time stock availability, and comprehensive medicine supply solutions for medical stores, hospitals, and clinics across Kerala.
+              </p>
+              <p className="text-gray-700 leading-relaxed mb-4 text-lg">
+                Our commitment to excellence and quality has made us a preferred partner for over 720 satisfied customers. Whether you need bulk medicine supply for hospitals or regular inventory for medical stores, we offer competitive wholesale rates, reliable delivery, and state-of-the-art cold chain facilities to ensure all medications are stored and handled with the highest care.
+              </p>
+              <p className="text-gray-700 leading-relaxed mb-4 text-lg">
+                Located at {contact.address}, medi-house provides comprehensive pharmaceutical distribution services throughout Alappuzha and its suburbs. Our dedicated team of five salesmen and one van salesman ensures personalized service, while our strategic partnership with Tracon Courier extends our delivery reach across Kerala.
+              </p>
+              <div className="bg-gradient-to-br from-ocean-cyan/10 to-ocean-royal/10 p-6 rounded-lg border border-ocean-cyan/20 mt-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Why Choose Medi-House as Your Pharmaceutical Distributor?</h3>
+                <ul className="list-disc list-inside space-y-2 text-gray-700">
+                  <li>12+ years of trusted service in pharmaceutical distribution across Kerala</li>
+                  <li>Real-time stock visibility through our online platform</li>
+                  <li>State-of-the-art cold chain facility ensuring 100% compliance</li>
+                  <li>Partnerships with leading pharma companies: Aristo, Blue Cross, JB Chemicals, RPG Life, Indoco, and more</li>
+                  <li>Daily delivery services covering whole of Alappuzha and suburbs</li>
+                  <li>Competitive wholesale pricing for better margins</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Features Section */}
         <section id="services" className="relative overflow-hidden py-12 sm:py-16 md:py-20 px-4" aria-label="Our Services">

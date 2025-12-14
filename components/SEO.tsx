@@ -4,13 +4,15 @@ import { siteConfig } from '@/data/site'
 
 interface SEOProps {
   meta: PageMeta
+  canonicalPath?: string
 }
 
-export default function SEO({ meta }: SEOProps) {
+export default function SEO({ meta, canonicalPath }: SEOProps) {
   const title = meta.title || siteConfig.name
   const description = meta.description || siteConfig.description
   const ogImage = meta.ogImage || '/logo.svg'
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medihouse-alappuzha.com'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medi-house.in'
+  const canonicalUrl = canonicalPath ? `${siteUrl}${canonicalPath}` : siteUrl
 
   return (
     <Head>
@@ -18,13 +20,14 @@ export default function SEO({ meta }: SEOProps) {
       <meta name="description" content={description} />
       {meta.keywords && <meta name="keywords" content={meta.keywords} />}
       {meta.noindex && <meta name="robots" content="noindex, nofollow" />}
+      {!meta.noindex && <link rel="canonical" href={canonicalUrl} />}
 
       {/* Open Graph */}
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={`${siteUrl}${ogImage}`} />
       <meta property="og:type" content="website" />
-      <meta property="og:url" content={siteUrl} />
+      <meta property="og:url" content={canonicalUrl} />
       <meta property="og:site_name" content={siteConfig.name} />
 
       {/* Twitter */}

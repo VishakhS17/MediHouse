@@ -12,7 +12,7 @@ export const defaultMeta: PageMeta = {
   title: `${siteConfig.name} - ${siteConfig.tagline}`,
   description: siteConfig.description,
   keywords:
-    'pharmaceutical distribution, Alappuzha, medicine distributor, hospital supplies, cold chain, pharma distributor Kerala',
+    'pharmaceutical distributor Kerala, medicine wholesale supplier Kerala, pharma distributor Alappuzha, bulk medicine supplier Kerala, medical store supplier Kerala, pharmaceutical distribution Kerala',
   ogImage: '/logo.svg',
 }
 

@@ -72,10 +72,10 @@ export default function Hero() {
           {/* Main Heading */}
           <h1 className="mb-4 font-display font-black leading-[1.1] tracking-tight text-white">
             <span className="block animate-slide-up opacity-0 text-4xl sm:text-5xl md:text-6xl lg:text-7xl" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
-              Alappuzha's Most Reliable
+              Pharmaceutical Distributor
             </span>
             <span className="block animate-slide-up bg-gradient-to-r from-white via-ocean-sky to-ocean-aqua bg-clip-text text-transparent opacity-0 text-4xl sm:text-5xl md:text-6xl lg:text-7xl" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-              Pharmaceutical Distribution Partner
+              in Kerala – medi-house
             </span>
             <span className="mt-4 block animate-slide-up text-2xl font-light text-white/80 sm:text-3xl md:text-4xl opacity-0" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
               Serving Alappuzha with Excellence since 2011
