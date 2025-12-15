@@ -12,22 +12,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { admin, logout, hasPermission } = useAdminAuth()
   const router = useRouter()
 
-  // Open sidebar on desktop by default, close on mobile
+  // Open sidebar on desktop by default, close on mobile.
+  // Use a media query change listener so scroll-triggered viewport height changes
+  // on mobile don't force-close the sidebar.
   useEffect(() => {
-    const checkScreenSize = () => {
-      if (typeof window !== 'undefined') {
-        const isDesktop = window.innerWidth >= 1024 // lg breakpoint
-        setSidebarOpen(isDesktop)
-      }
+    if (typeof window === 'undefined') return
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)')
+
+    // Set initial state based on current viewport width
+    setSidebarOpen(mediaQuery.matches)
+
+    // Update only when the breakpoint is crossed (width-based), not on height changes
+    const handleChange = (event: MediaQueryListEvent) => {
+      setSidebarOpen(event.matches)
     }
-    
-    // Check on mount
-    checkScreenSize()
-    
-    // Listen for resize events
-    window.addEventListener('resize', checkScreenSize)
-    
-    return () => window.removeEventListener('resize', checkScreenSize)
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
   const navigation = [
