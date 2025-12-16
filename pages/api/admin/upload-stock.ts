@@ -31,11 +31,14 @@ async function parseExcelFile(filePath: string): Promise<StockUpdate[]> {
     const fileBuffer = fs.readFileSync(filePath)
 
     // Read buffer with options to handle both .xls and .xlsx formats
+    // Optimize for large files: skip formulas, dates, and number formats
     workbook = XLSX.read(fileBuffer, {
       type: 'buffer',
       cellDates: false,
       cellNF: false,
       cellText: false,
+      cellFormula: false, // Skip formulas for faster parsing
+      dense: false, // Use sparse mode for memory efficiency
     })
   } catch (readError: any) {
     const errorMsg = readError.message || 'Unknown error reading file'
@@ -262,8 +265,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ message: 'Invalid file type. Please upload an Excel file (.xls or .xlsx)' })
     }
 
+    // Check file size before parsing (large files may timeout)
+    const fileStats = fs.statSync(filePath)
+    const fileSizeMB = fileStats.size / (1024 * 1024)
+    
+    if (fileSizeMB > 5) {
+      console.warn(`Large file detected: ${fileSizeMB.toFixed(2)}MB - may take longer to process`)
+    }
+    
     // Parse Excel file
+    const parseStartTime = Date.now()
     const stockUpdates = await parseExcelFile(filePath)
+    const parseTime = Date.now() - parseStartTime
+    console.log(`Excel parsing took ${parseTime}ms, found ${stockUpdates.length} rows`)
 
     if (stockUpdates.length === 0) {
       // Clean up file
@@ -271,6 +285,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fs.unlinkSync(filePath)
       }
       return res.status(400).json({ message: 'No valid product data found in the Excel file' })
+    }
+    
+    // Warn if file is very large
+    if (stockUpdates.length > 10000) {
+      console.warn(`Large file with ${stockUpdates.length} rows - processing may take time`)
     }
 
     // Group by product name and sum stock quantities
@@ -289,12 +308,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Get all product names to find in chunks (to avoid query size limits)
     const productNames = Array.from(stockByProduct.keys())
-    const BATCH_SIZE = 1000 // Process products in batches to avoid timeout
-    const UPDATE_BATCH_SIZE = 500 // Update database in smaller batches
+    const BATCH_SIZE = 200 // Further reduced to prevent timeout on large files
+    const UPDATE_BATCH_SIZE = 100 // Much smaller update batches for timeout safety
     
     // Find all matching products in chunks (prevents large query timeouts)
     const productMap = new Map<string, { id: number; name: string }>()
     
+    // Process in smaller chunks with progress logging
     for (let i = 0; i < productNames.length; i += BATCH_SIZE) {
       const nameBatch = productNames.slice(i, i + BATCH_SIZE)
       const findProductsResult = await query(
@@ -309,6 +329,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!productMap.has(lowerName)) {
           productMap.set(lowerName, { id: row.id, name: row.name })
         }
+      }
+      
+      // Log progress for large files
+      if (productNames.length > 1000 && i % (BATCH_SIZE * 5) === 0) {
+        console.log(`Processing products: ${Math.min(i + BATCH_SIZE, productNames.length)}/${productNames.length}`)
       }
     }
     
@@ -333,36 +358,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Perform chunked batch updates to prevent timeout on large datasets
     if (updatesByProductId.size > 0) {
       const updateEntries = Array.from(updatesByProductId.entries())
+      const totalUpdates = updateEntries.length
       
-      // Process updates in chunks
+      // Process updates in smaller chunks with timeout protection
       for (let i = 0; i < updateEntries.length; i += UPDATE_BATCH_SIZE) {
         const updateBatch = updateEntries.slice(i, i + UPDATE_BATCH_SIZE)
         
+        // Check elapsed time periodically to avoid timeout
+        const elapsed = Date.now() - startTime
+        if (elapsed > 50000) { // If we're close to 60s timeout, warn
+          console.warn(`Upload taking longer than expected: ${elapsed}ms elapsed, ${i}/${totalUpdates} updates completed`)
+        }
+        
         try {
-          // Build VALUES clause for this batch
-          const values: any[] = []
-          const valueStrings: string[] = []
-          let paramIndex = 1
-          
-          for (const [productId, stock] of updateBatch) {
-            valueStrings.push(`($${paramIndex}, $${paramIndex + 1})`)
-            values.push(productId, stock)
-            paramIndex += 2
+          // Use simpler UPDATE with IN clause for smaller batches (faster than VALUES)
+          if (updateBatch.length <= 50) {
+            // For very small batches, use individual updates (more reliable)
+            for (const [productId, stock] of updateBatch) {
+              await query(
+                `UPDATE products 
+                 SET stock_quantity = $1, updated_at = NOW() 
+                 WHERE id = $2`,
+                [stock, productId]
+              )
+              updated++
+            }
+          } else {
+            // For larger batches, use VALUES approach
+            const values: any[] = []
+            const valueStrings: string[] = []
+            let paramIndex = 1
+            
+            for (const [productId, stock] of updateBatch) {
+              valueStrings.push(`($${paramIndex}, $${paramIndex + 1})`)
+              values.push(productId, stock)
+              paramIndex += 2
+            }
+            
+            // Batch update query for this chunk
+            const batchUpdateQuery = `
+              UPDATE products p
+              SET stock_quantity = v.stock,
+                  updated_at = NOW()
+              FROM (VALUES ${valueStrings.join(', ')}) AS v(id, stock)
+              WHERE p.id = v.id
+            `
+            
+            await query(batchUpdateQuery, values)
+            updated += updateBatch.length
           }
-          
-          // Batch update query for this chunk
-          const batchUpdateQuery = `
-            UPDATE products p
-            SET stock_quantity = v.stock,
-                updated_at = NOW()
-            FROM (VALUES ${valueStrings.join(', ')}) AS v(id, stock)
-            WHERE p.id = v.id
-          `
-          
-          await query(batchUpdateQuery, values)
-          updated += updateBatch.length
         } catch (batchError: any) {
-          console.error(`Batch update failed for chunk ${i / UPDATE_BATCH_SIZE + 1}, falling back to individual updates:`, batchError.message)
+          console.error(`Batch update failed for chunk ${Math.floor(i / UPDATE_BATCH_SIZE) + 1}, falling back to individual updates:`, batchError.message)
           // Fallback to individual updates for this chunk if batch fails
           for (const [productId, stock] of updateBatch) {
             try {
@@ -377,6 +423,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               errors.push(`Error updating product ID ${productId}: ${individualError.message}`)
             }
           }
+        }
+        
+        // Log progress for large updates
+        if (totalUpdates > 500 && i % (UPDATE_BATCH_SIZE * 10) === 0) {
+          console.log(`Updating products: ${Math.min(i + UPDATE_BATCH_SIZE, totalUpdates)}/${totalUpdates}`)
         }
       }
     }
