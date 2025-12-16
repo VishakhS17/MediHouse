@@ -14,12 +14,14 @@ export default function InvoiceChecking() {
   const [success, setSuccess] = useState('')
   const [downloading, setDownloading] = useState(false)
   const [checkerNames, setCheckerNames] = useState<Record<number, string>>({})
+  const [selectedDate, setSelectedDate] = useState<string>('')
 
   useEffect(() => {
     if (admin) {
       loadCollections()
     }
-  }, [admin])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin, selectedDate])
 
   useEffect(() => {
     // Initialize checker names with admin name for all unchecked invoices
@@ -43,7 +45,13 @@ export default function InvoiceChecking() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/admin/invoice-checking', {
+      // Build query string with date filter if selected
+      let queryString = ''
+      if (selectedDate) {
+        queryString = `?date=${selectedDate}`
+      }
+      
+      const response = await fetch(`/api/admin/invoice-checking${queryString}`, {
         headers: {
           'x-admin-data': JSON.stringify(admin),
         },
@@ -122,7 +130,13 @@ export default function InvoiceChecking() {
   const handleDownloadExcel = async () => {
     setDownloading(true)
     try {
-      const response = await fetch('/api/admin/invoice-checking?download=true', {
+      // Build query string with date filter if selected
+      let queryString = 'download=true'
+      if (selectedDate) {
+        queryString += `&date=${selectedDate}`
+      }
+      
+      const response = await fetch(`/api/admin/invoice-checking?${queryString}`, {
         headers: {
           'x-admin-data': JSON.stringify(admin),
         },
@@ -241,63 +255,99 @@ export default function InvoiceChecking() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Invoice Collections</h2>
-              <button
-                onClick={handleDownloadExcel}
-                disabled={downloading || collections.length === 0}
-                className="px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation w-full sm:w-auto"
-              >
-                {downloading ? (
-                  <span className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                {/* Date Picker */}
+                <div className="flex items-center gap-2">
+                  <label htmlFor="filter-date" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Filter by Date:
+                  </label>
+                  <input
+                    id="filter-date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation"
+                  />
+                  {selectedDate && (
+                    <button
+                      onClick={() => setSelectedDate('')}
+                      className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
+                      title="Clear date filter"
                     >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={handleDownloadExcel}
+                  disabled={downloading || collections.length === 0}
+                  className="px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation w-full sm:w-auto"
+                >
+                  {downloading ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Downloading...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
                         stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Downloading...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center">
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    Download Excel
-                  </span>
-                )}
-              </button>
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      Download Excel
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
+            {selectedDate && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  Showing invoices from: <strong>{new Date(selectedDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                </p>
+              </div>
+            )}
+            
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ocean-royal mx-auto"></div>
                 <p className="text-gray-600 mt-4">Loading invoice collections...</p>
               </div>
             ) : collections.length === 0 ? (
-              <p className="text-sm sm:text-base text-gray-500 text-center py-8">No invoice collections found</p>
+              <p className="text-sm sm:text-base text-gray-500 text-center py-8">
+                {selectedDate ? `No invoice collections found for ${new Date(selectedDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}` : 'No invoice collections found'}
+              </p>
             ) : (
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <table className="min-w-full divide-y divide-gray-200">

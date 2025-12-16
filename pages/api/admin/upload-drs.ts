@@ -508,6 +508,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       client.release()
     }
     
+    // Record upload history
+    try {
+      await query(
+        `INSERT INTO upload_history (upload_type, last_upload_date, uploaded_by, records_count, file_name)
+         VALUES ('drs', NOW(), $1, $2, $3)
+         ON CONFLICT (upload_type) 
+         DO UPDATE SET 
+           last_upload_date = NOW(),
+           uploaded_by = EXCLUDED.uploaded_by,
+           records_count = EXCLUDED.records_count,
+           file_name = EXCLUDED.file_name,
+           updated_at = NOW()`,
+        [userId, validRows.length, originalName]
+      )
+    } catch (historyError: any) {
+      // Don't fail the upload if history recording fails
+      console.error('Failed to record upload history:', historyError)
+    }
+    
     // Clean up file
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath)

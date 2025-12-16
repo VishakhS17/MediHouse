@@ -22,8 +22,8 @@ interface OutstandingBill {
 export default function OutstandingBills() {
   const { admin } = useAdminAuth()
   const [searchTerm, setSearchTerm] = useState('')
-  const [refFilter, setRefFilter] = useState('')
-  const [dateSort, setDateSort] = useState<string>('desc') // 'asc', 'desc', or 'none'
+  const [refFilter, setRefFilter] = useState('PART OK') // Default to 'PART OK'
+  const [dateSort, setDateSort] = useState<string>('asc') // Default to 'asc' (Oldest First)
   const [refValues, setRefValues] = useState<string[]>([])
   const [bills, setBills] = useState<OutstandingBill[]>([])
   const [loading, setLoading] = useState(false)
@@ -146,8 +146,8 @@ export default function OutstandingBills() {
 
   const handleClear = () => {
     setSearchTerm('')
-    setRefFilter('')
-    setDateSort('desc')
+    setRefFilter('PART OK') // Reset to default 'PART OK'
+    setDateSort('asc') // Reset to default 'asc' (Oldest First)
     setCurrentPage(1)
     setBills([])
     setSummary({ totalRecords: 0, totalPendingBalance: '0.00' })
@@ -181,10 +181,10 @@ export default function OutstandingBills() {
     }
   }
 
-  // Load all records on initial mount
+  // Load all records on initial mount with default filters
   useEffect(() => {
     if (admin) {
-      loadBills('', '', 1, false, dateSort)
+      loadBills('', refFilter, 1, false, dateSort)
       loadRefValues()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -391,7 +391,7 @@ export default function OutstandingBills() {
                         <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-right font-semibold text-green-600">
                           {formatCurrency(bill.received_amount)}
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-right font-semibold text-red-600">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-right font-bold text-red-600">
                           {formatCurrency(bill.pending_balance)}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import AdminLayout from '@/components/AdminLayout'
 import AdminProtectedRoute from '@/components/AdminProtectedRoute'
@@ -10,6 +10,41 @@ export default function UploadStock() {
   const [uploading, setUploading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string>('')
+  const [lastUpload, setLastUpload] = useState<any>(null)
+
+  // Fetch last upload date on component mount
+  useEffect(() => {
+    const fetchLastUpload = async () => {
+      try {
+        const response = await fetch('/api/admin/upload-history')
+        const data = await response.json()
+        if (data.success && data.history?.stock) {
+          setLastUpload(data.history.stock)
+        }
+      } catch (err) {
+        console.error('Failed to fetch upload history:', err)
+      }
+    }
+    fetchLastUpload()
+  }, [])
+
+  // Refresh last upload after successful upload
+  useEffect(() => {
+    if (result && result.success) {
+      const fetchLastUpload = async () => {
+        try {
+          const response = await fetch('/api/admin/upload-history')
+          const data = await response.json()
+          if (data.success && data.history?.stock) {
+            setLastUpload(data.history.stock)
+          }
+        } catch (err) {
+          console.error('Failed to fetch upload history:', err)
+        }
+      }
+      fetchLastUpload()
+    }
+  }, [result])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -115,6 +150,45 @@ export default function UploadStock() {
               Upload an Excel file to update product stock quantities
             </p>
           </div>
+
+          {/* Last Upload Info */}
+          {lastUpload && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Last Upload</p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {new Date(lastUpload.lastUploadDate).toLocaleString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </p>
+                    {lastUpload.uploadedBy && (
+                      <p className="text-xs text-gray-500 mt-1">by {lastUpload.uploadedBy}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  {lastUpload.recordsCount > 0 && (
+                    <>
+                      <p className="text-xs text-gray-500">Records</p>
+                      <p className="text-sm font-semibold text-gray-700">{lastUpload.recordsCount.toLocaleString()}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Upload Form */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">

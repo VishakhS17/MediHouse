@@ -62,10 +62,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'GET') {
     // Get invoice collections with checking status
     try {
-      const { limit = 1000, offset = 0, download } = req.query
+      const { limit = 1000, offset = 0, download, date } = req.query
 
-      // Get all invoice collections with checking status and supply details
-      const queryStr = `
+      // Build query with optional date filter
+      let queryStr = `
         SELECT 
           ic.id,
           ic.invoice_number,
@@ -79,11 +79,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         FROM invoice_collections ic
         LEFT JOIN admin_users au ON ic.collected_by = au.id
         LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
-        ORDER BY ic.collection_date DESC
-        LIMIT $1 OFFSET $2
+        WHERE 1=1
       `
+      
+      const params: any[] = []
+      let paramIndex = 1
+      
+      // Add date filter if provided
+      if (date) {
+        queryStr += ` AND DATE(ic.collection_date) = $${paramIndex}`
+        params.push(date)
+        paramIndex++
+      }
+      
+      queryStr += ` ORDER BY ic.collection_date DESC`
+      
+      // Add limit and offset only if not downloading
+      if (download !== 'true' && download !== 'excel') {
+        queryStr += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
+        params.push(parseInt(limit as string), parseInt(offset as string))
+      }
 
-      const result = await query(queryStr, [parseInt(limit as string), parseInt(offset as string)])
+      const result = await query(queryStr, params)
 
       // Check if Excel download is requested
       if (download === 'true' || download === 'excel') {
@@ -120,7 +137,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Invoice Checking')
 
-        const filename = `Invoice_Checking_${new Date().toISOString().split('T')[0]}.xlsx`
+        // Generate filename with date if filtered
+        let filename = 'Invoice_Checking'
+        if (date) {
+          filename += `_${date}`
+        } else {
+          filename += `_${new Date().toISOString().split('T')[0]}`
+        }
+        filename += '.xlsx'
         const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
