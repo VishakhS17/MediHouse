@@ -282,28 +282,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       stockByProduct.set(productName, currentStock + update.stockQuantity)
     }
 
-    // Update database using optimized batch processing
+    // Update database using optimized chunked batch processing to prevent timeouts
     let updated = 0
     let notFound = 0
     const errors: string[] = []
     
-    // Get all product names to find in one query
+    // Get all product names to find in chunks (to avoid query size limits)
     const productNames = Array.from(stockByProduct.keys())
+    const BATCH_SIZE = 1000 // Process products in batches to avoid timeout
+    const UPDATE_BATCH_SIZE = 500 // Update database in smaller batches
     
-    // Find all matching products in one query (much faster)
-    const findProductsResult = await query(
-      `SELECT id, LOWER(name) as lower_name, name 
-       FROM products 
-       WHERE LOWER(name) = ANY($1::text[])`,
-      [productNames.map(n => n.toLowerCase())]
-    )
-    
-    // Create a map of found products by lowercase name
+    // Find all matching products in chunks (prevents large query timeouts)
     const productMap = new Map<string, { id: number; name: string }>()
-    for (const row of findProductsResult.rows) {
-      const lowerName = row.lower_name
-      if (!productMap.has(lowerName)) {
-        productMap.set(lowerName, { id: row.id, name: row.name })
+    
+    for (let i = 0; i < productNames.length; i += BATCH_SIZE) {
+      const nameBatch = productNames.slice(i, i + BATCH_SIZE)
+      const findProductsResult = await query(
+        `SELECT id, LOWER(name) as lower_name, name 
+         FROM products 
+         WHERE LOWER(name) = ANY($1::text[])`,
+        [nameBatch.map(n => n.toLowerCase())]
+      )
+      
+      for (const row of findProductsResult.rows) {
+        const lowerName = row.lower_name
+        if (!productMap.has(lowerName)) {
+          productMap.set(lowerName, { id: row.id, name: row.name })
+        }
       }
     }
     
@@ -325,45 +330,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
     
-    // Perform batch update using VALUES and JOIN (much faster than individual updates)
+    // Perform chunked batch updates to prevent timeout on large datasets
     if (updatesByProductId.size > 0) {
-      try {
-        // Build VALUES clause for batch update
-        const values: any[] = []
-        const valueStrings: string[] = []
-        let paramIndex = 1
+      const updateEntries = Array.from(updatesByProductId.entries())
+      
+      // Process updates in chunks
+      for (let i = 0; i < updateEntries.length; i += UPDATE_BATCH_SIZE) {
+        const updateBatch = updateEntries.slice(i, i + UPDATE_BATCH_SIZE)
         
-        for (const [productId, stock] of updatesByProductId.entries()) {
-          valueStrings.push(`($${paramIndex}, $${paramIndex + 1})`)
-          values.push(productId, stock)
-          paramIndex += 2
-        }
-        
-        // Single batch update query
-        const batchUpdateQuery = `
-          UPDATE products p
-          SET stock_quantity = v.stock,
-              updated_at = NOW()
-          FROM (VALUES ${valueStrings.join(', ')}) AS v(id, stock)
-          WHERE p.id = v.id
-        `
-        
-        await query(batchUpdateQuery, values)
-        updated = updatesByProductId.size
-      } catch (batchError: any) {
-        console.error('Batch update failed, falling back to individual updates:', batchError)
-        // Fallback to individual updates if batch fails
-        for (const [productId, stock] of updatesByProductId.entries()) {
-          try {
-            await query(
-              `UPDATE products 
-               SET stock_quantity = $1, updated_at = NOW() 
-               WHERE id = $2`,
-              [stock, productId]
-            )
-            updated++
-          } catch (individualError: any) {
-            errors.push(`Error updating product ID ${productId}: ${individualError.message}`)
+        try {
+          // Build VALUES clause for this batch
+          const values: any[] = []
+          const valueStrings: string[] = []
+          let paramIndex = 1
+          
+          for (const [productId, stock] of updateBatch) {
+            valueStrings.push(`($${paramIndex}, $${paramIndex + 1})`)
+            values.push(productId, stock)
+            paramIndex += 2
+          }
+          
+          // Batch update query for this chunk
+          const batchUpdateQuery = `
+            UPDATE products p
+            SET stock_quantity = v.stock,
+                updated_at = NOW()
+            FROM (VALUES ${valueStrings.join(', ')}) AS v(id, stock)
+            WHERE p.id = v.id
+          `
+          
+          await query(batchUpdateQuery, values)
+          updated += updateBatch.length
+        } catch (batchError: any) {
+          console.error(`Batch update failed for chunk ${i / UPDATE_BATCH_SIZE + 1}, falling back to individual updates:`, batchError.message)
+          // Fallback to individual updates for this chunk if batch fails
+          for (const [productId, stock] of updateBatch) {
+            try {
+              await query(
+                `UPDATE products 
+                 SET stock_quantity = $1, updated_at = NOW() 
+                 WHERE id = $2`,
+                [stock, productId]
+              )
+              updated++
+            } catch (individualError: any) {
+              errors.push(`Error updating product ID ${productId}: ${individualError.message}`)
+            }
           }
         }
       }
