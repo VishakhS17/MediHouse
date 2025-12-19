@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     // Get supply records or download Excel
     try {
-      const { download } = req.query
+      const { download, invoices } = req.query
 
       // If download is requested, generate Excel file
       if (download === 'true' || download === 'excel') {
@@ -114,7 +114,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return
       }
 
-      // Otherwise, return JSON data
+      // If invoices query parameter is set, return all invoices with supply status
+      if (invoices === 'true') {
+        const result = await query(
+          `SELECT 
+            ic.id,
+            ic.invoice_number,
+            ic.collector_name,
+            ic.collection_date,
+            s.id as supply_id,
+            s.supplied_by,
+            s.customer_name as supply_customer_name,
+            s.delivery_date,
+            s.latitude,
+            s.longitude,
+            s.location_address,
+            s.created_at as supply_created_at
+          FROM invoice_collections ic
+          LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
+          ORDER BY ic.collection_date DESC`
+        )
+
+        res.status(200).json({
+          success: true,
+          data: result.rows,
+        })
+        return
+      }
+
+      // Otherwise, return JSON data (existing supply records)
       const result = await query(
         `SELECT 
           s.id,

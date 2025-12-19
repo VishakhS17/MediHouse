@@ -6,406 +6,281 @@ import { useAdminAuth } from '@/lib/adminAuth'
 
 export default function Supply() {
   const { admin, hasPermission } = useAdminAuth()
-  const [supplyRecords, setSupplyRecords] = useState<any[]>([])
-  const [invoiceNumbers, setInvoiceNumbers] = useState<string[]>([])
+  const [invoices, setInvoices] = useState<any[]>([])
+  const [filteredInvoices, setFilteredInvoices] = useState<any[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submittingId, setSubmittingId] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [downloading, setDownloading] = useState(false)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
-  const [formData, setFormData] = useState({
-    invoiceNumber: '',
-    suppliedBy: '',
-    customerName: '',
-    latitude: '',
-    longitude: '',
-    locationAddress: '',
-  })
-  const [gettingLocation, setGettingLocation] = useState(false)
+  const [supplyData, setSupplyData] = useState<Record<number, { suppliedBy: string; customerName: string }>>({})
+  const [gettingLocation, setGettingLocation] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     if (admin) {
-      loadSupplyRecords()
-      loadInvoiceNumbers()
+      loadInvoices()
     }
   }, [admin])
 
-  const loadSupplyRecords = async () => {
+  useEffect(() => {
+    // Initialize supply data with existing values for already supplied invoices
+    if (invoices.length > 0) {
+      const initialData: Record<number, { suppliedBy: string; customerName: string }> = {}
+      invoices.forEach((invoice) => {
+        if (invoice.supply_id && invoice.supplied_by && invoice.supply_customer_name) {
+          initialData[invoice.id] = {
+            suppliedBy: invoice.supplied_by,
+            customerName: invoice.supply_customer_name,
+          }
+        }
+      })
+      setSupplyData((prev) => ({ ...prev, ...initialData }))
+    }
+  }, [invoices])
+
+  useEffect(() => {
+    // Filter invoices based on search term
+    if (searchTerm.trim() === '') {
+      setFilteredInvoices(invoices)
+    } else {
+      const filtered = invoices.filter((invoice) =>
+        invoice.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+      )
+      setFilteredInvoices(filtered)
+    }
+  }, [invoices, searchTerm])
+
+  const loadInvoices = async () => {
+    if (!admin) {
+      setError('Admin user not loaded')
+      return
+    }
+
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/admin/supply', {
+      const response = await fetch('/api/admin/supply?invoices=true', {
         headers: {
           'x-admin-data': JSON.stringify(admin),
         },
       })
-
       if (response.ok) {
         const data = await response.json()
-        setSupplyRecords(data.data || [])
+        const invoicesData = data.data || []
+        setInvoices(invoicesData)
+        setFilteredInvoices(invoicesData)
       } else {
-        // Check if response is JSON before parsing
-        const contentType = response.headers.get('content-type')
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json()
-          setError(errorData.message || 'Failed to load supply records')
-        } else {
-          const text = await response.text()
-          setError(`Failed to load supply records: ${response.status} ${response.statusText}`)
-        }
+        const errorData = await response.json()
+        setError(errorData.message || 'Failed to load invoices')
       }
     } catch (err: any) {
+      console.error('Error loading invoices:', err)
       setError(err.message || 'An error occurred')
     } finally {
       setLoading(false)
     }
   }
 
-  const loadInvoiceNumbers = async () => {
-    try {
-      const response = await fetch('/api/admin/invoice-numbers', {
-        headers: {
-          'x-admin-data': JSON.stringify(admin),
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setInvoiceNumbers(data.invoiceNumbers || [])
-      }
-    } catch (err) {
-      console.error('Error loading invoice numbers:', err)
-    }
-  }
-
-  const handleAdd = () => {
-    setFormData({
-      invoiceNumber: '',
-      suppliedBy: '',
-      customerName: '',
-      latitude: '',
-      longitude: '',
-      locationAddress: '',
-    })
-    setError('')
-    setSuccess('')
-    setShowAddModal(true)
-  }
-  
-  const handleCloseModal = () => {
-    setShowAddModal(false)
-    setShowEditModal(false)
-    setError('')
-    setFormData({
-      invoiceNumber: '',
-      suppliedBy: '',
-      customerName: '',
-      latitude: '',
-      longitude: '',
-      locationAddress: '',
-    })
-  }
-  
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser')
-      return
-    }
-
-    setGettingLocation(true)
-    setError('')
-
-    // Use watchPosition to continuously get location updates until we have good accuracy
-    let bestPosition: GeolocationPosition | null = null
-    let attempts = 0
-    const maxAttempts = 10 // Try up to 10 position updates to get best accuracy
-    
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        attempts++
-        const { latitude, longitude, accuracy } = position.coords
-        
-        // Log accuracy for debugging
-        console.log(`Location attempt ${attempts}: accuracy ${accuracy.toFixed(0)} meters`)
-        
-        // Keep track of the best (most accurate) position
-        if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
-          bestPosition = position
-        }
-        
-        // Accept position if accuracy is good (within 50 meters) or we've tried enough times
-        if (accuracy <= 50 || attempts >= maxAttempts) {
-          // Stop watching
-          navigator.geolocation.clearWatch(watchId)
-          
-          // Use the best position we got
-          const finalPosition = bestPosition || position
-          const finalLat = finalPosition.coords.latitude
-          const finalLon = finalPosition.coords.longitude
-          const finalAccuracy = finalPosition.coords.accuracy
-          
-          if (finalAccuracy > 100) {
-            console.warn(`Final location accuracy: ${finalAccuracy.toFixed(0)} meters - may not be very accurate`)
-          }
-          
-          // Clear any previous errors since location was successfully retrieved
-          setError('')
-        
-          setFormData(prev => ({
-            ...prev,
-            latitude: finalLat.toString(),
-            longitude: finalLon.toString(),
-          }))
-
-          // Try to get address from coordinates using reverse geocoding
-          try {
-            // Using OpenStreetMap Nominatim API (free, no key required)
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${finalLat}&lon=${finalLon}&zoom=18&addressdetails=1`,
-            {
-              headers: {
-                'User-Agent': 'MediHouse-Supply-Management' // Required by Nominatim
-              }
-            }
-          )
-          
-          if (response.ok) {
-            const data = await response.json()
-            const address = data.display_name || `${data.address?.road || ''} ${data.address?.city || data.address?.town || ''} ${data.address?.postcode || ''}`.trim()
-            
-              setFormData(prev => ({
-                ...prev,
-                locationAddress: address || '',
-              }))
-            }
-          } catch (err) {
-            console.error('Error getting address:', err)
-            // Location captured even if address lookup fails - don't show error to user
-          }
-
-          setGettingLocation(false)
-        }
+  const handleSupplyDataChange = (invoiceId: number, field: 'suppliedBy' | 'customerName', value: string) => {
+    setSupplyData((prev) => ({
+      ...prev,
+      [invoiceId]: {
+        ...prev[invoiceId],
+        [field]: value,
       },
-      (error) => {
-        // Stop watching on error
-        navigator.geolocation.clearWatch(watchId)
-        
-        // If watchPosition fails, fall back to getCurrentPosition with high accuracy
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const { latitude, longitude } = position.coords
-            
-            setError('')
-            
-            setFormData(prev => ({
-              ...prev,
-              latitude: latitude.toString(),
-              longitude: longitude.toString(),
-            }))
+    }))
+  }
 
+  const getCurrentLocation = (invoiceId: number): Promise<{ latitude: number; longitude: number; locationAddress: string }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by your browser'))
+        return
+      }
+
+      setGettingLocation((prev) => ({ ...prev, [invoiceId]: true }))
+
+      let bestPosition: GeolocationPosition | null = null
+      let attempts = 0
+      const maxAttempts = 10
+
+      const watchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          attempts++
+          const { latitude, longitude, accuracy } = position.coords
+
+          if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+            bestPosition = position
+          }
+
+          if (accuracy <= 50 || attempts >= maxAttempts) {
+            navigator.geolocation.clearWatch(watchId)
+
+            const finalPosition = bestPosition || position
+            const finalLat = finalPosition.coords.latitude
+            const finalLon = finalPosition.coords.longitude
+
+            let locationAddress = ''
             try {
               const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${finalLat}&lon=${finalLon}&zoom=18&addressdetails=1`,
                 {
                   headers: {
                     'User-Agent': 'MediHouse-Supply-Management'
                   }
                 }
               )
-              
+
               if (response.ok) {
                 const data = await response.json()
-                const address = data.display_name || `${data.address?.road || ''} ${data.address?.city || data.address?.town || ''} ${data.address?.postcode || ''}`.trim()
-                
-                setFormData(prev => ({
-                  ...prev,
-                  locationAddress: address || '',
-                }))
+                locationAddress = data.display_name || `${data.address?.road || ''} ${data.address?.city || data.address?.town || ''} ${data.address?.postcode || ''}`.trim()
               }
             } catch (err) {
               console.error('Error getting address:', err)
             }
 
-            setGettingLocation(false)
-          },
-          (fallbackError) => {
-            setGettingLocation(false)
-            let errorMessage = 'Failed to get location'
-            switch (fallbackError.code) {
-              case fallbackError.PERMISSION_DENIED:
-                errorMessage = 'Location access denied. Please enable location permissions in your browser settings.'
-                break
-              case fallbackError.POSITION_UNAVAILABLE:
-                errorMessage = 'Location information unavailable. Please ensure GPS/location services are enabled on your device.'
-                break
-              case fallbackError.TIMEOUT:
-                errorMessage = 'Location request timed out. Please try again and ensure you are in an area with good GPS signal.'
-                break
-              default:
-                errorMessage = 'An error occurred while getting your location. Please try again.'
-                break
-            }
-            setError(errorMessage)
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 20000, // Increased timeout to 20 seconds
-            maximumAge: 0 // Don't use cached location
+            setGettingLocation((prev) => ({ ...prev, [invoiceId]: false }))
+            resolve({ latitude: finalLat, longitude: finalLon, locationAddress })
           }
-        )
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 20000, // Increased timeout to 20 seconds
-        maximumAge: 0 // Don't use cached location - always get fresh location
-      }
-    )
-  }
+        },
+        (error) => {
+          navigator.geolocation.clearWatch(watchId)
 
-  const handleEdit = (record: any) => {
-    setSelectedRecord(record)
-    setFormData({
-      invoiceNumber: record.invoice_number,
-      suppliedBy: record.supplied_by,
-      customerName: record.customer_name,
-      latitude: record.latitude ? record.latitude.toString() : '',
-      longitude: record.longitude ? record.longitude.toString() : '',
-      locationAddress: record.location_address || '',
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords
+              let locationAddress = ''
+
+              try {
+                const response = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+                  {
+                    headers: {
+                      'User-Agent': 'MediHouse-Supply-Management'
+                    }
+                  }
+                )
+
+                if (response.ok) {
+                  const data = await response.json()
+                  locationAddress = data.display_name || `${data.address?.road || ''} ${data.address?.city || data.address?.town || ''} ${data.address?.postcode || ''}`.trim()
+                }
+              } catch (err) {
+                console.error('Error getting address:', err)
+              }
+
+              setGettingLocation((prev) => ({ ...prev, [invoiceId]: false }))
+              resolve({ latitude, longitude, locationAddress })
+            },
+            (fallbackError) => {
+              setGettingLocation((prev) => ({ ...prev, [invoiceId]: false }))
+              let errorMessage = 'Failed to get location'
+              switch (fallbackError.code) {
+                case fallbackError.PERMISSION_DENIED:
+                  errorMessage = 'Location access denied. Please enable location permissions.'
+                  break
+                case fallbackError.POSITION_UNAVAILABLE:
+                  errorMessage = 'Location information unavailable.'
+                  break
+                case fallbackError.TIMEOUT:
+                  errorMessage = 'Location request timed out.'
+                  break
+              }
+              reject(new Error(errorMessage))
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 20000,
+              maximumAge: 0
+            }
+          )
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 0
+        }
+      )
     })
-    setShowEditModal(true)
-    setError('')
-    setSuccess('')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-
-    if (!formData.invoiceNumber || !formData.suppliedBy || !formData.customerName) {
-      setError('Invoice number, supplied by, and customer name are required')
-      return
-    }
-
-    // Location is only required when creating a new record, not when editing
-    if (!showEditModal && (!formData.latitude || !formData.longitude)) {
-      setError('Location is required. Please click "Get Current Location" to capture your location.')
+  const handleSubmitSupply = async (invoiceId: number, invoiceNumber: string) => {
+    const data = supplyData[invoiceId]
+    const suppliedBy = data?.suppliedBy?.trim() || ''
+    const customerName = data?.customerName?.trim() || ''
+    
+    if (!suppliedBy || !customerName) {
+      setError('Supplied By and Customer Name are required')
       return
     }
 
     setSubmitting(true)
+    setSubmittingId(invoiceId)
+    setError('')
+    setSuccess('')
 
     try {
-      const url = '/api/admin/supply'
-      const method = showEditModal ? 'PUT' : 'POST'
-      
+      // Get current location
+      let latitude: number | null = null
+      let longitude: number | null = null
+      let locationAddress: string | null = null
+
+      try {
+        const location = await getCurrentLocation(invoiceId)
+        latitude = location.latitude
+        longitude = location.longitude
+        locationAddress = location.locationAddress || null
+      } catch (locationError: any) {
+        setError(locationError.message || 'Failed to get location. Please try again.')
+        setSubmitting(false)
+        setSubmittingId(null)
+        return
+      }
+
       // Automatically get current date and time from device
       const now = new Date()
-      const deliveryDate = now.toISOString() // Full ISO string with timezone
-      
-      const body: any = showEditModal
-        ? {
-            id: selectedRecord.id,
-            suppliedBy: formData.suppliedBy.trim(),
-            customerName: formData.customerName.trim(),
-            deliveryDate: deliveryDate,
-            // Location is not editable - keep existing values from the record
-            latitude: selectedRecord.latitude || null,
-            longitude: selectedRecord.longitude || null,
-            locationAddress: selectedRecord.location_address || null,
-          }
-        : {
-            invoiceNumber: formData.invoiceNumber.trim(),
-            suppliedBy: formData.suppliedBy.trim(),
-            customerName: formData.customerName.trim(),
-            deliveryDate: deliveryDate,
-            latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-            longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-            locationAddress: formData.locationAddress.trim() || null,
-          }
+      const deliveryDate = now.toISOString()
 
-      const response = await fetch(url, {
-        method,
+      const response = await fetch('/api/admin/supply', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-admin-data': JSON.stringify(admin),
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          invoiceNumber: invoiceNumber.trim(),
+          suppliedBy: suppliedBy,
+          customerName: customerName,
+          deliveryDate: deliveryDate,
+          latitude: latitude,
+          longitude: longitude,
+          locationAddress: locationAddress,
+        }),
       })
 
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text()
-        setError(`Failed to save supply record: ${response.status} ${response.statusText}`)
-        setSubmitting(false)
-        return
-      }
-
-      const data = await response.json()
+      const responseData = await response.json()
 
       if (response.ok) {
-        setSuccess(showEditModal ? 'Supply record updated successfully!' : 'Supply record created successfully!')
-        setShowAddModal(false)
-        setShowEditModal(false)
-        setFormData({
-          invoiceNumber: '',
-          suppliedBy: '',
-          customerName: '',
-          latitude: '',
-          longitude: '',
-          locationAddress: '',
+        setSuccess('Supply record created successfully!')
+        loadInvoices()
+        // Clear the input fields for this invoice
+        setSupplyData((prev) => {
+          const newData = { ...prev }
+          delete newData[invoiceId]
+          return newData
         })
-        loadSupplyRecords()
-        loadInvoiceNumbers()
         setTimeout(() => setSuccess(''), 3000)
       } else {
-        // Show detailed error message if available
-        const errorMessage = data.message || data.error || 'Failed to save supply record'
-        setError(errorMessage)
+        setError(responseData.message || 'Failed to create supply record')
       }
     } catch (err: any) {
-      console.error('Error submitting form:', err)
-      setError(err.message || 'An error occurred while saving the supply record')
+      console.error('Error submitting supply:', err)
+      setError(err.message || 'An error occurred')
     } finally {
       setSubmitting(false)
-    }
-  }
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this supply record?')) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/admin/supply?id=${id}`, {
-        method: 'DELETE',
-        headers: {
-          'x-admin-data': JSON.stringify(admin),
-        },
-      })
-
-      if (response.ok) {
-        setSuccess('Supply record deleted successfully!')
-        loadSupplyRecords()
-        loadInvoiceNumbers()
-        setTimeout(() => setSuccess(''), 3000)
-      } else {
-        // Check if response is JSON before parsing
-        const contentType = response.headers.get('content-type')
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json()
-          setError(errorData.message || 'Failed to delete supply record')
-        } else {
-          const text = await response.text()
-          setError(`Failed to delete supply record: ${response.status} ${response.statusText}`)
-        }
-      }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+      setSubmittingId(null)
     }
   }
 
@@ -419,7 +294,6 @@ export default function Supply() {
       })
 
       if (!response.ok) {
-        // Check if response is JSON before parsing
         const contentType = response.headers.get('content-type')
         if (contentType && contentType.includes('application/json')) {
           const error = await response.json()
@@ -458,6 +332,17 @@ export default function Supply() {
     }
   }
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
   if (!hasPermission('manage_supply')) {
     return (
       <AdminProtectedRoute>
@@ -488,7 +373,7 @@ export default function Supply() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Supply Management</h1>
             <p className="text-sm sm:text-base text-gray-600 mt-1">
-              Track invoice supplies with supplier and customer information
+              Record and track invoice supplies. Enter supplier and customer information for each invoice.
             </p>
           </div>
 
@@ -505,41 +390,99 @@ export default function Supply() {
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleAdd}
-              className="px-4 sm:px-6 py-2.5 bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg font-medium hover:shadow-lg transition-all min-h-[44px] touch-manipulation"
-            >
-              + Add Supply Record
-            </button>
-            <button
-              onClick={handleDownloadExcel}
-              disabled={downloading || supplyRecords.length === 0}
-              className="px-4 sm:px-6 py-2.5 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
-            >
-              {downloading ? 'Downloading...' : 'Download Excel'}
-            </button>
-          </div>
-
-          {/* Supply Records Table */}
+          {/* Invoices List */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Supply Records</h2>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Invoices</h2>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                {/* Search Input */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search invoice number..."
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto min-w-[200px]"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
+                      title="Clear search"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={handleDownloadExcel}
+                  disabled={downloading || invoices.length === 0}
+                  className="px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation w-full sm:w-auto"
+                >
+                  {downloading ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Downloading...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      Download Excel
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
 
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ocean-royal mx-auto"></div>
-                <p className="text-gray-600 mt-4">Loading supply records...</p>
+                <p className="text-gray-600 mt-4">Loading invoices...</p>
               </div>
-            ) : supplyRecords.length === 0 ? (
-              <p className="text-sm sm:text-base text-gray-500 text-center py-8">No supply records found</p>
+            ) : filteredInvoices.length === 0 ? (
+              <p className="text-sm sm:text-base text-gray-500 text-center py-8">
+                {searchTerm ? `No invoices found matching "${searchTerm}"` : 'No invoices found'}
+              </p>
             ) : (
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Invoice Number
+                        Invoice #
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Supplied By
@@ -547,75 +490,124 @@ export default function Supply() {
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Customer Name
                       </th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                        Delivery Date
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Supply Datetime
                       </th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Location
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        Action
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {supplyRecords.map((record) => (
-                      <tr key={record.id} className="hover:bg-gray-50">
-                        <td className="px-3 sm:px-4 py-3 text-sm font-medium text-gray-900">
-                          {record.invoice_number}
+                    {filteredInvoices.map((invoice) => (
+                      <tr key={invoice.id} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-4 py-3">
+                          <div className="text-sm font-medium text-gray-900">{invoice.invoice_number}</div>
                         </td>
-                        <td className="px-3 sm:px-4 py-3 text-sm text-gray-600">
-                          {record.supplied_by}
+                        <td className="px-3 sm:px-4 py-3">
+                          {invoice.supply_id ? (
+                            <span className="text-xs sm:text-sm text-gray-900 font-medium">
+                              {invoice.supplied_by}
+                            </span>
+                          ) : (
+                            <input
+                              type="text"
+                              value={supplyData[invoice.id]?.suppliedBy || ''}
+                              onChange={(e) => handleSupplyDataChange(invoice.id, 'suppliedBy', e.target.value)}
+                              placeholder="Enter supplier name"
+                              className="w-full px-2 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation min-w-[120px]"
+                            />
+                          )}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 text-sm text-gray-600">
-                          {record.customer_name}
+                        <td className="px-3 sm:px-4 py-3">
+                          {invoice.supply_id ? (
+                            <span className="text-xs sm:text-sm text-gray-900 font-medium">
+                              {invoice.supply_customer_name}
+                            </span>
+                          ) : (
+                            <input
+                              type="text"
+                              value={supplyData[invoice.id]?.customerName || ''}
+                              onChange={(e) => handleSupplyDataChange(invoice.id, 'customerName', e.target.value)}
+                              placeholder="Enter customer name"
+                              className="w-full px-2 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation min-w-[120px]"
+                            />
+                          )}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 hidden md:table-cell">
-                          {record.delivery_date
-                            ? new Date(record.delivery_date).toLocaleString('en-IN', {
-                                timeZone: 'Asia/Kolkata',
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : '-'}
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
+                          {invoice.supply_id && invoice.delivery_date ? (
+                            formatDate(invoice.delivery_date)
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 hidden lg:table-cell">
-                          {record.latitude && record.longitude ? (
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
+                          {invoice.supply_id && invoice.latitude && invoice.longitude ? (
                             <a
-                              href={`https://www.google.com/maps?q=${record.latitude},${record.longitude}`}
+                              href={`https://www.google.com/maps?q=${invoice.latitude},${invoice.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
-                              title={record.location_address || `${record.latitude}, ${record.longitude}`}
+                              title={invoice.location_address || `${invoice.latitude}, ${invoice.longitude}`}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                               </svg>
-                              <span className="hidden xl:inline">View Map</span>
+                              <span className="hidden sm:inline">
+                                {invoice.location_address ? invoice.location_address.substring(0, 30) + (invoice.location_address.length > 30 ? '...' : '') : 'View Map'}
+                              </span>
+                              <span className="sm:hidden">Map</span>
                             </a>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
                         <td className="px-3 sm:px-4 py-3 text-sm">
-                          <div className="flex gap-2">
+                          {invoice.supply_id ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              ✓ Supplied
+                            </span>
+                          ) : (
                             <button
-                              onClick={() => handleEdit(record)}
-                              className="text-ocean-royal hover:text-ocean-cyan font-medium min-h-[36px] touch-manipulation"
+                              onClick={() => handleSubmitSupply(invoice.id, invoice.invoice_number)}
+                              disabled={submitting || submittingId === invoice.id || gettingLocation[invoice.id] || !supplyData[invoice.id]?.suppliedBy?.trim() || !supplyData[invoice.id]?.customerName?.trim()}
+                              className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-ocean-royal to-ocean-cyan rounded-lg hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[36px] touch-manipulation"
                             >
-                              Edit
+                              {gettingLocation[invoice.id] ? (
+                                <span className="flex items-center gap-1">
+                                  <svg
+                                    className="animate-spin h-3 w-3"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                  </svg>
+                                  Getting Location...
+                                </span>
+                              ) : submittingId === invoice.id ? (
+                                'Submitting...'
+                              ) : (
+                                'Submit'
+                              )}
                             </button>
-                            <button
-                              onClick={() => handleDelete(record.id)}
-                              className="text-red-600 hover:text-red-700 font-medium min-h-[36px] touch-manipulation"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -625,210 +617,6 @@ export default function Supply() {
             )}
           </div>
         </div>
-
-        {/* Add/Edit Modal */}
-        {(showAddModal || showEditModal) && (
-          <div 
-            className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={handleCloseModal}
-          >
-            <div 
-              className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 sm:p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  {showEditModal ? 'Edit Supply Record' : 'Add Supply Record'}
-                </h2>
-                
-                {error && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600">{error}</p>
-                  </div>
-                )}
-                
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="invoiceNumber" className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Invoice Number <span className="text-red-500">*</span>
-                    </label>
-                    {showEditModal ? (
-                      <input
-                        type="text"
-                        id="invoiceNumber"
-                        value={formData.invoiceNumber}
-                        disabled
-                        className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
-                      />
-                    ) : (
-                      <select
-                        id="invoiceNumber"
-                        value={formData.invoiceNumber}
-                        onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                        className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation"
-                        required
-                        disabled={submitting}
-                      >
-                        <option value="">Select Invoice Number</option>
-                        {invoiceNumbers.map((inv) => (
-                          <option key={inv} value={inv}>
-                            {inv}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="suppliedBy" className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Supplied By <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="suppliedBy"
-                      value={formData.suppliedBy}
-                      onChange={(e) => setFormData({ ...formData, suppliedBy: e.target.value })}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation"
-                      placeholder="Enter supplier name"
-                      required
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Customer Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="customerName"
-                      value={formData.customerName}
-                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation"
-                      placeholder="Enter customer name"
-                      required
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Location {!showEditModal && <span className="text-red-500">*</span>}
-                    </label>
-                    {showEditModal ? (
-                      // Read-only display when editing
-                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="text-xs text-gray-700 space-y-1">
-                          {formData.latitude && formData.longitude ? (
-                            <>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">Coordinates:</span>
-                                <span>{formData.latitude}, {formData.longitude}</span>
-                              </div>
-                              {formData.locationAddress && (
-                                <div className="flex items-start gap-2">
-                                  <span className="font-medium">Address:</span>
-                                  <span className="flex-1">{formData.locationAddress}</span>
-                                </div>
-                              )}
-                              <a
-                                href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                                View on Google Maps
-                              </a>
-                            </>
-                          ) : (
-                            <span className="text-gray-500">No location recorded</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2 italic">Location cannot be changed after record creation</p>
-                      </div>
-                    ) : (
-                      // Editable location capture when creating new record
-                      <div className="space-y-2">
-                        <button
-                          type="button"
-                          onClick={getCurrentLocation}
-                          disabled={gettingLocation || submitting}
-                          className="w-full px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          {gettingLocation ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
-                              <span>Getting accurate GPS location...</span>
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <span>Get Current Location</span>
-                            </>
-                          )}
-                        </button>
-                        <p className="text-xs text-gray-500 text-center">
-                          ⚠️ Make sure GPS/location services are enabled and you're in an open area for best accuracy
-                        </p>
-                        
-                        {(formData.latitude || formData.longitude) && (
-                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                            <div className="text-xs text-green-700 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">Coordinates:</span>
-                                <span>{formData.latitude}, {formData.longitude}</span>
-                              </div>
-                              {formData.locationAddress && (
-                                <div className="flex items-start gap-2">
-                                  <span className="font-medium">Address:</span>
-                                  <span className="flex-1">{formData.locationAddress}</span>
-                                </div>
-                              )}
-                              <a
-                                href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                                View on Google Maps
-                              </a>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="flex-1 bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] touch-manipulation"
-                    >
-                      {submitting ? 'Saving...' : showEditModal ? 'Update' : 'Create'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCloseModal}
-                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors min-h-[48px] touch-manipulation"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
       </AdminLayout>
     </AdminProtectedRoute>
   )
