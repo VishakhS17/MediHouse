@@ -52,29 +52,82 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // If download is requested, generate Excel file
       if (download === 'true' || download === 'excel') {
-        const result = await query(
-          `SELECT 
-            s.id,
-            s.invoice_number,
+        const { search, checkedDate } = req.query
+        
+        // Build query with filters - using same data source as the UI (invoice_collections joined with supply)
+        let sql = `
+          SELECT 
+            ic.id,
+            ic.invoice_number,
+            ic.collector_name,
+            ic.collection_date,
+            ic.checked_date,
+            s.id as supply_id,
             s.supplied_by,
-            s.customer_name,
+            s.customer_name as supply_customer_name,
             s.delivery_date,
             s.latitude,
             s.longitude,
             s.location_address,
-            s.created_at,
-            s.updated_at,
-            au.name as created_by_name
-          FROM supply s
-          LEFT JOIN admin_users au ON s.created_by = au.id
-          ORDER BY s.created_at DESC`
-        )
+            s.created_at as supply_created_at
+          FROM invoice_collections ic
+          LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
+          WHERE 1=1
+        `
+        
+        const params: any[] = []
+        let paramIndex = 1
+        
+        // Apply search filter (case-insensitive search on invoice number and supplier name)
+        if (search && typeof search === 'string' && search.trim() !== '') {
+          const searchPattern = `%${search.trim()}%`
+          sql += ` AND (
+            ic.invoice_number ILIKE $${paramIndex}
+            OR s.supplied_by ILIKE $${paramIndex}
+          )`
+          params.push(searchPattern)
+          paramIndex++
+        }
+        
+        // Apply checked date filter
+        if (checkedDate && typeof checkedDate === 'string' && checkedDate.trim() !== '') {
+          sql += ` AND DATE(ic.checked_date) = $${paramIndex}`
+          params.push(checkedDate.trim())
+          paramIndex++
+        }
+        
+        sql += ` ORDER BY ic.collection_date DESC`
+        
+        const result = await query(sql, params)
 
         // Generate Excel file
         const excelData = result.rows.map((row) => ({
-          'Invoice Number': row.invoice_number,
-          'Supplied By': row.supplied_by,
-          'Customer Name': row.customer_name,
+          'Invoice Number': row.invoice_number || '',
+          'Collector Name': row.collector_name || '',
+          'Collection Date': row.collection_date
+            ? new Date(row.collection_date).toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              })
+            : '',
+          'Checked Date': row.checked_date
+            ? new Date(row.checked_date).toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              })
+            : '',
+          'Supplied By': row.supplied_by || '',
+          'Customer Name': row.supply_customer_name || '',
           'Delivery Date': row.delivery_date
             ? new Date(row.delivery_date).toLocaleString('en-IN', {
                 timeZone: 'Asia/Kolkata',
@@ -89,16 +142,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'Latitude': row.latitude || '',
           'Longitude': row.longitude || '',
           'Location Address': row.location_address || '',
-          'Created At': new Date(row.created_at).toLocaleString('en-IN', {
-            timeZone: 'Asia/Kolkata',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          }),
-          'Created By': row.created_by_name || '',
         }))
 
         const worksheet = XLSX.utils.json_to_sheet(excelData)
@@ -122,6 +165,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ic.invoice_number,
             ic.collector_name,
             ic.collection_date,
+            ic.checked_date,
             s.id as supply_id,
             s.supplied_by,
             s.customer_name as supply_customer_name,

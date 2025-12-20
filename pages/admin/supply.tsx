@@ -4,11 +4,70 @@ import AdminLayout from '@/components/AdminLayout'
 import AdminProtectedRoute from '@/components/AdminProtectedRoute'
 import { useAdminAuth } from '@/lib/adminAuth'
 
+// Calculate Levenshtein distance between two strings
+function levenshteinDistance(str1: string, str2: string): number {
+  const matrix: number[][] = []
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i]
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        )
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length]
+}
+
+// Calculate similarity between two strings (0 to 1)
+function calculateSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2
+  const shorter = str1.length > str2.length ? str2 : str1
+  
+  if (longer.length === 0) return 1.0
+  
+  const distance = levenshteinDistance(longer, shorter)
+  return (longer.length - distance) / longer.length
+}
+
+// Fuzzy search helper function (Levenshtein distance-based similarity)
+function fuzzyMatch(text: string, pattern: string): boolean {
+  if (!text || !pattern) return false
+  
+  const normalizedText = text.toLowerCase().trim()
+  const normalizedPattern = pattern.toLowerCase().trim()
+  
+  // Exact substring match (case-insensitive)
+  if (normalizedText.includes(normalizedPattern)) {
+    return true
+  }
+  
+  // Calculate similarity using Levenshtein distance
+  const similarity = calculateSimilarity(normalizedText, normalizedPattern)
+  // Consider it a match if similarity is above 60%
+  return similarity >= 0.6
+}
+
 export default function Supply() {
   const { admin, hasPermission } = useAdminAuth()
   const [invoices, setInvoices] = useState<any[]>([])
   const [filteredInvoices, setFilteredInvoices] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [checkedDateFilter, setCheckedDateFilter] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submittingId, setSubmittingId] = useState<number | null>(null)
@@ -41,16 +100,36 @@ export default function Supply() {
   }, [invoices])
 
   useEffect(() => {
-    // Filter invoices based on search term
-    if (searchTerm.trim() === '') {
-      setFilteredInvoices(invoices)
-    } else {
-      const filtered = invoices.filter((invoice) =>
-        invoice.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase().trim())
-      )
-      setFilteredInvoices(filtered)
+    // Filter invoices based on search term and date filter
+    let filtered = invoices
+
+    // Apply supplier name search (fuzzy matching)
+    if (searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter((invoice) => {
+        // Search in invoice number (exact match)
+        const matchesInvoiceNumber = invoice.invoice_number?.toLowerCase().includes(searchLower)
+        
+        // Search in supplier name (fuzzy match)
+        const matchesSupplier = invoice.supplied_by 
+          ? fuzzyMatch(invoice.supplied_by, searchTerm)
+          : false
+        
+        return matchesInvoiceNumber || matchesSupplier
+      })
     }
-  }, [invoices, searchTerm])
+
+    // Apply checked date filter
+    if (checkedDateFilter) {
+      filtered = filtered.filter((invoice) => {
+        if (!invoice.checked_date) return false
+        const invoiceDate = new Date(invoice.checked_date).toISOString().split('T')[0]
+        return invoiceDate === checkedDateFilter
+      })
+    }
+
+    setFilteredInvoices(filtered)
+  }, [invoices, searchTerm, checkedDateFilter])
 
   const loadInvoices = async () => {
     if (!admin) {
@@ -287,7 +366,17 @@ export default function Supply() {
   const handleDownloadExcel = async () => {
     setDownloading(true)
     try {
-      const response = await fetch('/api/admin/supply?download=true', {
+      // Build query parameters with current filters
+      const params = new URLSearchParams()
+      params.append('download', 'true')
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm.trim())
+      }
+      if (checkedDateFilter) {
+        params.append('checkedDate', checkedDateFilter)
+      }
+      
+      const response = await fetch(`/api/admin/supply?${params.toString()}`, {
         headers: {
           'x-admin-data': JSON.stringify(admin),
         },
@@ -401,7 +490,7 @@ export default function Supply() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search invoice number..."
+                    placeholder="Search invoice or supplier..."
                     className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto min-w-[200px]"
                   />
                   {searchTerm && (
@@ -409,6 +498,27 @@ export default function Supply() {
                       onClick={() => setSearchTerm('')}
                       className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
                       title="Clear search"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {/* Date Filter */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={checkedDateFilter}
+                    onChange={(e) => setCheckedDateFilter(e.target.value)}
+                    placeholder="Filter by checked date..."
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
+                  />
+                  {checkedDateFilter && (
+                    <button
+                      onClick={() => setCheckedDateFilter('')}
+                      className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
+                      title="Clear date filter"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -494,6 +604,9 @@ export default function Supply() {
                         Supply Datetime
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Checked Date
+                      </th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Location
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -540,6 +653,13 @@ export default function Supply() {
                         <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
                           {invoice.supply_id && invoice.delivery_date ? (
                             formatDate(invoice.delivery_date)
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
+                          {invoice.checked_date ? (
+                            formatDate(invoice.checked_date)
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
