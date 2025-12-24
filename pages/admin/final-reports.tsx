@@ -296,9 +296,6 @@ export default function FinalReports() {
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Supplied Date & Time
                       </th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Supply Location
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -324,44 +321,6 @@ export default function FinalReports() {
                         </td>
                         <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
                           {formatDate(report.delivery_date)}
-                        </td>
-                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
-                          {report.location_address ? (
-                            report.latitude && report.longitude ? (
-                              <a
-                                href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
-                                title={report.location_address}
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                </svg>
-                                <span className="hidden sm:inline">
-                                  {report.location_address.length > 30
-                                    ? report.location_address.substring(0, 30) + '...'
-                                    : report.location_address}
-                                </span>
-                                <span className="sm:hidden">Map</span>
-                              </a>
-                            ) : (
-                              <span>{report.location_address}</span>
-                            )
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
                         </td>
                       </tr>
                     ))}

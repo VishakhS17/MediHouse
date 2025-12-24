@@ -36,10 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ic.checker_name,
         ic.checked_date,
         s.supplied_by,
-        s.delivery_date,
-        s.location_address,
-        s.latitude,
-        s.longitude
+        s.delivery_date
       FROM invoice_collections ic
       LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
       WHERE 1=1
@@ -67,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // If downloading as Excel
     if (download === 'true' || download === 'excel') {
-      // Generate Excel file (excluding location_address)
+      // Generate Excel file
       const excelData = result.rows.map((row) => ({
         'Invoice Number': row.invoice_number || '',
         'Collected By': row.collector_name || '',

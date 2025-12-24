@@ -90,9 +90,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             s.supplied_by,
             s.customer_name,
             s.delivery_date,
-            s.latitude,
-            s.longitude,
-            s.location_address,
             s.created_at,
             s.updated_at,
             ic.checked_date,
@@ -204,9 +201,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             s.supplied_by,
             s.customer_name as supply_customer_name,
             s.delivery_date,
-            s.latitude,
-            s.longitude,
-            s.location_address,
             s.created_at as supply_created_at
           FROM invoice_collections ic
           LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
@@ -228,9 +222,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           s.supplied_by,
           s.customer_name,
           s.delivery_date,
-          s.latitude,
-          s.longitude,
-          s.location_address,
           s.created_at,
           s.updated_at,
           au.name as created_by_name
@@ -253,7 +244,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'POST') {
     // Create new supply record
     try {
-      const { invoiceNumber, suppliedBy, customerName, deliveryDate, latitude, longitude, locationAddress } = req.body
+      const { invoiceNumber, suppliedBy, customerName, deliveryDate } = req.body
 
       if (!invoiceNumber || !suppliedBy || !customerName) {
         return res.status(400).json({
@@ -280,17 +271,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Insert supply record
       const result = await query(
         `INSERT INTO supply 
-         (invoice_number, supplied_by, customer_name, delivery_date, latitude, longitude, location_address, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         RETURNING id, invoice_number, supplied_by, customer_name, delivery_date, latitude, longitude, location_address, created_at`,
+         (invoice_number, supplied_by, customer_name, delivery_date, created_by)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, invoice_number, supplied_by, customer_name, delivery_date, created_at`,
         [
           invoiceNumber.trim(),
           suppliedBy.trim(),
           customerName.trim(),
           deliveryDate || null,
-          latitude || null,
-          longitude || null,
-          locationAddress || null,
           createdBy,
         ]
       )
@@ -334,7 +322,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'PUT') {
     // Update supply record
     try {
-      const { id, suppliedBy, customerName, deliveryDate, latitude, longitude, locationAddress } = req.body
+      const { id, suppliedBy, customerName, deliveryDate } = req.body
 
       if (!id) {
         return res.status(400).json({
@@ -366,19 +354,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          SET supplied_by = $1, 
              customer_name = $2, 
              delivery_date = $3,
-             latitude = $4,
-             longitude = $5,
-             location_address = $6,
              updated_at = NOW()
-         WHERE id = $7
-         RETURNING id, invoice_number, supplied_by, customer_name, delivery_date, latitude, longitude, location_address, updated_at`,
+         WHERE id = $4
+         RETURNING id, invoice_number, supplied_by, customer_name, delivery_date, updated_at`,
         [
           suppliedBy.trim(),
           customerName.trim(),
           deliveryDate || null,
-          latitude || null,
-          longitude || null,
-          locationAddress || null,
           id,
         ]
       )

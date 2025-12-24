@@ -24,7 +24,6 @@ export default function Supply() {
   const [success, setSuccess] = useState('')
   const [downloading, setDownloading] = useState(false)
   const [supplyData, setSupplyData] = useState<Record<number, { suppliedBy: string; customerName: string }>>({})
-  const [gettingLocation, setGettingLocation] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     if (admin) {
@@ -149,118 +148,6 @@ export default function Supply() {
     }))
   }
 
-  const getCurrentLocation = (invoiceId: number): Promise<{ latitude: number; longitude: number; locationAddress: string }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported by your browser'))
-        return
-      }
-
-      setGettingLocation((prev) => ({ ...prev, [invoiceId]: true }))
-
-      let bestPosition: GeolocationPosition | null = null
-      let attempts = 0
-      const maxAttempts = 10
-
-      const watchId = navigator.geolocation.watchPosition(
-        async (position) => {
-          attempts++
-          const { latitude, longitude, accuracy } = position.coords
-
-          if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
-            bestPosition = position
-          }
-
-          if (accuracy <= 50 || attempts >= maxAttempts) {
-            navigator.geolocation.clearWatch(watchId)
-
-            const finalPosition = bestPosition || position
-            const finalLat = finalPosition.coords.latitude
-            const finalLon = finalPosition.coords.longitude
-
-            let locationAddress = ''
-            try {
-              const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${finalLat}&lon=${finalLon}&zoom=18&addressdetails=1`,
-                {
-                  headers: {
-                    'User-Agent': 'MediHouse-Supply-Management'
-                  }
-                }
-              )
-
-              if (response.ok) {
-                const data = await response.json()
-                locationAddress = data.display_name || `${data.address?.road || ''} ${data.address?.city || data.address?.town || ''} ${data.address?.postcode || ''}`.trim()
-              }
-            } catch (err) {
-              console.error('Error getting address:', err)
-            }
-
-            setGettingLocation((prev) => ({ ...prev, [invoiceId]: false }))
-            resolve({ latitude: finalLat, longitude: finalLon, locationAddress })
-          }
-        },
-        (error) => {
-          navigator.geolocation.clearWatch(watchId)
-
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              const { latitude, longitude } = position.coords
-              let locationAddress = ''
-
-              try {
-                const response = await fetch(
-                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-                  {
-                    headers: {
-                      'User-Agent': 'MediHouse-Supply-Management'
-                    }
-                  }
-                )
-
-                if (response.ok) {
-                  const data = await response.json()
-                  locationAddress = data.display_name || `${data.address?.road || ''} ${data.address?.city || data.address?.town || ''} ${data.address?.postcode || ''}`.trim()
-                }
-              } catch (err) {
-                console.error('Error getting address:', err)
-              }
-
-              setGettingLocation((prev) => ({ ...prev, [invoiceId]: false }))
-              resolve({ latitude, longitude, locationAddress })
-            },
-            (fallbackError) => {
-              setGettingLocation((prev) => ({ ...prev, [invoiceId]: false }))
-              let errorMessage = 'Failed to get location'
-              switch (fallbackError.code) {
-                case fallbackError.PERMISSION_DENIED:
-                  errorMessage = 'Location access denied. Please enable location permissions.'
-                  break
-                case fallbackError.POSITION_UNAVAILABLE:
-                  errorMessage = 'Location information unavailable.'
-                  break
-                case fallbackError.TIMEOUT:
-                  errorMessage = 'Location request timed out.'
-                  break
-              }
-              reject(new Error(errorMessage))
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 20000,
-              maximumAge: 0
-            }
-          )
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 20000,
-          maximumAge: 0
-        }
-      )
-    })
-  }
 
   const handleSubmitSupply = async (invoiceId: number, invoiceNumber: string) => {
     const data = supplyData[invoiceId]
@@ -278,23 +165,6 @@ export default function Supply() {
     setSuccess('')
 
     try {
-      // Get current location
-      let latitude: number | null = null
-      let longitude: number | null = null
-      let locationAddress: string | null = null
-
-      try {
-        const location = await getCurrentLocation(invoiceId)
-        latitude = location.latitude
-        longitude = location.longitude
-        locationAddress = location.locationAddress || null
-      } catch (locationError: any) {
-        setError(locationError.message || 'Failed to get location. Please try again.')
-        setSubmitting(false)
-        setSubmittingId(null)
-        return
-      }
-
       // Automatically get current date and time from device
       const now = new Date()
       const deliveryDate = now.toISOString()
@@ -310,9 +180,6 @@ export default function Supply() {
           suppliedBy: suppliedBy,
           customerName: customerName,
           deliveryDate: deliveryDate,
-          latitude: latitude,
-          longitude: longitude,
-          locationAddress: locationAddress,
         }),
       })
 
@@ -649,9 +516,6 @@ export default function Supply() {
                         Supply Datetime
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Location
-                      </th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Action
                       </th>
                     </tr>
@@ -706,28 +570,6 @@ export default function Supply() {
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
-                          {invoice.supply_id && invoice.latitude && invoice.longitude ? (
-                            <a
-                              href={`https://www.google.com/maps?q=${invoice.latitude},${invoice.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
-                              title={invoice.location_address || `${invoice.latitude}, ${invoice.longitude}`}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <span className="hidden sm:inline">
-                                {invoice.location_address ? invoice.location_address.substring(0, 30) + (invoice.location_address.length > 30 ? '...' : '') : 'View Map'}
-                              </span>
-                              <span className="sm:hidden">Map</span>
-                            </a>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
                         <td className="px-3 sm:px-4 py-3 text-sm">
                           {invoice.supply_id ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -736,38 +578,10 @@ export default function Supply() {
                           ) : (
                             <button
                               onClick={() => handleSubmitSupply(invoice.id, invoice.invoice_number)}
-                              disabled={submitting || submittingId === invoice.id || gettingLocation[invoice.id] || !supplyData[invoice.id]?.suppliedBy?.trim() || !supplyData[invoice.id]?.customerName?.trim()}
+                              disabled={submitting || submittingId === invoice.id || !supplyData[invoice.id]?.suppliedBy?.trim() || !supplyData[invoice.id]?.customerName?.trim()}
                               className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-ocean-royal to-ocean-cyan rounded-lg hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[36px] touch-manipulation"
                             >
-                              {gettingLocation[invoice.id] ? (
-                                <span className="flex items-center gap-1">
-                                  <svg
-                                    className="animate-spin h-3 w-3"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <circle
-                                      className="opacity-25"
-                                      cx="12"
-                                      cy="12"
-                                      r="10"
-                                      stroke="currentColor"
-                                      strokeWidth="4"
-                                    ></circle>
-                                    <path
-                                      className="opacity-75"
-                                      fill="currentColor"
-                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    ></path>
-                                  </svg>
-                                  Getting Location...
-                                </span>
-                              ) : submittingId === invoice.id ? (
-                                'Submitting...'
-                              ) : (
-                                'Submit'
-                              )}
+                              {submittingId === invoice.id ? 'Submitting...' : 'Submit'}
                             </button>
                           )}
                         </td>
