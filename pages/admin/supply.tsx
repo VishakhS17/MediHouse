@@ -9,7 +9,14 @@ export default function Supply() {
   const [invoices, setInvoices] = useState<any[]>([])
   const [filteredInvoices, setFilteredInvoices] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [dateFilter, setDateFilter] = useState('')
+  // Set default date filter to today's date (YYYY-MM-DD format for date input)
+  const [checkedDateFilter, setCheckedDateFilter] = useState(() => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submittingId, setSubmittingId] = useState<number | null>(null)
@@ -41,33 +48,65 @@ export default function Supply() {
     }
   }, [invoices])
 
+  // Fuzzy search function using Levenshtein distance
+  const fuzzyMatch = (text: string, pattern: string): boolean => {
+    const normalizedText = text.toLowerCase().trim()
+    const normalizedPattern = pattern.toLowerCase().trim()
+    
+    if (!normalizedPattern) return true
+    
+    // Exact substring match (case-insensitive)
+    if (normalizedText.includes(normalizedPattern)) return true
+    
+    // Simple fuzzy matching using character similarity
+    // Count matching characters in order
+    let textIndex = 0
+    let matchCount = 0
+    
+    for (let i = 0; i < normalizedPattern.length; i++) {
+      const char = normalizedPattern[i]
+      const foundIndex = normalizedText.indexOf(char, textIndex)
+      if (foundIndex !== -1) {
+        matchCount++
+        textIndex = foundIndex + 1
+      }
+    }
+    
+    // If at least 70% of pattern characters match in order, consider it a match
+    const matchRatio = matchCount / normalizedPattern.length
+    return matchRatio >= 0.7
+  }
+
   useEffect(() => {
     // Filter invoices based on search term and date filter
     let filtered = invoices
 
-    // Apply search filter
+    // Filter by search term (invoice number or supplier name with fuzzy matching)
     if (searchTerm.trim() !== '') {
-      filtered = filtered.filter((invoice) =>
-        invoice.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase().trim())
-      )
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter((invoice) => {
+        // Check invoice number (exact substring match)
+        const invoiceMatch = invoice.invoice_number?.toLowerCase().includes(searchLower)
+        
+        // Check supplier name with fuzzy matching
+        const supplierName = invoice.supplied_by || ''
+        const supplierMatch = fuzzyMatch(supplierName, searchTerm)
+        
+        return invoiceMatch || supplierMatch
+      })
     }
 
-    // Apply date filter (filter by collection_date)
-    if (dateFilter) {
+    // Filter by checked date
+    if (checkedDateFilter) {
       filtered = filtered.filter((invoice) => {
-        if (!invoice.collection_date) return false
-        const invoiceDate = new Date(invoice.collection_date).toISOString().split('T')[0]
-        return invoiceDate === dateFilter
+        if (!invoice.checked_date) return false
+        const invoiceDate = new Date(invoice.checked_date).toISOString().split('T')[0]
+        return invoiceDate === checkedDateFilter
       })
     }
 
     setFilteredInvoices(filtered)
-  }, [invoices, searchTerm, dateFilter])
-
-  // Calculate statistics
-  const totalRecords = filteredInvoices.length
-  const suppliedRecords = filteredInvoices.filter((invoice) => invoice.supply_id).length
-  const pendingRecords = totalRecords - suppliedRecords
+  }, [invoices, searchTerm, checkedDateFilter])
 
   const loadInvoices = async () => {
     if (!admin) {
@@ -304,7 +343,16 @@ export default function Supply() {
   const handleDownloadExcel = async () => {
     setDownloading(true)
     try {
-      const response = await fetch('/api/admin/supply?download=true', {
+      // Build query string with date filter and search term if selected
+      let queryString = 'download=true'
+      if (checkedDateFilter) {
+        queryString += `&checkedDateFilter=${encodeURIComponent(checkedDateFilter)}`
+      }
+      if (searchTerm.trim()) {
+        queryString += `&searchTerm=${encodeURIComponent(searchTerm.trim())}`
+      }
+      
+      const response = await fetch(`/api/admin/supply?${queryString}`, {
         headers: {
           'x-admin-data': JSON.stringify(admin),
         },
@@ -407,60 +455,71 @@ export default function Supply() {
             </div>
           )}
 
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Records</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{totalRecords}</p>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+          {/* Summary Cards */}
+          {!loading && invoices.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              {/* Total Records */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Records</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-2">{invoices.length}</p>
+                  </div>
+                  <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Supplied</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-green-600 mt-1">{suppliedRecords}</p>
-                  {totalRecords > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {Math.round((suppliedRecords / totalRecords) * 100)}% complete
+              {/* Supplied */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Supplied</p>
+                    <p className="text-2xl font-bold text-green-600 mt-2">
+                      {invoices.filter((inv) => inv.supply_id).length}
                     </p>
-                  )}
-                </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {invoices.length > 0
+                        ? Math.round((invoices.filter((inv) => inv.supply_id).length / invoices.length) * 100)
+                        : 0}
+                      % complete
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-orange-600 mt-1">{pendingRecords}</p>
-                  {totalRecords > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {Math.round((pendingRecords / totalRecords) * 100)}% remaining
+              {/* Pending */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-2xl font-bold text-orange-600 mt-2">
+                      {invoices.filter((inv) => !inv.supply_id).length}
                     </p>
-                  )}
-                </div>
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {invoices.length > 0
+                        ? Math.round((invoices.filter((inv) => !inv.supply_id).length / invoices.length) * 100)
+                        : 0}
+                      % remaining
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Invoices List */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
@@ -473,7 +532,7 @@ export default function Supply() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search invoice number..."
+                    placeholder="Search invoice number or supplier name..."
                     className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto min-w-[200px]"
                   />
                   {searchTerm && (
@@ -492,14 +551,14 @@ export default function Supply() {
                 <div className="flex items-center gap-2">
                   <input
                     type="date"
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    placeholder="Filter by date..."
+                    value={checkedDateFilter}
+                    onChange={(e) => setCheckedDateFilter(e.target.value)}
+                    placeholder="Filter by checked date"
                     className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
                   />
-                  {dateFilter && (
+                  {checkedDateFilter && (
                     <button
-                      onClick={() => setDateFilter('')}
+                      onClick={() => setCheckedDateFilter('')}
                       className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
                       title="Clear date filter"
                     >
@@ -584,6 +643,9 @@ export default function Supply() {
                         Customer Name
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Checked Date
+                      </th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Supply Datetime
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -628,6 +690,13 @@ export default function Supply() {
                               placeholder="Enter customer name"
                               className="w-full px-2 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation min-w-[120px]"
                             />
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
+                          {invoice.checked_date ? (
+                            formatDate(invoice.checked_date)
+                          ) : (
+                            <span className="text-gray-400">-</span>
                           )}
                         </td>
                         <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">

@@ -52,69 +52,90 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // If download is requested, generate Excel file
       if (download === 'true' || download === 'excel') {
-        const { search, checkedDate } = req.query
-        
-        // Build query with filters - using same data source as the UI (invoice_collections joined with supply)
-        let sql = `
-          SELECT 
-            ic.id,
-            ic.invoice_number,
-            ic.collector_name,
-            ic.collection_date,
-            ic.checked_date,
-            s.id as supply_id,
+        const { checkedDateFilter, searchTerm } = req.query
+
+        // Fuzzy match function (same as frontend)
+        const fuzzyMatch = (text: string, pattern: string): boolean => {
+          const normalizedText = (text || '').toLowerCase().trim()
+          const normalizedPattern = (pattern || '').toLowerCase().trim()
+          
+          if (!normalizedPattern) return true
+          
+          // Exact substring match (case-insensitive)
+          if (normalizedText.includes(normalizedPattern)) return true
+          
+          // Simple fuzzy matching using character similarity
+          // Count matching characters in order
+          let textIndex = 0
+          let matchCount = 0
+          
+          for (let i = 0; i < normalizedPattern.length; i++) {
+            const char = normalizedPattern[i]
+            const foundIndex = normalizedText.indexOf(char, textIndex)
+            if (foundIndex !== -1) {
+              matchCount++
+              textIndex = foundIndex + 1
+            }
+          }
+          
+          // If at least 70% of pattern characters match in order, consider it a match
+          const matchRatio = matchCount / normalizedPattern.length
+          return matchRatio >= 0.7
+        }
+
+        // Build query with optional date filter
+        let queryStr = `SELECT 
+            s.id,
+            s.invoice_number,
             s.supplied_by,
-            s.customer_name as supply_customer_name,
+            s.customer_name,
             s.delivery_date,
             s.latitude,
             s.longitude,
             s.location_address,
-            s.created_at as supply_created_at
-          FROM invoice_collections ic
-          LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
-          WHERE 1=1
-        `
-        
+            s.created_at,
+            s.updated_at,
+            ic.checked_date,
+            au.name as created_by_name
+          FROM supply s
+          LEFT JOIN admin_users au ON s.created_by = au.id
+          LEFT JOIN invoice_collections ic ON s.invoice_number = ic.invoice_number
+          WHERE 1=1`
+
         const params: any[] = []
         let paramIndex = 1
-        
-        // Apply search filter (case-insensitive search on invoice number and supplier name)
-        if (search && typeof search === 'string' && search.trim() !== '') {
-          const searchPattern = `%${search.trim()}%`
-          sql += ` AND (
-            ic.invoice_number ILIKE $${paramIndex}
-            OR s.supplied_by ILIKE $${paramIndex}
-          )`
-          params.push(searchPattern)
+
+        // Add date filter if provided
+        if (checkedDateFilter && typeof checkedDateFilter === 'string' && checkedDateFilter.trim() !== '') {
+          queryStr += ` AND DATE(ic.checked_date) = $${paramIndex}`
+          params.push(checkedDateFilter)
           paramIndex++
         }
-        
-        // Apply checked date filter
-        if (checkedDate && typeof checkedDate === 'string' && checkedDate.trim() !== '') {
-          sql += ` AND DATE(ic.checked_date) = $${paramIndex}`
-          params.push(checkedDate.trim())
-          paramIndex++
+
+        queryStr += ` ORDER BY s.created_at DESC`
+
+        let result = await query(queryStr, params)
+
+        // Apply search term filtering (fuzzy matching done in JavaScript)
+        if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim() !== '') {
+          const searchLower = searchTerm.toLowerCase().trim()
+          result.rows = result.rows.filter((row) => {
+            // Check invoice number (exact substring match)
+            const invoiceMatch = row.invoice_number?.toLowerCase().includes(searchLower)
+            
+            // Check supplier name with fuzzy matching
+            const supplierName = row.supplied_by || ''
+            const supplierMatch = fuzzyMatch(supplierName, searchTerm)
+            
+            return invoiceMatch || supplierMatch
+          })
         }
-        
-        sql += ` ORDER BY ic.collection_date DESC`
-        
-        const result = await query(sql, params)
 
         // Generate Excel file
         const excelData = result.rows.map((row) => ({
-          'Invoice Number': row.invoice_number || '',
-          'Collector Name': row.collector_name || '',
-          'Collection Date': row.collection_date
-            ? new Date(row.collection_date).toLocaleString('en-IN', {
-                timeZone: 'Asia/Kolkata',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              })
-            : '',
+          'Invoice Number': row.invoice_number,
+          'Supplied By': row.supplied_by,
+          'Customer Name': row.customer_name,
           'Checked Date': row.checked_date
             ? new Date(row.checked_date).toLocaleString('en-IN', {
                 timeZone: 'Asia/Kolkata',
@@ -126,8 +147,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 second: '2-digit',
               })
             : '',
-          'Supplied By': row.supplied_by || '',
-          'Customer Name': row.supply_customer_name || '',
           'Delivery Date': row.delivery_date
             ? new Date(row.delivery_date).toLocaleString('en-IN', {
                 timeZone: 'Asia/Kolkata',
@@ -142,13 +161,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'Latitude': row.latitude || '',
           'Longitude': row.longitude || '',
           'Location Address': row.location_address || '',
+          'Created At': new Date(row.created_at).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }),
+          'Created By': row.created_by_name || '',
         }))
 
         const worksheet = XLSX.utils.json_to_sheet(excelData)
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Supply Records')
 
-        const filename = `Supply_Records_${new Date().toISOString().split('T')[0]}.xlsx`
+        // Construct filename - avoid reassignment by building in one expression
+        const baseDate = new Date().toISOString().split('T')[0]
+        const dateSuffix = checkedDateFilter && typeof checkedDateFilter === 'string' && checkedDateFilter.trim() !== '' 
+          ? `_${checkedDateFilter}` 
+          : ''
+        const searchSuffix = searchTerm && typeof searchTerm === 'string' && searchTerm.trim() !== ''
+          ? `_${searchTerm.trim().replace(/[^a-zA-Z0-9]/g, '_')}`
+          : ''
+        const filename = `Supply_Records_${baseDate}${dateSuffix}${searchSuffix}.xlsx`
         const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
