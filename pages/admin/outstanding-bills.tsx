@@ -24,8 +24,10 @@ export default function OutstandingBills() {
   const { admin } = useAdminAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [refFilter, setRefFilter] = useState('PART OK') // Default to 'PART OK'
+  const [areaFilter, setAreaFilter] = useState('') // Default to empty (All Areas)
   const [dateSort, setDateSort] = useState<string>('asc') // Default to 'asc' (Oldest First)
   const [refValues, setRefValues] = useState<string[]>([])
+  const [areaValues, setAreaValues] = useState<string[]>([])
   const [bills, setBills] = useState<OutstandingBill[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -36,8 +38,9 @@ export default function OutstandingBills() {
   const itemsPerPage = 50
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const refFilterTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const areaFilterTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const loadBills = async (search: string = '', ref: string = '', page: number = 1, resetPage: boolean = false, sort: string = 'desc') => {
+  const loadBills = async (search: string = '', ref: string = '', area: string = '', page: number = 1, resetPage: boolean = false, sort: string = 'desc') => {
     setLoading(true)
     setError('')
 
@@ -54,6 +57,10 @@ export default function OutstandingBills() {
       
       if (ref && ref.trim()) {
         params.append('ref', ref.trim())
+      }
+      
+      if (area && area.trim()) {
+        params.append('area', area.trim())
       }
       
       if (sort && sort !== 'none') {
@@ -101,7 +108,7 @@ export default function OutstandingBills() {
     // Only search if there's a term or if clearing
     if (searchTerm.trim() || searchTerm === '') {
       searchTimeoutRef.current = setTimeout(() => {
-        loadBills(searchTerm, refFilter, 1, true, dateSort)
+        loadBills(searchTerm, refFilter, areaFilter, 1, true, dateSort)
       }, 500) // 500ms debounce
     }
 
@@ -123,7 +130,7 @@ export default function OutstandingBills() {
     }
 
     // Apply REF filter immediately (dropdown doesn't need debounce)
-    loadBills(searchTerm, refFilter, 1, true, dateSort)
+    loadBills(searchTerm, refFilter, areaFilter, 1, true, dateSort)
 
     return () => {
       if (refFilterTimeoutRef.current) {
@@ -132,6 +139,26 @@ export default function OutstandingBills() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refFilter, admin, dateSort])
+
+  // Area filter effect - no debounce needed for dropdown
+  useEffect(() => {
+    if (!admin) return
+
+    // Clear previous timeout
+    if (areaFilterTimeoutRef.current) {
+      clearTimeout(areaFilterTimeoutRef.current)
+    }
+
+    // Apply area filter immediately (dropdown doesn't need debounce)
+    loadBills(searchTerm, refFilter, areaFilter, 1, true, dateSort)
+
+    return () => {
+      if (areaFilterTimeoutRef.current) {
+        clearTimeout(areaFilterTimeoutRef.current)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [areaFilter, admin, dateSort])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -142,12 +169,16 @@ export default function OutstandingBills() {
     if (refFilterTimeoutRef.current) {
       clearTimeout(refFilterTimeoutRef.current)
     }
-    loadBills(searchTerm, refFilter, 1, true, dateSort)
+    if (areaFilterTimeoutRef.current) {
+      clearTimeout(areaFilterTimeoutRef.current)
+    }
+    loadBills(searchTerm, refFilter, areaFilter, 1, true, dateSort)
   }
 
   const handleClear = () => {
     setSearchTerm('')
     setRefFilter('PART OK') // Reset to default 'PART OK'
+    setAreaFilter('') // Reset to empty (All Areas)
     setDateSort('asc') // Reset to default 'asc' (Oldest First)
     setCurrentPage(1)
     setBills([])
@@ -156,13 +187,13 @@ export default function OutstandingBills() {
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage)
-    loadBills(searchTerm, refFilter, newPage, false, dateSort)
+    loadBills(searchTerm, refFilter, areaFilter, newPage, false, dateSort)
   }
   
   const handleDateSortChange = (newSort: string) => {
     setDateSort(newSort)
     setCurrentPage(1)
-    loadBills(searchTerm, refFilter, 1, true, newSort)
+    loadBills(searchTerm, refFilter, areaFilter, 1, true, newSort)
   }
 
   // Load distinct REF values
@@ -182,13 +213,46 @@ export default function OutstandingBills() {
     }
   }
 
+  // Load distinct area values
+  const loadAreaValues = async () => {
+    try {
+      const response = await fetch('/api/admin/outstanding-bills?areaValues=true', {
+        headers: {
+          'x-admin-data': JSON.stringify(admin),
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAreaValues(data.areaValues || [])
+      }
+    } catch (err) {
+      console.error('Error loading area values:', err)
+    }
+  }
+
   // Load all records on initial mount with default filters
   useEffect(() => {
     if (admin) {
-      loadBills('', refFilter, 1, false, dateSort)
+      loadBills('', refFilter, areaFilter, 1, false, dateSort)
       loadRefValues()
+      loadAreaValues()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin])
+
+  // Reload area and REF values when page regains focus (e.g., after uploading DRS in another tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (admin) {
+        loadRefValues()
+        loadAreaValues()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [admin])
 
   const formatDate = (dateString: string) => {
@@ -353,7 +417,29 @@ export default function OutstandingBills() {
                         </div>
                       </th>
                       <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Area
+                        <div className="flex flex-col gap-1">
+                          <span>Area</span>
+                          <select
+                            value={areaFilter}
+                            onChange={(e) => {
+                              setAreaFilter(e.target.value)
+                              setCurrentPage(1)
+                            }}
+                            className="px-1.5 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white min-w-[90px] sm:min-w-[100px]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">All Areas</option>
+                            {areaValues.length > 0 ? (
+                              areaValues.map((area) => (
+                                <option key={area} value={area}>
+                                  {area}
+                                </option>
+                              ))
+                            ) : (
+                              <option value="" disabled>Loading...</option>
+                            )}
+                          </select>
+                        </div>
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Total Amount

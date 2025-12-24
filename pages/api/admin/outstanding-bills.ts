@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
-      const { customerNumber, customerName, invoiceNumber, ref, refValues, sortBy, sortOrder, limit = '50', offset = '0' } = req.query
+      const { customerNumber, customerName, invoiceNumber, ref, refValues, area, areaValues, sortBy, sortOrder, limit = '50', offset = '0' } = req.query
 
       // If refValues is requested, return distinct REF values
       if (refValues === 'true') {
@@ -36,6 +36,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.error('Error fetching distinct REF values:', error)
           return res.status(500).json({
             message: 'Error fetching REF values',
+            error: error.message,
+          })
+        }
+      }
+
+      // If areaValues is requested, return distinct area values
+      if (areaValues === 'true') {
+        try {
+          const distinctAreasResult = await query(
+            `SELECT DISTINCT area 
+             FROM outstanding_bills 
+             WHERE area IS NOT NULL AND area != ''
+             ORDER BY area ASC`
+          )
+          const areaValues = distinctAreasResult.rows.map(row => row.area).filter(area => area && area.trim() !== '')
+          return res.status(200).json({
+            success: true,
+            areaValues,
+          })
+        } catch (error: any) {
+          console.error('Error fetching distinct area values:', error)
+          return res.status(500).json({
+            message: 'Error fetching area values',
             error: error.message,
           })
         }
@@ -91,6 +114,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         params.push(ref)
       }
 
+      // Filter by area if provided
+      if (area && area !== '') {
+        paramCount++
+        sql += ` AND area = $${paramCount}`
+        params.push(area)
+      }
+
       // Build count query for pagination
       let countSql = `SELECT COUNT(*) as total FROM outstanding_bills WHERE 1=1`
       const countParams: any[] = []
@@ -108,6 +138,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } else {
           countSql += ` AND ref = $${countParamCount}`
         }
+      }
+      if (area && area !== '') {
+        countParamCount++
+        countParams.push(area)
+        countSql += ` AND area = $${countParamCount}`
       }
 
       // Add pagination and ordering to main query
@@ -147,6 +182,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } else {
           summarySql += ` AND ref = $${summaryParamCount}`
         }
+      }
+      if (area && area !== '') {
+        summaryParamCount++
+        summaryParams.push(area)
+        summarySql += ` AND area = $${summaryParamCount}`
       }
 
       // Execute all queries in parallel for maximum performance
