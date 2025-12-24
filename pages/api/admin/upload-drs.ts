@@ -19,6 +19,7 @@ interface DRSParsedRow {
   invoiceNumber: string
   customerName: string
   ref?: string
+  area?: string
   totalAmount: number
   receivedAmount: number
 }
@@ -70,6 +71,7 @@ async function parseDRSExcelFile(filePath: string): Promise<DRSParsedRow[]> {
   let invoiceNoCol = -1
   let customerNameCol = -1
   let refCol = -1
+  let areaCol = -1
   let amtCol = -1
   let recCol = -1
   
@@ -126,6 +128,16 @@ async function parseDRSExcelFile(filePath: string): Promise<DRSParsedRow[]> {
         headerRowIndex = i // Ensure header row is set
       }
       
+      // Check for AREA column (case-insensitive, handle various formats)
+      if (areaCol === -1 && (
+        cell === 'area' ||
+        cell.includes('area') ||
+        cell.includes('location') ||
+        cell.includes('region')
+      )) {
+        areaCol = j
+      }
+      
       // Check for AMT column
       if (amtCol === -1 && (
         cell === 'amt' ||
@@ -164,6 +176,13 @@ async function parseDRSExcelFile(filePath: string): Promise<DRSParsedRow[]> {
     console.log('Warning: REF column not found in Excel file. REF values will be null.')
   }
   
+  // Log AREA column detection (for debugging)
+  if (areaCol !== -1) {
+    console.log(`AREA column detected at column index: ${areaCol}`)
+  } else {
+    console.log('Warning: AREA column not found in Excel file. AREA values will be null.')
+  }
+  
   // Parse data rows
   const parsedRows: DRSParsedRow[] = []
   for (let i = headerRowIndex + 1; i < data.length; i++) {
@@ -177,6 +196,12 @@ async function parseDRSExcelFile(filePath: string): Promise<DRSParsedRow[]> {
     if (refCol !== -1) {
       const refValue = String(row[refCol] || '').trim()
       ref = refValue !== '' ? refValue : undefined
+    }
+    // Extract AREA value - handle empty strings by converting to null for database
+    let area: string | undefined = undefined
+    if (areaCol !== -1) {
+      const areaValue = String(row[areaCol] || '').trim()
+      area = areaValue !== '' ? areaValue : undefined
     }
     
     // Skip empty rows
@@ -234,6 +259,7 @@ async function parseDRSExcelFile(filePath: string): Promise<DRSParsedRow[]> {
       invoiceNumber,
       customerName,
       ref,
+      area,
       totalAmount,
       receivedAmount,
     })
@@ -319,6 +345,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       invoiceNumber: string
       customerName: string
       ref?: string
+      area?: string
       billDateStr: string
       totalAmount: number
       receivedAmount: number
@@ -345,6 +372,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           invoiceNumber: row.invoiceNumber,
           customerName: row.customerName,
           ref: row.ref,
+          area: row.area,
           billDateStr,
           totalAmount: row.totalAmount,
           receivedAmount: row.receivedAmount,
@@ -418,30 +446,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         for (const row of batch) {
           valueStrings.push(
-            `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}, CURRENT_DATE, $${paramIndex + 6})`
+            `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}, $${paramIndex + 6}, CURRENT_DATE, $${paramIndex + 7})`
           )
           values.push(
             row.invoiceNumber,
             row.customerName,
             row.billDateStr,
             row.ref || null,
+            row.area || null,
             row.totalAmount,
             row.receivedAmount,
             userId
           )
-          paramIndex += 7
+          paramIndex += 8
         }
 
         // Use PostgreSQL UPSERT (ON CONFLICT DO UPDATE) for maximum performance
         // This handles both inserts and updates in a single query
         const upsertQuery = `
           INSERT INTO outstanding_bills 
-            (invoice_number, customer_name, bill_date, ref, total_amount, received_amount, as_of_date, uploaded_by)
+            (invoice_number, customer_name, bill_date, ref, area, total_amount, received_amount, as_of_date, uploaded_by)
           VALUES ${valueStrings.join(', ')}
           ON CONFLICT (invoice_number, customer_name) 
           DO UPDATE SET
             bill_date = EXCLUDED.bill_date,
             ref = EXCLUDED.ref,
+            area = EXCLUDED.area,
             total_amount = EXCLUDED.total_amount,
             received_amount = EXCLUDED.received_amount,
             as_of_date = CURRENT_DATE,
@@ -461,17 +491,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
               const individualResult = await client.query(
                 `INSERT INTO outstanding_bills 
-                  (invoice_number, customer_name, bill_date, ref, total_amount, received_amount, as_of_date, uploaded_by)
-                 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7)
+                  (invoice_number, customer_name, bill_date, ref, area, total_amount, received_amount, as_of_date, uploaded_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, $8)
                  ON CONFLICT (invoice_number, customer_name) 
                  DO UPDATE SET
                    bill_date = EXCLUDED.bill_date,
                    ref = EXCLUDED.ref,
+                   area = EXCLUDED.area,
                    total_amount = EXCLUDED.total_amount,
                    received_amount = EXCLUDED.received_amount,
                    as_of_date = CURRENT_DATE,
                    updated_at = NOW()`,
-                [row.invoiceNumber, row.customerName, row.billDateStr, row.ref || null, row.totalAmount, row.receivedAmount, userId]
+                [row.invoiceNumber, row.customerName, row.billDateStr, row.ref || null, row.area || null, row.totalAmount, row.receivedAmount, userId]
               )
             } catch (individualError: any) {
               errors.push(`Invoice ${row.invoiceNumber} (${row.customerName}): ${individualError.message}`)

@@ -10,6 +10,7 @@ interface OutstandingBill {
   customer_name: string
   bill_date: string
   ref?: string
+  area?: string
   total_amount: number
   received_amount: number
   pending_balance: number
@@ -351,6 +352,9 @@ export default function OutstandingBills() {
                           </select>
                         </div>
                       </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Area
+                      </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Total Amount
                       </th>
@@ -384,6 +388,9 @@ export default function OutstandingBills() {
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {bill.ref || '-'}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                          {bill.area || '-'}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-right text-gray-900">
                           {formatCurrency(bill.total_amount)}

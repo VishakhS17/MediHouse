@@ -52,6 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           customer_name,
           bill_date,
           ref,
+          area,
           total_amount,
           received_amount,
           pending_balance,
