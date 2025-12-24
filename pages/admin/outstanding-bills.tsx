@@ -360,12 +360,6 @@ export default function OutstandingBills() {
               <div className="text-center py-8">
                 <p className="text-gray-600">Loading outstanding bills...</p>
               </div>
-            ) : bills.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600">
-                  {searchTerm ? 'No outstanding bills found for your search.' : 'No outstanding bills found.'}
-                </p>
-              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -459,7 +453,16 @@ export default function OutstandingBills() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {bills.map((bill) => (
+                    {bills.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
+                          {searchTerm || areaFilter || refFilter !== 'PART OK' 
+                            ? 'No outstanding bills found matching your filters.' 
+                            : 'No outstanding bills found.'}
+                        </td>
+                      </tr>
+                    ) : (
+                      bills.map((bill) => (
                       <tr key={bill.id} className="hover:bg-gray-50">
                         <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {formatDate(bill.bill_date)}
@@ -494,7 +497,8 @@ export default function OutstandingBills() {
                           {bill.credit_days !== null ? `${bill.credit_days} days` : '-'}
                         </td>
                       </tr>
-                    ))}
+                    ))
+                    )}
                   </tbody>
                 </table>
               </div>
