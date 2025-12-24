@@ -14,6 +14,9 @@ export default function InvoiceCollection() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [collections, setCollections] = useState<any[]>([])
+  const [filteredCollections, setFilteredCollections] = useState<any[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [dateFilter, setDateFilter] = useState('')
   const [loading, setLoading] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [downloading, setDownloading] = useState(false)
@@ -25,15 +28,82 @@ export default function InvoiceCollection() {
   }, [admin])
 
   useEffect(() => {
-    if (showHistory) {
+    if (showHistory && admin) {
       loadCollections()
     }
-  }, [showHistory])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHistory, dateFilter])
+
+  // Fuzzy search function - matches words within the text
+  const fuzzyMatch = (text: string, pattern: string): boolean => {
+    const normalizedText = text.toLowerCase().trim()
+    const normalizedPattern = pattern.toLowerCase().trim()
+    
+    if (!normalizedPattern) return true
+    
+    // Exact substring match (case-insensitive)
+    if (normalizedText.includes(normalizedPattern)) return true
+    
+    // Simple fuzzy matching using character similarity
+    // Count matching characters in order
+    let textIndex = 0
+    let matchCount = 0
+    
+    for (let i = 0; i < normalizedPattern.length; i++) {
+      const char = normalizedPattern[i]
+      const foundIndex = normalizedText.indexOf(char, textIndex)
+      if (foundIndex !== -1) {
+        matchCount++
+        textIndex = foundIndex + 1
+      }
+    }
+    
+    // If at least 70% of pattern characters match in order, consider it a match
+    const matchRatio = matchCount / normalizedPattern.length
+    return matchRatio >= 0.7
+  }
+
+  useEffect(() => {
+    // Filter collections based on search term and date filter
+    let filtered = collections
+
+    // Filter by search term (invoice number or collector name with fuzzy matching)
+    if (searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter((collection) => {
+        // Check invoice number (exact substring match)
+        const invoiceMatch = collection.invoice_number?.toLowerCase().includes(searchLower)
+        
+        // Check collector name with fuzzy matching
+        const collectorName = collection.collector_name || ''
+        const collectorMatch = fuzzyMatch(collectorName, searchTerm)
+        
+        return invoiceMatch || collectorMatch
+      })
+    }
+
+    // Filter by date
+    if (dateFilter) {
+      filtered = filtered.filter((collection) => {
+        if (!collection.collection_date) return false
+        const collectionDate = new Date(collection.collection_date).toISOString().split('T')[0]
+        return collectionDate === dateFilter
+      })
+    }
+
+    setFilteredCollections(filtered)
+  }, [collections, searchTerm, dateFilter])
 
   const loadCollections = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/admin/invoice-collection', {
+      // Build query string with date filter if selected
+      let queryString = 'limit=10000' // Get all records for filtering
+      if (dateFilter) {
+        queryString += `&startDate=${dateFilter}&endDate=${dateFilter}`
+      }
+      
+      const response = await fetch(`/api/admin/invoice-collection?${queryString}`, {
         headers: {
           'x-admin-data': JSON.stringify(admin),
         },
@@ -52,7 +122,16 @@ export default function InvoiceCollection() {
   const handleDownloadExcel = async () => {
     setDownloading(true)
     try {
-      const response = await fetch('/api/admin/invoice-collection-export', {
+      // Build query string with date filter and search term if selected
+      let queryString = ''
+      if (dateFilter) {
+        queryString += `startDate=${dateFilter}&endDate=${dateFilter}`
+      }
+      if (searchTerm.trim()) {
+        queryString += queryString ? `&searchTerm=${encodeURIComponent(searchTerm.trim())}` : `searchTerm=${encodeURIComponent(searchTerm.trim())}`
+      }
+      
+      const response = await fetch(`/api/admin/invoice-collection-export?${queryString}`, {
         headers: {
           'x-admin-data': JSON.stringify(admin),
         },
@@ -280,11 +359,64 @@ export default function InvoiceCollection() {
                   {showHistory ? 'Hide History' : 'Show History'}
                 </button>
                 {showHistory && collections.length > 0 && (
-                  <button
-                    onClick={handleDownloadExcel}
-                    disabled={downloading}
-                    className="px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation flex-1 sm:flex-none"
-                  >
+                  <>
+                    {/* Search Input */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search invoice number or collector name..."
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto min-w-[200px]"
+                      />
+                      {searchTerm && (
+                        <button
+                          onClick={() => setSearchTerm('')}
+                          className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
+                          title="Clear search"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    {/* Date Filter */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        placeholder="Filter by date"
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
+                      />
+                      {dateFilter && (
+                        <button
+                          onClick={() => {
+                            const today = new Date()
+                            const year = today.getFullYear()
+                            const month = String(today.getMonth() + 1).padStart(2, '0')
+                            const day = String(today.getDate()).padStart(2, '0')
+                            const todayStr = `${year}-${month}-${day}`
+                            if (dateFilter !== todayStr) {
+                              setDateFilter(todayStr)
+                              loadCollections()
+                            }
+                          }}
+                          className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
+                          title="Reset to today"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleDownloadExcel}
+                      disabled={downloading}
+                      className="px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation flex-1 sm:flex-none"
+                    >
                     {downloading ? (
                       <span className="flex items-center justify-center">
                         <svg
@@ -328,6 +460,7 @@ export default function InvoiceCollection() {
                       </span>
                     )}
                   </button>
+                  </>
                 )}
               </div>
             </div>
@@ -338,8 +471,10 @@ export default function InvoiceCollection() {
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ocean-royal mx-auto"></div>
                   </div>
-                ) : collections.length === 0 ? (
-                  <p className="text-sm sm:text-base text-gray-500 text-center py-8">No collections recorded yet</p>
+                ) : filteredCollections.length === 0 ? (
+                  <p className="text-sm sm:text-base text-gray-500 text-center py-8">
+                    {searchTerm || dateFilter ? 'No collections found matching the filters' : 'No collections recorded yet'}
+                  </p>
                 ) : (
                   <div className="overflow-x-auto -mx-4 sm:mx-0 table-wrapper">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -363,7 +498,7 @@ export default function InvoiceCollection() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {collections.map((collection) => (
+                        {filteredCollections.map((collection) => (
                           <tr key={collection.id} className="hover:bg-gray-50">
                             <td className="px-3 sm:px-4 py-3">
                               <div className="text-sm font-medium text-gray-900">{collection.invoice_number}</div>

@@ -7,6 +7,8 @@ import { useAdminAuth } from '@/lib/adminAuth'
 export default function InvoiceChecking() {
   const { admin, hasPermission, loading: authLoading } = useAdminAuth()
   const [collections, setCollections] = useState<any[]>([])
+  const [filteredCollections, setFilteredCollections] = useState<any[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submittingId, setSubmittingId] = useState<number | null>(null)
@@ -35,6 +37,61 @@ export default function InvoiceChecking() {
       setCheckerNames((prev) => ({ ...prev, ...initialNames }))
     }
   }, [collections, admin])
+
+  // Fuzzy search function - matches words within the text
+  const fuzzyMatch = (text: string, pattern: string): boolean => {
+    const normalizedText = text.toLowerCase().trim()
+    const normalizedPattern = pattern.toLowerCase().trim()
+    
+    if (!normalizedPattern) return true
+    
+    // Exact substring match (case-insensitive)
+    if (normalizedText.includes(normalizedPattern)) return true
+    
+    // Simple fuzzy matching using character similarity
+    // Count matching characters in order
+    let textIndex = 0
+    let matchCount = 0
+    
+    for (let i = 0; i < normalizedPattern.length; i++) {
+      const char = normalizedPattern[i]
+      const foundIndex = normalizedText.indexOf(char, textIndex)
+      if (foundIndex !== -1) {
+        matchCount++
+        textIndex = foundIndex + 1
+      }
+    }
+    
+    // If at least 70% of pattern characters match in order, consider it a match
+    const matchRatio = matchCount / normalizedPattern.length
+    return matchRatio >= 0.7
+  }
+
+  useEffect(() => {
+    // Filter collections based on search term
+    let filtered = collections
+
+    // Filter by search term (invoice number, collector name, or checker name with fuzzy matching)
+    if (searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter((collection) => {
+        // Check invoice number (exact substring match)
+        const invoiceMatch = collection.invoice_number?.toLowerCase().includes(searchLower)
+        
+        // Check collector name with fuzzy matching
+        const collectorName = collection.collector_name || ''
+        const collectorMatch = fuzzyMatch(collectorName, searchTerm)
+        
+        // Check checker name with fuzzy matching
+        const checkerName = collection.checker_name || ''
+        const checkerMatch = fuzzyMatch(checkerName, searchTerm)
+        
+        return invoiceMatch || collectorMatch || checkerMatch
+      })
+    }
+
+    setFilteredCollections(filtered)
+  }, [collections, searchTerm])
 
   const loadCollections = async () => {
     if (!admin) {
@@ -130,10 +187,13 @@ export default function InvoiceChecking() {
   const handleDownloadExcel = async () => {
     setDownloading(true)
     try {
-      // Build query string with date filter if selected
+      // Build query string with date filter and search term if selected
       let queryString = 'download=true'
       if (selectedDate) {
-        queryString += `&date=${selectedDate}`
+        queryString += `&date=${encodeURIComponent(selectedDate)}`
+      }
+      if (searchTerm.trim()) {
+        queryString += `&searchTerm=${encodeURIComponent(searchTerm.trim())}`
       }
       
       const response = await fetch(`/api/admin/invoice-checking?${queryString}`, {
@@ -256,6 +316,27 @@ export default function InvoiceChecking() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Invoice Collections</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                {/* Search Input */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search invoice number or collector/checker name..."
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto min-w-[200px]"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
+                      title="Clear search"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 {/* Date Picker */}
                 <div className="flex items-center gap-2">
                   <label htmlFor="filter-date" className="text-sm font-medium text-gray-700 whitespace-nowrap">
@@ -270,9 +351,15 @@ export default function InvoiceChecking() {
                   />
                   {selectedDate && (
                     <button
-                      onClick={() => setSelectedDate('')}
+                      onClick={() => {
+                        const today = new Date()
+                        const year = today.getFullYear()
+                        const month = String(today.getMonth() + 1).padStart(2, '0')
+                        const day = String(today.getDate()).padStart(2, '0')
+                        setSelectedDate(`${year}-${month}-${day}`)
+                      }}
                       className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
-                      title="Clear date filter"
+                      title="Reset to today"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -282,7 +369,7 @@ export default function InvoiceChecking() {
                 </div>
                 <button
                   onClick={handleDownloadExcel}
-                  disabled={downloading || collections.length === 0}
+                  disabled={downloading || filteredCollections.length === 0}
                   className="px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation w-full sm:w-auto"
                 >
                   {downloading ? (
@@ -344,9 +431,9 @@ export default function InvoiceChecking() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ocean-royal mx-auto"></div>
                 <p className="text-gray-600 mt-4">Loading invoice collections...</p>
               </div>
-            ) : collections.length === 0 ? (
+            ) : filteredCollections.length === 0 ? (
               <p className="text-sm sm:text-base text-gray-500 text-center py-8">
-                {selectedDate ? `No invoice collections found for ${new Date(selectedDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}` : 'No invoice collections found'}
+                {searchTerm || selectedDate ? 'No invoice collections found matching the filters' : 'No invoice collections found'}
               </p>
             ) : (
               <div className="overflow-x-auto -mx-4 sm:mx-0">
@@ -377,7 +464,7 @@ export default function InvoiceChecking() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {collections.map((collection) => (
+                    {filteredCollections.map((collection) => (
                       <tr key={collection.id} className="hover:bg-gray-50">
                         <td className="px-3 sm:px-4 py-3">
                           <div className="text-sm font-medium text-gray-900">{collection.invoice_number}</div>

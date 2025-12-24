@@ -463,7 +463,7 @@ export default function Supply() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Records</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-2">{invoices.length}</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-2">{filteredInvoices.length}</p>
                   </div>
                   <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center">
                     <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -479,11 +479,11 @@ export default function Supply() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Supplied</p>
                     <p className="text-2xl font-bold text-green-600 mt-2">
-                      {invoices.filter((inv) => inv.supply_id).length}
+                      {filteredInvoices.filter((inv) => inv.supply_id).length}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {invoices.length > 0
-                        ? Math.round((invoices.filter((inv) => inv.supply_id).length / invoices.length) * 100)
+                      {filteredInvoices.length > 0
+                        ? Math.round((filteredInvoices.filter((inv) => inv.supply_id).length / filteredInvoices.length) * 100)
                         : 0}
                       % complete
                     </p>
@@ -502,11 +502,11 @@ export default function Supply() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Pending</p>
                     <p className="text-2xl font-bold text-orange-600 mt-2">
-                      {invoices.filter((inv) => !inv.supply_id).length}
+                      {filteredInvoices.filter((inv) => !inv.supply_id).length}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {invoices.length > 0
-                        ? Math.round((invoices.filter((inv) => !inv.supply_id).length / invoices.length) * 100)
+                      {filteredInvoices.length > 0
+                        ? Math.round((filteredInvoices.filter((inv) => !inv.supply_id).length / filteredInvoices.length) * 100)
                         : 0}
                       % remaining
                     </p>

@@ -26,9 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       }
 
-      if (!['present', 'absent', 'half_day', 'leave'].includes(status)) {
+      if (!['present', 'half_day', 'leave'].includes(status)) {
         return res.status(400).json({
-          message: 'Invalid status. Must be: present, absent, half_day, or leave',
+          message: 'Invalid status. Must be: present, half_day, or leave',
         })
       }
 
@@ -47,16 +47,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       }
 
-      // Insert or update attendance
+      // Check if attendance already exists for this employee and date
+      const existingCheck = await query(
+        `SELECT id, status, created_at FROM attendance 
+         WHERE employee_id = $1 AND attendance_date = $2`,
+        [employeeId, attendanceDate]
+      )
+
+      if (existingCheck.rows.length > 0) {
+        return res.status(400).json({
+          message: 'Attendance already marked for this employee on this date. Only super admins can edit existing attendance.',
+        })
+      }
+
+      // Insert attendance (no update on conflict since we prevent duplicates)
       const result = await query(
         `INSERT INTO attendance (employee_id, attendance_date, status, marked_by, notes)
          VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (employee_id, attendance_date)
-         DO UPDATE SET 
-           status = EXCLUDED.status,
-           marked_by = EXCLUDED.marked_by,
-           notes = EXCLUDED.notes,
-           updated_at = NOW()
          RETURNING id, employee_id, attendance_date, status, notes, created_at`,
         [employeeId, attendanceDate, status, userId, notes || null]
       )
@@ -169,6 +176,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Get attendance error:', error)
       res.status(500).json({
         message: 'Error fetching attendance',
+        error: error.message,
+      })
+    }
+  } else if (req.method === 'PUT') {
+    // Edit attendance (super admin only, can change to any status)
+    try {
+      const { id, status } = req.body
+
+      if (!id || !status) {
+        return res.status(400).json({
+          message: 'Attendance ID and status are required',
+        })
+      }
+
+      // Validate status
+      if (!['present', 'half_day', 'leave'].includes(status)) {
+        return res.status(400).json({
+          message: 'Invalid status. Must be: present, half_day, or leave',
+        })
+      }
+
+      // Check if user is super admin
+      const userRoleCheck = await query(
+        `SELECT r.name as role_name
+         FROM admin_users au
+         LEFT JOIN admin_roles r ON au.role_id = r.id
+         WHERE au.id = $1`,
+        [userId]
+      )
+
+      const isSuperAdmin = userRoleCheck.rows[0]?.role_name === 'super_admin'
+
+      if (!isSuperAdmin) {
+        return res.status(403).json({
+          message: 'Forbidden - Only super admins can edit attendance',
+        })
+      }
+
+      // Check if attendance record exists
+      const attendanceCheck = await query(
+        `SELECT id, status, employee_id, attendance_date 
+         FROM attendance 
+         WHERE id = $1`,
+        [id]
+      )
+
+      if (attendanceCheck.rows.length === 0) {
+        return res.status(404).json({
+          message: 'Attendance record not found',
+        })
+      }
+
+      // Update attendance to new status
+      const result = await query(
+        `UPDATE attendance 
+         SET status = $1, updated_at = NOW()
+         WHERE id = $2
+         RETURNING id, employee_id, attendance_date, status, notes, updated_at`,
+        [status, id]
+      )
+
+      res.status(200).json({
+        success: true,
+        message: 'Attendance updated successfully',
+        data: result.rows[0],
+      })
+    } catch (error: any) {
+      console.error('Edit attendance error:', error)
+      res.status(500).json({
+        message: 'Error updating attendance',
         error: error.message,
       })
     }

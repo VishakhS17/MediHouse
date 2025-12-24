@@ -19,6 +19,8 @@ export default function Attendance() {
     status: 'present',
     notes: '',
   })
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingStatus, setEditingStatus] = useState<string>('')
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -87,6 +89,18 @@ export default function Attendance() {
       return
     }
 
+    // Check if attendance already exists for this employee and date
+    const existingAttendance = attendance.find(
+      (record) =>
+        record.employee_id === parseInt(formData.employeeId) &&
+        record.attendance_date === formData.attendanceDate
+    )
+
+    if (existingAttendance) {
+      setError('Attendance already marked for this employee on this date. Only super admins can edit existing attendance.')
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -123,6 +137,56 @@ export default function Attendance() {
       setError(err.message || 'An error occurred')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleEditStart = (recordId: number, currentStatus: string) => {
+    setEditingId(recordId)
+    setEditingStatus(currentStatus)
+    setError('')
+  }
+
+  const handleEditCancel = () => {
+    setEditingId(null)
+    setEditingStatus('')
+    setError('')
+  }
+
+  const handleEditSave = async (recordId: number) => {
+    if (!editingStatus) {
+      setError('Please select a status')
+      return
+    }
+
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch('/api/admin/attendance', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-data': JSON.stringify(admin),
+        },
+        body: JSON.stringify({
+          id: recordId,
+          status: editingStatus,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSuccess('Attendance updated successfully!')
+        loadAttendance()
+        setEditingId(null)
+        setEditingStatus('')
+        setTimeout(() => setSuccess(''), 3000)
+      } else {
+        setError(data.message || 'Failed to update attendance')
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred')
     }
   }
 
@@ -187,6 +251,8 @@ export default function Attendance() {
     })
   }
 
+  const isSuperAdmin = admin?.role?.name === 'super_admin'
+
   if (!hasPermission('manage_attendance')) {
     return (
       <AdminProtectedRoute>
@@ -209,8 +275,6 @@ export default function Attendance() {
     switch (status) {
       case 'present':
         return 'bg-green-100 text-green-800'
-      case 'absent':
-        return 'bg-red-100 text-red-800'
       case 'half_day':
         return 'bg-yellow-100 text-yellow-800'
       case 'leave':
@@ -292,7 +356,6 @@ export default function Attendance() {
                     disabled={submitting}
                   >
                     <option value="present">Present</option>
-                    <option value="absent">Absent</option>
                     <option value="half_day">Half Day</option>
                     <option value="leave">Leave</option>
                   </select>
@@ -480,6 +543,11 @@ export default function Attendance() {
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                         Notes
                       </th>
+                      {isSuperAdmin && (
+                        <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Action
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -506,6 +574,44 @@ export default function Attendance() {
                         <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 hidden lg:table-cell">
                           {record.notes || '-'}
                         </td>
+                        {isSuperAdmin && (
+                          <td className="px-3 sm:px-4 py-3 text-sm">
+                            {editingId === record.id ? (
+                              <div className="flex flex-col gap-2">
+                                <select
+                                  value={editingStatus}
+                                  onChange={(e) => setEditingStatus(e.target.value)}
+                                  className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation"
+                                >
+                                  <option value="present">Present</option>
+                                  <option value="half_day">Half Day</option>
+                                  <option value="leave">Leave</option>
+                                </select>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleEditSave(record.id)}
+                                    className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors touch-manipulation"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={handleEditCancel}
+                                    className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition-colors touch-manipulation"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleEditStart(record.id, record.status)}
+                                className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors min-h-[32px] touch-manipulation"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

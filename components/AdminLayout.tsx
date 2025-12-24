@@ -43,9 +43,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Outstanding Bills', href: '/admin/outstanding-bills', icon: '📋', permission: 'manage_outstanding_bills' },
     { name: 'Upload DRS', href: '/admin/upload-drs', icon: '📄', permission: 'manage_outstanding_bills' },
     { name: 'Supply', href: '/admin/supply', icon: '📦', permission: 'manage_supply' },
+    { 
+      name: 'Final Reports', 
+      href: '/admin/final-reports', 
+      icon: '📑', 
+      permission: 'collect_invoices',
+      // Show if user has any of these permissions
+      customCheck: () => hasPermission('collect_invoices') || hasPermission('check_invoices') || hasPermission('manage_supply')
+    },
     { name: 'Attendance', href: '/admin/attendance', icon: '📅', permission: 'manage_attendance' },
     { name: 'Admin Users', href: '/admin/users', icon: '👤', permission: 'manage_admins' },
-  ].filter(item => hasPermission(item.permission))
+  ].filter(item => {
+    // If item has customCheck function, use it; otherwise use standard permission check
+    if (item.customCheck) {
+      return item.customCheck()
+    }
+    return hasPermission(item.permission)
+  })
 
   const handleLogout = () => {
     logout()

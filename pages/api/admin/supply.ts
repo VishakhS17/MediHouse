@@ -158,9 +158,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 second: '2-digit',
               })
             : '',
-          'Latitude': row.latitude || '',
-          'Longitude': row.longitude || '',
-          'Location Address': row.location_address || '',
           'Created At': new Date(row.created_at).toLocaleString('en-IN', {
             timeZone: 'Asia/Kolkata',
             year: 'numeric',
