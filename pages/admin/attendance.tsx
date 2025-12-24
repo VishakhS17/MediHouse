@@ -21,6 +21,7 @@ export default function Attendance() {
   })
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingStatus, setEditingStatus] = useState<string>('')
+  const [gettingLocation, setGettingLocation] = useState(false)
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -79,6 +80,119 @@ export default function Attendance() {
     }
   }
 
+  const getCurrentLocation = (): Promise<{ latitude: number; longitude: number; locationAddress: string }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by your browser'))
+        return
+      }
+
+      setGettingLocation(true)
+
+      let bestPosition: GeolocationPosition | null = null
+      let attempts = 0
+      const maxAttempts = 10
+
+      const watchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          attempts++
+          const { latitude, longitude, accuracy } = position.coords
+
+          if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+            bestPosition = position
+          }
+
+          if (accuracy <= 50 || attempts >= maxAttempts) {
+            navigator.geolocation.clearWatch(watchId)
+
+            const finalPosition = bestPosition || position
+            const finalLat = finalPosition.coords.latitude
+            const finalLon = finalPosition.coords.longitude
+
+            let locationAddress = ''
+            try {
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${finalLat}&lon=${finalLon}&zoom=18&addressdetails=1`,
+                {
+                  headers: {
+                    'User-Agent': 'MediHouse-Attendance-Management'
+                  }
+                }
+              )
+
+              if (response.ok) {
+                const data = await response.json()
+                locationAddress = data.display_name || `${data.address?.road || ''} ${data.address?.city || data.address?.town || ''} ${data.address?.postcode || ''}`.trim()
+              }
+            } catch (err) {
+              console.error('Error getting address:', err)
+            }
+
+            setGettingLocation(false)
+            resolve({ latitude: finalLat, longitude: finalLon, locationAddress })
+          }
+        },
+        (error) => {
+          navigator.geolocation.clearWatch(watchId)
+
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords
+              let locationAddress = ''
+
+              try {
+                const response = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+                  {
+                    headers: {
+                      'User-Agent': 'MediHouse-Attendance-Management'
+                    }
+                  }
+                )
+
+                if (response.ok) {
+                  const data = await response.json()
+                  locationAddress = data.display_name || `${data.address?.road || ''} ${data.address?.city || data.address?.town || ''} ${data.address?.postcode || ''}`.trim()
+                }
+              } catch (err) {
+                console.error('Error getting address:', err)
+              }
+
+              setGettingLocation(false)
+              resolve({ latitude, longitude, locationAddress })
+            },
+            (fallbackError) => {
+              setGettingLocation(false)
+              let errorMessage = 'Failed to get location'
+              switch (fallbackError.code) {
+                case fallbackError.PERMISSION_DENIED:
+                  errorMessage = 'Location access denied. Please enable location permissions.'
+                  break
+                case fallbackError.POSITION_UNAVAILABLE:
+                  errorMessage = 'Location information unavailable.'
+                  break
+                case fallbackError.TIMEOUT:
+                  errorMessage = 'Location request timed out.'
+                  break
+              }
+              reject(new Error(errorMessage))
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 20000,
+              maximumAge: 0
+            }
+          )
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 0
+        }
+      )
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -104,6 +218,22 @@ export default function Attendance() {
     setSubmitting(true)
 
     try {
+      // Get current location
+      let latitude: number | null = null
+      let longitude: number | null = null
+      let locationAddress: string | null = null
+
+      try {
+        const location = await getCurrentLocation()
+        latitude = location.latitude
+        longitude = location.longitude
+        locationAddress = location.locationAddress || null
+      } catch (locationError: any) {
+        setError(locationError.message || 'Failed to get location. Please try again.')
+        setSubmitting(false)
+        return
+      }
+
       const response = await fetch('/api/admin/attendance', {
         method: 'POST',
         headers: {
@@ -115,6 +245,9 @@ export default function Attendance() {
           attendanceDate: formData.attendanceDate,
           status: formData.status,
           notes: formData.notes.trim() || null,
+          latitude: latitude,
+          longitude: longitude,
+          locationAddress: locationAddress,
         }),
       })
 
@@ -391,10 +524,10 @@ export default function Attendance() {
 
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || gettingLocation}
                 className="w-full bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none min-h-[48px] touch-manipulation"
               >
-                {submitting ? 'Marking...' : 'Mark Attendance'}
+                {gettingLocation ? 'Getting Location...' : submitting ? 'Marking...' : 'Mark Attendance'}
               </button>
             </form>
           </div>
@@ -543,6 +676,9 @@ export default function Attendance() {
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                         Notes
                       </th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                      </th>
                       {isSuperAdmin && (
                         <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Action
@@ -573,6 +709,44 @@ export default function Attendance() {
                         </td>
                         <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 hidden lg:table-cell">
                           {record.notes || '-'}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
+                          {record.location_address ? (
+                            record.latitude && record.longitude ? (
+                              <a
+                                href={`https://www.google.com/maps?q=${record.latitude},${record.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
+                                title={record.location_address}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                </svg>
+                                <span className="hidden sm:inline">
+                                  {record.location_address.length > 30
+                                    ? record.location_address.substring(0, 30) + '...'
+                                    : record.location_address}
+                                </span>
+                                <span className="sm:hidden">Map</span>
+                              </a>
+                            ) : (
+                              <span>{record.location_address}</span>
+                            )
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                         {isSuperAdmin && (
                           <td className="px-3 sm:px-4 py-3 text-sm">

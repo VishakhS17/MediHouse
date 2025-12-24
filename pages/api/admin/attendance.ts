@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     // Mark attendance
     try {
-      const { employeeId, attendanceDate, status, notes } = req.body
+      const { employeeId, attendanceDate, status, notes, latitude, longitude, locationAddress } = req.body
 
       if (!employeeId || !attendanceDate || !status) {
         return res.status(400).json({
@@ -62,10 +62,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Insert attendance (no update on conflict since we prevent duplicates)
       const result = await query(
-        `INSERT INTO attendance (employee_id, attendance_date, status, marked_by, notes)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, employee_id, attendance_date, status, notes, created_at`,
-        [employeeId, attendanceDate, status, userId, notes || null]
+        `INSERT INTO attendance (employee_id, attendance_date, status, marked_by, notes, latitude, longitude, location_address)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id, employee_id, attendance_date, status, notes, latitude, longitude, location_address, created_at`,
+        [employeeId, attendanceDate, status, userId, notes || null, latitude || null, longitude || null, locationAddress || null]
       )
 
       res.status(200).json({
@@ -92,6 +92,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           a.attendance_date,
           a.status,
           a.notes,
+          a.latitude,
+          a.longitude,
+          a.location_address,
           a.created_at,
           a.updated_at,
           au.name as employee_name,

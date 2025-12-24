@@ -16,9 +16,23 @@ export default function AdminDashboard() {
     { name: 'Invoice Collection', href: '/admin/invoice-collection', icon: '🧾', permission: 'collect_invoices', color: 'from-ocean-royal to-ocean-teal' },
     { name: 'Invoice Checking', href: '/admin/invoice-checking', icon: '✓', permission: 'check_invoices', color: 'from-ocean-teal to-ocean-cyan' },
     { name: 'Supply', href: '/admin/supply', icon: '📦', permission: 'manage_supply', color: 'from-ocean-aqua to-ocean-sky' },
+    { 
+      name: 'Final Reports', 
+      href: '/admin/final-reports', 
+      icon: '📑', 
+      permission: 'collect_invoices',
+      customCheck: () => hasPermission('collect_invoices') || hasPermission('check_invoices') || hasPermission('manage_supply'),
+      color: 'from-ocean-royal to-ocean-teal' 
+    },
     { name: 'Attendance', href: '/admin/attendance', icon: '📅', permission: 'manage_attendance', color: 'from-ocean-aqua to-ocean-sky' },
     { name: 'Admin Users', href: '/admin/users', icon: '👤', permission: 'manage_admins', color: 'from-ocean-teal to-ocean-cyan' },
-  ].filter(link => hasPermission(link.permission))
+  ].filter(link => {
+    // If link has customCheck function, use it; otherwise use standard permission check
+    if ((link as any).customCheck) {
+      return (link as any).customCheck()
+    }
+    return hasPermission(link.permission)
+  })
 
   return (
     <AdminProtectedRoute>
