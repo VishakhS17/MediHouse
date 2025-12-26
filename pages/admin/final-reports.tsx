@@ -9,6 +9,7 @@ export default function FinalReports() {
   const [reports, setReports] = useState<any[]>([])
   const [filteredReports, setFilteredReports] = useState<any[]>([])
   const [dateFilter, setDateFilter] = useState<string>('')
+  const [searchTerm, setSearchTerm] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [downloading, setDownloading] = useState(false)
@@ -21,7 +22,7 @@ export default function FinalReports() {
   }, [admin, dateFilter])
 
   useEffect(() => {
-    // Filter reports based on date filter
+    // Filter reports based on date filter and search term
     let filtered = reports
 
     // Filter by date (already filtered on backend, but keep for consistency)
@@ -33,8 +34,26 @@ export default function FinalReports() {
       })
     }
 
+    // Filter by search term (invoice number, collected by, checked by, supplied by)
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter((report) => {
+        const invoiceNumber = (report.invoice_number || '').toLowerCase()
+        const collectedBy = (report.collector_name || '').toLowerCase()
+        const checkedBy = (report.checker_name || '').toLowerCase()
+        const suppliedBy = (report.supplied_by || '').toLowerCase()
+        
+        return (
+          invoiceNumber.includes(searchLower) ||
+          collectedBy.includes(searchLower) ||
+          checkedBy.includes(searchLower) ||
+          suppliedBy.includes(searchLower)
+        )
+      })
+    }
+
     setFilteredReports(filtered)
-  }, [reports, dateFilter])
+  }, [reports, dateFilter, searchTerm])
 
   const loadReports = async () => {
     if (!admin) {
@@ -189,6 +208,42 @@ export default function FinalReports() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Reports</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                {/* Search Filter */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:flex-initial">
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search by invoice, collector, checker, or supplier..."
+                      className="px-3 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-64"
+                    />
+                    <svg
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
+                      title="Clear search"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
                 {/* Date Filter */}
                 <div className="flex items-center gap-2">
                   <input
@@ -268,7 +323,9 @@ export default function FinalReports() {
               </div>
             ) : filteredReports.length === 0 ? (
               <p className="text-sm sm:text-base text-gray-500 text-center py-8">
-                {dateFilter ? `No reports found for the selected date` : 'No reports found'}
+                {dateFilter || searchTerm
+                  ? `No reports found matching the filters`
+                  : 'No reports found'}
               </p>
             ) : (
               <div className="overflow-x-auto -mx-4 sm:mx-0">
