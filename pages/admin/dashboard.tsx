@@ -16,6 +16,7 @@ export default function AdminDashboard() {
     { name: 'Invoice Collection', href: '/admin/invoice-collection', icon: '🧾', permission: 'collect_invoices', color: 'from-ocean-royal to-ocean-teal' },
     { name: 'Invoice Checking', href: '/admin/invoice-checking', icon: '✓', permission: 'check_invoices', color: 'from-ocean-teal to-ocean-cyan' },
     { name: 'Supply', href: '/admin/supply', icon: '📦', permission: 'manage_supply', color: 'from-ocean-aqua to-ocean-sky' },
+    { name: 'Cashbook', href: '/admin/cashbook', icon: '💰', permission: 'manage_cashbook', color: 'from-green-500 to-green-600' },
     { 
       name: 'Final Reports', 
       href: '/admin/final-reports', 

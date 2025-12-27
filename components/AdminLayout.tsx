@@ -43,6 +43,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Outstanding Bills', href: '/admin/outstanding-bills', icon: '📋', permission: 'manage_outstanding_bills' },
     { name: 'Upload DRS', href: '/admin/upload-drs', icon: '📄', permission: 'manage_outstanding_bills' },
     { name: 'Supply', href: '/admin/supply', icon: '📦', permission: 'manage_supply' },
+    { name: 'Cashbook', href: '/admin/cashbook', icon: '💰', permission: 'manage_cashbook' },
     { 
       name: 'Final Reports', 
       href: '/admin/final-reports', 

@@ -311,6 +311,72 @@ export default function InvoiceChecking() {
             </div>
           )}
 
+          {/* Summary Cards */}
+          {!loading && collections.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              {/* Total Records */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-2">{filteredCollections.length}</p>
+                  </div>
+                  <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Checked */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Checked</p>
+                    <p className="text-2xl font-bold text-green-600 mt-2">
+                      {filteredCollections.filter((collection) => collection.checked_date).length}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {filteredCollections.length > 0
+                        ? Math.round((filteredCollections.filter((collection) => collection.checked_date).length / filteredCollections.length) * 100)
+                        : 0}
+                      % complete
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pending */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-2xl font-bold text-orange-600 mt-2">
+                      {filteredCollections.filter((collection) => !collection.checked_date).length}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {filteredCollections.length > 0
+                        ? Math.round((filteredCollections.filter((collection) => !collection.checked_date).length / filteredCollections.length) * 100)
+                        : 0}
+                      % remaining
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Invoice Collections List */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
