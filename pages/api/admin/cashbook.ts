@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { query } from '@/lib/db'
 import { checkPermission, getAdminUserIdFromRequest } from '@/lib/adminPermissions'
+import XLSX from 'xlsx'
 
 // Helper to get admin user from request
 async function getAdminUser(req: NextApiRequest): Promise<{ id: number; name: string } | null> {
@@ -103,7 +104,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'GET') {
     // Get cashbook transactions
     try {
-      const { startDate, endDate, staffName, partyName, receiptNumber, limit = 100, offset = 0 } = req.query
+      const { startDate, endDate, staffName, partyName, receiptNumber, limit = 100, offset = 0, download } = req.query
+
+      const isExcelExport = download === 'true' || download === 'excel'
 
       let queryStr = `
         SELECT 
@@ -157,12 +160,69 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         paramIndex++
       }
 
-      queryStr += ` ORDER BY ct.transaction_date DESC, ct.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
-      params.push(parseInt(limit as string), parseInt(offset as string))
+      queryStr += ` ORDER BY ct.transaction_date DESC, ct.id DESC`
+
+      // Only apply LIMIT and OFFSET for regular queries, not Excel exports
+      if (!isExcelExport) {
+        queryStr += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`
+        params.push(parseInt(limit as string), parseInt(offset as string))
+      }
 
       const result = await query(queryStr, params)
 
-      // Get total count
+      // Check if Excel download is requested
+      if (download === 'true' || download === 'excel') {
+        // Generate Excel file
+        const excelData = result.rows.map((row) => ({
+          'Transaction Date': new Date(row.transaction_date).toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }),
+          'Receipt Number': row.receipt_number || '',
+          'Staff Name': row.staff_name || '',
+          'Party Name': row.party_name || '',
+          'Bill Numbers': row.bill_numbers || '',
+          'Debit Amount': parseFloat(row.debit_amount || 0),
+          'Credit Amount': parseFloat(row.credit_amount || 0),
+          'Balance': parseFloat(row.balance || 0),
+          'Notes': row.notes || '',
+          'Created By': row.created_by_name || '',
+          'Created At': new Date(row.created_at).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        }))
+
+        const worksheet = XLSX.utils.json_to_sheet(excelData)
+        const workbook = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Cashbook')
+
+        // Generate filename with date filters if applicable
+        const baseDate = new Date().toISOString().split('T')[0]
+        let filename = `Cashbook_${baseDate}`
+        
+        if (startDate || endDate) {
+          const start = startDate ? new Date(startDate as string).toISOString().split('T')[0] : 'all'
+          const end = endDate ? new Date(endDate as string).toISOString().split('T')[0] : 'all'
+          filename += `_${start}_to_${end}`
+        }
+        
+        filename += '.xlsx'
+
+        const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+        res.status(200).send(excelBuffer)
+        return
+      }
+
+      // Get total count (only if not downloading)
       let countQuery = `SELECT COUNT(*) as total FROM cashbook_transactions WHERE 1=1`
       const countParams: any[] = []
       let countParamIndex = 1

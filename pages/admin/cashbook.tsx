@@ -25,6 +25,7 @@ export default function Cashbook() {
   const [transactions, setTransactions] = useState<CashbookTransaction[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [currentBalance, setCurrentBalance] = useState(0)
@@ -215,6 +216,76 @@ export default function Cashbook() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num || 0)
+  }
+
+  const handleDownloadExcel = async () => {
+    setDownloading(true)
+    try {
+      // Build query string with filters
+      let queryString = 'download=true'
+      if (startDate) {
+        queryString += `&startDate=${encodeURIComponent(startDate)}`
+      }
+      if (endDate) {
+        queryString += `&endDate=${encodeURIComponent(endDate)}`
+      }
+      if (filterStaffName.trim()) {
+        queryString += `&staffName=${encodeURIComponent(filterStaffName.trim())}`
+      }
+      if (filterPartyName.trim()) {
+        queryString += `&partyName=${encodeURIComponent(filterPartyName.trim())}`
+      }
+      if (filterReceiptNumber.trim()) {
+        queryString += `&receiptNumber=${encodeURIComponent(filterReceiptNumber.trim())}`
+      }
+
+      const response = await fetch(`/api/admin/cashbook?${queryString}`, {
+        headers: {
+          'x-admin-data': JSON.stringify(admin),
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        alert(`Error: ${error.message || 'Failed to download report'}`)
+        setDownloading(false)
+        return
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = 'Cashbook.xlsx'
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+        if (filenameMatch) {
+          filename = filenameMatch[1]
+        }
+      }
+
+      // Create blob and download
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(downloadUrl)
+    } catch (error: any) {
+      console.error('Download error:', error)
+      alert('Error downloading report. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  const handleClearFilters = () => {
+    setStartDate('')
+    setEndDate('')
+    setFilterStaffName('')
+    setFilterPartyName('')
+    setFilterReceiptNumber('')
   }
 
   if (!hasPermission('manage_cashbook')) {
@@ -426,7 +497,57 @@ export default function Cashbook() {
 
           {/* Filters */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Filters</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Filters</h2>
+              <button
+                onClick={handleDownloadExcel}
+                disabled={downloading || transactions.length === 0}
+                className="px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation w-full sm:w-auto"
+              >
+                {downloading ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Downloading...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Download Excel
+                  </span>
+                )}
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date</label>
@@ -476,6 +597,15 @@ export default function Cashbook() {
                   placeholder="Filter by receipt"
                 />
               </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={handleClearFilters}
+                disabled={!startDate && !endDate && !filterStaffName && !filterPartyName && !filterReceiptNumber}
+                className="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
+              >
+                Clear Filters
+              </button>
             </div>
           </div>
 
