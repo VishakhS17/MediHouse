@@ -30,6 +30,8 @@ export default function Cashbook() {
   const [success, setSuccess] = useState('')
   const [currentBalance, setCurrentBalance] = useState(0)
   const [totalRecords, setTotalRecords] = useState(0)
+  const [totalDebit, setTotalDebit] = useState(0)
+  const [totalCredit, setTotalCredit] = useState(0)
 
   // Form state
   const [showAddForm, setShowAddForm] = useState(false)
@@ -98,6 +100,8 @@ export default function Cashbook() {
       setTransactions(data.data || [])
       setCurrentBalance(data.currentBalance || 0)
       setTotalRecords(data.total || 0)
+      setTotalDebit(data.totalDebit || 0)
+      setTotalCredit(data.totalCredit || 0)
     } catch (err: any) {
       console.error('Error loading transactions:', err)
       setError(err.message || 'An error occurred while loading transactions')
@@ -352,11 +356,23 @@ export default function Cashbook() {
           {/* Summary Card */}
           {!loading && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Current Balance</p>
                   <p className={`text-2xl font-bold mt-2 ${currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(currentBalance)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Debit Collected</p>
+                  <p className="text-2xl font-bold text-green-600 mt-2">
+                    {formatCurrency(totalDebit)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Credit Deposited</p>
+                  <p className="text-2xl font-bold text-red-600 mt-2">
+                    {formatCurrency(totalCredit)}
                   </p>
                 </div>
                 <div>

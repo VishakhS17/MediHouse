@@ -277,11 +277,58 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       )
       const currentBalance = balanceResult.rows[0]?.balance || 0
 
+      // Get total debit and credit amounts (using same filters as count query)
+      let sumQuery = `SELECT COALESCE(SUM(debit_amount), 0) as total_debit, COALESCE(SUM(credit_amount), 0) as total_credit FROM cashbook_transactions WHERE 1=1`
+      const sumParams: any[] = []
+      let sumParamIndex = 1
+
+      if (startDate) {
+        sumQuery += ` AND transaction_date >= $${sumParamIndex}`
+        sumParams.push(startDate)
+        sumParamIndex++
+      }
+
+      if (endDate) {
+        sumQuery += ` AND transaction_date <= $${sumParamIndex}`
+        sumParams.push(endDate)
+        sumParamIndex++
+      }
+
+      if (staffName) {
+        sumQuery += ` AND staff_name ILIKE $${sumParamIndex}`
+        sumParams.push(`%${staffName}%`)
+        sumParamIndex++
+      }
+
+      if (partyName) {
+        sumQuery += ` AND party_name ILIKE $${sumParamIndex}`
+        sumParams.push(`%${partyName}%`)
+        sumParamIndex++
+      }
+
+      if (receiptNumber) {
+        sumQuery += ` AND receipt_number ILIKE $${sumParamIndex}`
+        sumParams.push(`%${receiptNumber}%`)
+        sumParamIndex++
+      }
+
+      if (transactionType === 'debit') {
+        sumQuery += ` AND debit_amount > 0`
+      } else if (transactionType === 'credit') {
+        sumQuery += ` AND credit_amount > 0`
+      }
+
+      const sumResult = await query(sumQuery, sumParams)
+      const totalDebit = parseFloat(sumResult.rows[0]?.total_debit || '0')
+      const totalCredit = parseFloat(sumResult.rows[0]?.total_credit || '0')
+
       res.status(200).json({
         success: true,
         data: result.rows,
         total: parseInt(countResult.rows[0]?.total || '0'),
         currentBalance: parseFloat(currentBalance),
+        totalDebit,
+        totalCredit,
         limit: parseInt(limit as string),
         offset: parseInt(offset as string),
       })
