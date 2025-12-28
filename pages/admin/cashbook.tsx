@@ -52,6 +52,7 @@ export default function Cashbook() {
   const [filterStaffName, setFilterStaffName] = useState('')
   const [filterPartyName, setFilterPartyName] = useState('')
   const [filterReceiptNumber, setFilterReceiptNumber] = useState('')
+  const [filterTransactionType, setFilterTransactionType] = useState<'all' | 'debit' | 'credit'>('all')
 
   useEffect(() => {
     if (admin?.name) {
@@ -64,7 +65,7 @@ export default function Cashbook() {
       loadTransactions()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [admin, startDate, endDate, filterStaffName, filterPartyName, filterReceiptNumber])
+  }, [admin, startDate, endDate, filterStaffName, filterPartyName, filterReceiptNumber, filterTransactionType])
 
   const loadTransactions = async () => {
     setLoading(true)
@@ -80,6 +81,7 @@ export default function Cashbook() {
       if (filterStaffName) params.append('staffName', filterStaffName)
       if (filterPartyName) params.append('partyName', filterPartyName)
       if (filterReceiptNumber) params.append('receiptNumber', filterReceiptNumber)
+      if (filterTransactionType && filterTransactionType !== 'all') params.append('transactionType', filterTransactionType)
 
       const response = await fetch(`/api/admin/cashbook?${params.toString()}`, {
         headers: {
@@ -238,6 +240,9 @@ export default function Cashbook() {
       if (filterReceiptNumber.trim()) {
         queryString += `&receiptNumber=${encodeURIComponent(filterReceiptNumber.trim())}`
       }
+      if (filterTransactionType && filterTransactionType !== 'all') {
+        queryString += `&transactionType=${encodeURIComponent(filterTransactionType)}`
+      }
 
       const response = await fetch(`/api/admin/cashbook?${queryString}`, {
         headers: {
@@ -286,6 +291,7 @@ export default function Cashbook() {
     setFilterStaffName('')
     setFilterPartyName('')
     setFilterReceiptNumber('')
+    setFilterTransactionType('all')
   }
 
   if (!hasPermission('manage_cashbook')) {
@@ -548,7 +554,7 @@ export default function Cashbook() {
                 )}
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date</label>
                 <input
@@ -566,6 +572,18 @@ export default function Cashbook() {
                   onChange={(e) => setEndDate(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Transaction Type</label>
+                <select
+                  value={filterTransactionType}
+                  onChange={(e) => setFilterTransactionType(e.target.value as 'all' | 'debit' | 'credit')}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                >
+                  <option value="all">All Transactions</option>
+                  <option value="debit">Debit (Collection)</option>
+                  <option value="credit">Credit (Deposit/Spending)</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Staff Name</label>
@@ -601,7 +619,7 @@ export default function Cashbook() {
             <div className="mt-4 flex justify-end">
               <button
                 onClick={handleClearFilters}
-                disabled={!startDate && !endDate && !filterStaffName && !filterPartyName && !filterReceiptNumber}
+                disabled={!startDate && !endDate && filterTransactionType === 'all' && !filterStaffName && !filterPartyName && !filterReceiptNumber}
                 className="px-4 py-2 text-sm font-medium bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
               >
                 Clear Filters

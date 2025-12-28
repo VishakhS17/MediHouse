@@ -104,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'GET') {
     // Get cashbook transactions
     try {
-      const { startDate, endDate, staffName, partyName, receiptNumber, limit = 100, offset = 0, download } = req.query
+      const { startDate, endDate, staffName, partyName, receiptNumber, transactionType, limit = 100, offset = 0, download } = req.query
 
       const isExcelExport = download === 'true' || download === 'excel'
 
@@ -158,6 +158,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         queryStr += ` AND ct.receipt_number ILIKE $${paramIndex}`
         params.push(`%${receiptNumber}%`)
         paramIndex++
+      }
+
+      if (transactionType === 'debit') {
+        queryStr += ` AND ct.debit_amount > 0`
+      } else if (transactionType === 'credit') {
+        queryStr += ` AND ct.credit_amount > 0`
       }
 
       queryStr += ` ORDER BY ct.transaction_date DESC, ct.id DESC`
@@ -255,6 +261,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         countQuery += ` AND receipt_number ILIKE $${countParamIndex}`
         countParams.push(`%${receiptNumber}%`)
         countParamIndex++
+      }
+
+      if (transactionType === 'debit') {
+        countQuery += ` AND debit_amount > 0`
+      } else if (transactionType === 'credit') {
+        countQuery += ` AND credit_amount > 0`
       }
 
       const countResult = await query(countQuery, countParams)
