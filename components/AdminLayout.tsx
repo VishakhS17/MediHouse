@@ -72,10 +72,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <aside
         className={`fixed top-0 left-0 z-40 h-screen transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 w-64 bg-white border-r border-gray-200 overflow-y-auto shadow-lg lg:shadow-none`}
+        } lg:translate-x-0 w-64 bg-white border-r border-gray-200 shadow-lg lg:shadow-none flex flex-col`}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6 border-b border-gray-200">
+        <div className="flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6 border-b border-gray-200 flex-shrink-0">
           <a href="https://medi-house.in" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 bg-gradient-to-br from-ocean-royal to-ocean-cyan rounded-lg flex items-center justify-center">
               <span className="text-white text-xl font-bold">m</span>
@@ -100,8 +100,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="px-3 sm:px-4 py-4 sm:py-6 space-y-1 sm:space-y-2">
+        {/* Navigation - scrollable area */}
+        <nav className="px-3 sm:px-4 py-4 sm:py-6 space-y-1 sm:space-y-2 flex-1 overflow-y-auto pb-24 sm:pb-28">
           {navigation.map((item) => {
             const isActive = router.pathname === item.href
             return (
@@ -127,8 +127,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           })}
         </nav>
 
-        {/* User Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 border-t border-gray-200 bg-white">
+        {/* User Section - fixed at bottom */}
+        <div className="flex-shrink-0 p-3 sm:p-4 border-t border-gray-200 bg-white">
           <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-ocean-royal to-ocean-cyan rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-white font-semibold text-sm sm:text-base">
