@@ -34,7 +34,7 @@ export default function FinalReports() {
       })
     }
 
-    // Filter by search term (invoice number, collected by, checked by, supplied by)
+    // Filter by search term (invoice number, collected by, checked by, supplied by, customer name)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase().trim()
       filtered = filtered.filter((report) => {
@@ -42,12 +42,14 @@ export default function FinalReports() {
         const collectedBy = (report.collector_name || '').toLowerCase()
         const checkedBy = (report.checker_name || '').toLowerCase()
         const suppliedBy = (report.supplied_by || '').toLowerCase()
+        const customerName = (report.customer_name || '').toLowerCase()
         
         return (
           invoiceNumber.includes(searchLower) ||
           collectedBy.includes(searchLower) ||
           checkedBy.includes(searchLower) ||
-          suppliedBy.includes(searchLower)
+          suppliedBy.includes(searchLower) ||
+          customerName.includes(searchLower)
         )
       })
     }
@@ -215,7 +217,7 @@ export default function FinalReports() {
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search by invoice, collector, checker, or supplier..."
+                      placeholder="Search by invoice, collector, checker, supplier, or customer name..."
                       className="px-3 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-64"
                     />
                     <svg
@@ -353,6 +355,9 @@ export default function FinalReports() {
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Supplied Date & Time
                       </th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer Name
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -378,6 +383,9 @@ export default function FinalReports() {
                         </td>
                         <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
                           {formatDate(report.delivery_date)}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3">
+                          <span className="text-xs sm:text-sm text-gray-900 font-medium">{report.customer_name || '-'}</span>
                         </td>
                       </tr>
                     ))}

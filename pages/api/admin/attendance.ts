@@ -126,7 +126,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         paramIndex++
       }
 
-      queryStr += ` ORDER BY a.attendance_date DESC, au.name ASC`
+      queryStr += ` ORDER BY a.attendance_date DESC, a.created_at ASC`
 
       const result = await query(queryStr, params)
 

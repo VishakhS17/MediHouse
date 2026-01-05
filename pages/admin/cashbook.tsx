@@ -35,6 +35,7 @@ export default function Cashbook() {
 
   // Form state
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [transactionDate, setTransactionDate] = useState(() => {
     const today = new Date()
     return today.toISOString().split('T')[0]
@@ -110,6 +111,36 @@ export default function Cashbook() {
     }
   }
 
+  const resetForm = () => {
+    setReceiptNumber('')
+    setPartyName('')
+    setBillNumbers('')
+    setDebitAmount('')
+    setCreditAmount('')
+    setNotes('')
+    setTransactionType('debit')
+    setEditingId(null)
+    setShowAddForm(false)
+  }
+
+  const handleEditStart = (transaction: CashbookTransaction) => {
+    setEditingId(transaction.id)
+    setTransactionDate(transaction.transaction_date)
+    setReceiptNumber(transaction.receipt_number)
+    setStaffName(transaction.staff_name)
+    setPartyName(transaction.party_name || '')
+    setBillNumbers(transaction.bill_numbers || '')
+    setDebitAmount(transaction.debit_amount > 0 ? transaction.debit_amount.toString() : '')
+    setCreditAmount(transaction.credit_amount > 0 ? transaction.credit_amount.toString() : '')
+    setTransactionType(transaction.debit_amount > 0 ? 'debit' : 'credit')
+    setNotes(transaction.notes || '')
+    setShowAddForm(true)
+  }
+
+  const handleEditCancel = () => {
+    resetForm()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -131,8 +162,11 @@ export default function Cashbook() {
     setSubmitting(true)
 
     try {
-      const response = await fetch('/api/admin/cashbook', {
-        method: 'POST',
+      const url = editingId ? `/api/admin/cashbook?id=${editingId}` : '/api/admin/cashbook'
+      const method = editingId ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'x-admin-data': JSON.stringify(admin),
@@ -152,20 +186,12 @@ export default function Cashbook() {
       const data = await response.json()
 
       if (response.ok) {
-        setSuccess('Transaction recorded successfully!')
-        // Reset form
-        setReceiptNumber('')
-        setPartyName('')
-        setBillNumbers('')
-        setDebitAmount('')
-        setCreditAmount('')
-        setNotes('')
-        setTransactionType('debit')
-        setShowAddForm(false)
+        setSuccess(editingId ? 'Transaction updated successfully!' : 'Transaction recorded successfully!')
+        resetForm()
         loadTransactions()
         setTimeout(() => setSuccess(''), 3000)
       } else {
-        setError(data.message || 'Failed to record transaction')
+        setError(data.message || (editingId ? 'Failed to update transaction' : 'Failed to record transaction'))
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred')
@@ -386,63 +412,100 @@ export default function Cashbook() {
           {/* Add Transaction Form */}
           {showAddForm && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Add New Transaction</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                  {editingId ? 'Edit Transaction' : 'Add New Transaction'}
+                </h2>
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={handleEditCancel}
+                    className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                       Transaction Date <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
                       value={transactionDate}
                       onChange={(e) => setTransactionDate(e.target.value)}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleSubmit(e as any)
+                        }
+                      }}
+                      className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
                       required
                       disabled={submitting}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Receipt Number (Auto-generated if empty)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Receipt Number (Auto-generated if empty)</label>
                     <input
                       type="text"
                       value={receiptNumber}
                       onChange={(e) => setReceiptNumber(e.target.value)}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleSubmit(e as any)
+                        }
+                      }}
+                      className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
                       placeholder="Leave empty for auto-generation"
                       disabled={submitting}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                       Staff Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={staffName}
                       onChange={(e) => setStaffName(e.target.value)}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleSubmit(e as any)
+                        }
+                      }}
+                      className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
                       required
                       disabled={submitting}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Party Name</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Party Name</label>
                     <input
                       type="text"
                       value={partyName}
                       onChange={(e) => setPartyName(e.target.value)}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleSubmit(e as any)
+                        }
+                      }}
+                      className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
                       placeholder="Customer/vendor name"
                       disabled={submitting}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Transaction Type</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Transaction Type</label>
                     <select
                       value={transactionType}
                       onChange={(e) => {
@@ -450,7 +513,7 @@ export default function Cashbook() {
                         setDebitAmount('')
                         setCreditAmount('')
                       }}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
                       disabled={submitting}
                     >
                       <option value="debit">Debit (Collection)</option>
@@ -459,7 +522,25 @@ export default function Cashbook() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Bill Numbers</label>
+                    <input
+                      type="text"
+                      value={billNumbers}
+                      onChange={(e) => setBillNumbers(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleSubmit(e as any)
+                        }
+                      }}
+                      className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      placeholder="Comma-separated invoice numbers"
+                      disabled={submitting}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                       Amount <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -474,32 +555,36 @@ export default function Cashbook() {
                           setCreditAmount(e.target.value)
                         }
                       }}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleSubmit(e as any)
+                        }
+                      }}
+                      onWheel={(e) => {
+                        e.currentTarget.blur()
+                      }}
+                      className="w-full px-4 py-3 text-base font-semibold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       placeholder="0.00"
                       required
                       disabled={submitting}
+                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitAppearance: 'none', MozAppearance: 'textfield' }}
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Bill Numbers</label>
-                    <input
-                      type="text"
-                      value={billNumbers}
-                      onChange={(e) => setBillNumbers(e.target.value)}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
-                      placeholder="Comma-separated invoice numbers"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notes</label>
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                          e.preventDefault()
+                          handleSubmit(e as any)
+                        }
+                      }}
                       rows={3}
-                      className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
                       placeholder="Additional notes..."
                       disabled={submitting}
                     />
@@ -509,9 +594,9 @@ export default function Cashbook() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white py-3 px-4 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none min-h-[48px] touch-manipulation"
+                  className="w-full bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white py-3 px-4 rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none min-h-[48px] touch-manipulation"
                 >
-                  {submitting ? 'Recording...' : 'Record Transaction'}
+                  {submitting ? (editingId ? 'Updating...' : 'Recording...') : (editingId ? 'Update Transaction' : 'Record Transaction')}
                 </button>
               </form>
             </div>
@@ -690,13 +775,23 @@ export default function Cashbook() {
                         </td>
                         <td className="px-3 sm:px-4 py-3 text-xs text-gray-600 hidden lg:table-cell">{transaction.notes || '-'}</td>
                         <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => handleDelete(transaction.id)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium"
-                            title="Delete transaction"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => handleEditStart(transaction)}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              title="Edit transaction"
+                            >
+                              Edit
+                            </button>
+                            <span className="text-gray-300">|</span>
+                            <button
+                              onClick={() => handleDelete(transaction.id)}
+                              className="text-red-600 hover:text-red-800 text-sm font-medium"
+                              title="Delete transaction"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -339,6 +339,86 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         error: error.message,
       })
     }
+  } else if (req.method === 'PUT') {
+    // Update cashbook transaction
+    try {
+      const { id } = req.query
+      const { transactionDate, receiptNumber, staffName, partyName, billNumbers, debitAmount, creditAmount, notes } = req.body
+
+      if (!id) {
+        return res.status(400).json({
+          message: 'Transaction ID is required',
+        })
+      }
+
+      if (!transactionDate || !staffName) {
+        return res.status(400).json({
+          message: 'Transaction date and staff name are required',
+        })
+      }
+
+      if ((!debitAmount || debitAmount <= 0) && (!creditAmount || creditAmount <= 0)) {
+        return res.status(400).json({
+          message: 'Either debit amount or credit amount must be greater than 0',
+        })
+      }
+
+      if (debitAmount > 0 && creditAmount > 0) {
+        return res.status(400).json({
+          message: 'Cannot have both debit and credit amounts',
+        })
+      }
+
+      // If receipt number is provided, check if it already exists (excluding current transaction)
+      if (receiptNumber) {
+        const existingCheck = await query(
+          'SELECT id FROM cashbook_transactions WHERE receipt_number = $1 AND id != $2',
+          [receiptNumber, parseInt(id as string)]
+        )
+
+        if (existingCheck.rows.length > 0) {
+          return res.status(400).json({
+            message: 'Receipt number already exists',
+          })
+        }
+      }
+
+      // Update transaction
+      const result = await query(
+        `UPDATE cashbook_transactions 
+         SET transaction_date = $1, receipt_number = $2, staff_name = $3, party_name = $4, 
+             bill_numbers = $5, debit_amount = $6, credit_amount = $7, notes = $8, updated_at = NOW()
+         WHERE id = $9
+         RETURNING id, transaction_date, receipt_number, staff_name, party_name, bill_numbers, 
+                   debit_amount, credit_amount, balance, notes, created_at, updated_at`,
+        [
+          transactionDate,
+          receiptNumber || null,
+          staffName,
+          partyName || null,
+          billNumbers || null,
+          debitAmount || 0,
+          creditAmount || 0,
+          notes || null,
+          parseInt(id as string),
+        ]
+      )
+
+      // Recalculate balances for all transactions after this one
+      await query('SELECT recalculate_all_cashbook_balances()')
+
+      res.status(200).json({
+        success: true,
+        message: 'Cashbook transaction updated successfully',
+        data: result.rows[0],
+      })
+    } catch (error: any) {
+      console.error('Update cashbook transaction error:', error)
+      res.status(500).json({
+        message: 'Error updating cashbook transaction',
+        error: error.message,
+      })
+    }
   } else if (req.method === 'DELETE') {
     // Delete cashbook transaction
     try {

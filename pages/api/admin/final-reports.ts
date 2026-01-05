@@ -36,7 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ic.checker_name,
         ic.checked_date,
         s.supplied_by,
-        s.delivery_date
+        s.delivery_date,
+        s.customer_name
       FROM invoice_collections ic
       LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
       WHERE 1=1
@@ -103,6 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               second: '2-digit',
             })
           : '',
+        'Customer Name': row.customer_name || '',
       }))
 
       const worksheet = XLSX.utils.json_to_sheet(excelData)

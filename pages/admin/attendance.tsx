@@ -386,6 +386,26 @@ export default function Attendance() {
 
   const isSuperAdmin = admin?.role?.name === 'super_admin'
 
+  // Calculate daily SL numbers
+  const getDailySLNumbers = () => {
+    const slMap: Record<string, number> = {}
+    const slNumbers: Record<number, number> = {}
+    
+    // Group by date and assign SL numbers
+    attendance.forEach((record) => {
+      const dateKey = record.attendance_date
+      if (!slMap[dateKey]) {
+        slMap[dateKey] = 0
+      }
+      slMap[dateKey]++
+      slNumbers[record.id] = slMap[dateKey]
+    })
+    
+    return slNumbers
+  }
+
+  const dailySLNumbers = getDailySLNumbers()
+
   if (!hasPermission('manage_attendance')) {
     return (
       <AdminProtectedRoute>
@@ -662,6 +682,9 @@ export default function Attendance() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        SL
+                      </th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -692,6 +715,9 @@ export default function Attendance() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {attendance.map((record) => (
                       <tr key={record.id} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-700">
+                          {dailySLNumbers[record.id] || '-'}
+                        </td>
                         <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
                           {new Date(record.attendance_date).toLocaleDateString('en-IN')}
                         </td>
