@@ -757,8 +757,8 @@ export default function Cashbook() {
             ) : transactions.length === 0 ? (
               <p className="text-sm sm:text-base text-gray-500 text-center py-8">No transactions found</p>
             ) : (
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="min-w-full divide-y divide-gray-200">
+              <div className="overflow-x-auto w-full" style={{ maxWidth: '100%' }}>
+                <table className="min-w-full divide-y divide-gray-200" style={{ width: '100%', tableLayout: 'auto' }}>
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
