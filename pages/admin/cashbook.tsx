@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import AdminLayout from '@/components/AdminLayout'
 import AdminProtectedRoute from '@/components/AdminProtectedRoute'
@@ -32,6 +32,9 @@ export default function Cashbook() {
   const [totalRecords, setTotalRecords] = useState(0)
   const [totalDebit, setTotalDebit] = useState(0)
   const [totalCredit, setTotalCredit] = useState(0)
+
+  // Ref for form section
+  const formRef = useRef<HTMLDivElement>(null)
 
   // Form state
   const [showAddForm, setShowAddForm] = useState(false)
@@ -112,7 +115,10 @@ export default function Cashbook() {
   }
 
   const resetForm = () => {
+    const today = new Date()
+    setTransactionDate(today.toISOString().split('T')[0])
     setReceiptNumber('')
+    setStaffName(admin?.name || '')
     setPartyName('')
     setBillNumbers('')
     setDebitAmount('')
@@ -135,6 +141,11 @@ export default function Cashbook() {
     setTransactionType(transaction.debit_amount > 0 ? 'debit' : 'credit')
     setNotes(transaction.notes || '')
     setShowAddForm(true)
+    
+    // Scroll to form after state updates
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
   }
 
   const handleEditCancel = () => {
@@ -359,10 +370,18 @@ export default function Cashbook() {
               </p>
             </div>
             <button
-              onClick={() => setShowAddForm(!showAddForm)}
+              onClick={() => {
+                if (showAddForm && !editingId) {
+                  resetForm()
+                } else if (!showAddForm) {
+                  // Reset form before opening for new transaction
+                  resetForm()
+                  setShowAddForm(true)
+                }
+              }}
               className="px-4 py-2.5 bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 min-h-[44px] touch-manipulation"
             >
-              {showAddForm ? 'Cancel' : '+ Add Transaction'}
+              {showAddForm && !editingId ? 'Cancel' : '+ Add Transaction'}
             </button>
           </div>
 
@@ -411,7 +430,7 @@ export default function Cashbook() {
 
           {/* Add Transaction Form */}
           {showAddForm && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div ref={formRef} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                   {editingId ? 'Edit Transaction' : 'Add New Transaction'}
@@ -420,7 +439,7 @@ export default function Cashbook() {
                   <button
                     type="button"
                     onClick={handleEditCancel}
-                    className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                    className="px-4 py-2 text-base font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors min-h-[44px] touch-manipulation"
                   >
                     Cancel
                   </button>
