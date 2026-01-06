@@ -765,51 +765,59 @@ export default function Cashbook() {
                 <table className="min-w-full divide-y divide-gray-200" style={{ width: '100%', tableLayout: 'auto' }}>
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt #</th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Party</th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Bill #</th>
-                      <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit</th>
-                      <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit</th>
-                      <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Notes</th>
-                      <th className="px-3 sm:px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                      <th className="px-2 sm:px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-2 sm:px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Receipt #</th>
+                      <th className="px-2 sm:px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Staff</th>
+                      <th className="px-2 sm:px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Party</th>
+                      <th className="px-2 sm:px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Bill #</th>
+                      <th className="px-2 sm:px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Debit</th>
+                      <th className="px-2 sm:px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Credit</th>
+                      <th className="px-2 sm:px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Balance</th>
+                      <th className="px-2 sm:px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Notes</th>
+                      <th className="px-2 sm:px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider" style={{ minWidth: '90px', width: '90px', maxWidth: '90px' }}>Action</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {transactions.map((transaction) => (
                       <tr key={transaction.id} className="hover:bg-gray-50">
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600">{formatDate(transaction.transaction_date)}</td>
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{transaction.receipt_number}</td>
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600">{transaction.staff_name}</td>
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">{transaction.party_name || '-'}</td>
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-xs text-gray-600 hidden md:table-cell">{transaction.bill_numbers || '-'}</td>
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-right text-green-600 font-medium">
+                        <td className="px-2 sm:px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-600 font-semibold">{formatDate(transaction.transaction_date)}</td>
+                        <td className="px-2 sm:px-3 py-3 whitespace-nowrap text-xs sm:text-sm font-semibold text-gray-900">{transaction.receipt_number}</td>
+                        <td className="px-2 sm:px-3 py-3 text-xs sm:text-sm text-gray-600 font-semibold">
+                          <div className="truncate max-w-[80px] sm:max-w-[100px]">{transaction.staff_name}</div>
+                        </td>
+                        <td className="px-2 sm:px-3 py-3 text-xs sm:text-sm text-gray-600 font-semibold hidden sm:table-cell">
+                          <div className="truncate max-w-[120px] sm:max-w-[150px]">{transaction.party_name || '-'}</div>
+                        </td>
+                        <td className="px-2 sm:px-3 py-3 text-xs text-gray-600 font-semibold hidden md:table-cell">
+                          <div className="truncate max-w-[80px] sm:max-w-[100px]">{transaction.bill_numbers || '-'}</div>
+                        </td>
+                        <td className="px-2 sm:px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-right text-green-600 font-semibold">
                           {transaction.debit_amount > 0 ? formatCurrency(transaction.debit_amount) : '-'}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-right text-red-600 font-medium">
+                        <td className="px-2 sm:px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-right text-red-600 font-semibold">
                           {transaction.credit_amount > 0 ? formatCurrency(transaction.credit_amount) : '-'}
                         </td>
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-right font-semibold">
+                        <td className="px-2 sm:px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-right font-bold">
                           <span className={transaction.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
                             {formatCurrency(transaction.balance)}
                           </span>
                         </td>
-                        <td className="px-3 sm:px-4 py-3 text-xs text-gray-600 hidden lg:table-cell">{transaction.notes || '-'}</td>
-                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-center">
-                          <div className="flex gap-2 justify-center">
+                        <td className="px-2 sm:px-3 py-3 text-xs text-gray-600 font-semibold hidden lg:table-cell">
+                          <div className="truncate max-w-[120px] sm:max-w-[150px]">{transaction.notes || '-'}</div>
+                        </td>
+                        <td className="px-1 sm:px-2 py-3 text-center" style={{ minWidth: '90px', width: '90px', maxWidth: '90px' }}>
+                          <div className="flex gap-1 justify-center items-center">
                             <button
                               onClick={() => handleEditStart(transaction)}
-                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              className="text-blue-600 hover:text-blue-800 text-xs font-semibold whitespace-nowrap"
                               title="Edit transaction"
                             >
                               Edit
                             </button>
-                            <span className="text-gray-300">|</span>
+                            <span className="text-gray-300 text-xs">|</span>
                             <button
                               onClick={() => handleDelete(transaction.id)}
-                              className="text-red-600 hover:text-red-800 text-sm font-medium"
+                              className="text-red-600 hover:text-red-800 text-xs font-semibold whitespace-nowrap"
                               title="Delete transaction"
                             >
                               Delete
