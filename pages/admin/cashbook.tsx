@@ -44,7 +44,7 @@ export default function Cashbook() {
     return today.toISOString().split('T')[0]
   })
   const [receiptNumber, setReceiptNumber] = useState('')
-  const [staffName, setStaffName] = useState(admin?.name || '')
+  const [staffName, setStaffName] = useState('')
   const [partyName, setPartyName] = useState('')
   const [billNumbers, setBillNumbers] = useState('')
   const [debitAmount, setDebitAmount] = useState('')
@@ -59,12 +59,6 @@ export default function Cashbook() {
   const [filterPartyName, setFilterPartyName] = useState('')
   const [filterReceiptNumber, setFilterReceiptNumber] = useState('')
   const [filterTransactionType, setFilterTransactionType] = useState<'all' | 'debit' | 'credit'>('all')
-
-  useEffect(() => {
-    if (admin?.name) {
-      setStaffName(admin.name)
-    }
-  }, [admin])
 
   useEffect(() => {
     if (admin) {
@@ -118,7 +112,7 @@ export default function Cashbook() {
     const today = new Date()
     setTransactionDate(today.toISOString().split('T')[0])
     setReceiptNumber('')
-    setStaffName(admin?.name || '')
+    setStaffName('')
     setPartyName('')
     setBillNumbers('')
     setDebitAmount('')
@@ -472,7 +466,10 @@ export default function Cashbook() {
                     <input
                       type="text"
                       value={receiptNumber}
-                      onChange={(e) => setReceiptNumber(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '')
+                        setReceiptNumber(value)
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault()
@@ -492,7 +489,10 @@ export default function Cashbook() {
                     <input
                       type="text"
                       value={staffName}
-                      onChange={(e) => setStaffName(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^a-zA-Z\s]/g, '')
+                        setStaffName(value)
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault()
@@ -532,11 +532,15 @@ export default function Cashbook() {
                         setDebitAmount('')
                         setCreditAmount('')
                       }}
-                      className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                      className={`w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent ${
+                        transactionType === 'debit' 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}
                       disabled={submitting}
                     >
-                      <option value="debit">Debit (Collection)</option>
-                      <option value="credit">Credit (Deposit/Spending)</option>
+                      <option value="debit" style={{ color: '#16a34a' }}>Debit (Collection)</option>
+                      <option value="credit" style={{ color: '#dc2626' }}>Credit (Deposit/Spending)</option>
                     </select>
                   </div>
 
