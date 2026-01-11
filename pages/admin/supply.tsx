@@ -24,6 +24,10 @@ export default function Supply() {
   const [success, setSuccess] = useState('')
   const [downloading, setDownloading] = useState(false)
   const [supplyData, setSupplyData] = useState<Record<number, { suppliedBy: string; customerName: string }>>({})
+  const [sortColumn, setSortColumn] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [dailySLNumbers, setDailySLNumbers] = useState<Record<number, number>>({})
+  const [showMissing, setShowMissing] = useState(false)
 
   useEffect(() => {
     if (admin) {
@@ -104,8 +108,38 @@ export default function Supply() {
       })
     }
 
+    // Calculate SL numbers based on filtered (but unsorted) invoices
+    const slMap: Record<string, number> = {}
+    const slNumbers: Record<number, number> = {}
+    
+    filtered.forEach((invoice) => {
+      const dateKey = invoice.checked_date 
+        ? new Date(invoice.checked_date).toISOString().split('T')[0]
+        : 'no-date'
+      if (!slMap[dateKey]) {
+        slMap[dateKey] = 0
+      }
+      slMap[dateKey]++
+      slNumbers[invoice.id] = slMap[dateKey]
+    })
+    
+    setDailySLNumbers(slNumbers)
+
+    // Apply sorting
+    if (sortColumn === 'invoice_number') {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a.invoice_number || ''
+        const bValue = b.invoice_number || ''
+        if (sortDirection === 'asc') {
+          return aValue.localeCompare(bValue)
+        } else {
+          return bValue.localeCompare(aValue)
+        }
+      })
+    }
+
     setFilteredInvoices(filtered)
-  }, [invoices, searchTerm, checkedDateFilter])
+  }, [invoices, searchTerm, checkedDateFilter, sortColumn, sortDirection])
 
   const loadInvoices = async () => {
     if (!admin) {
@@ -137,6 +171,7 @@ export default function Supply() {
       setLoading(false)
     }
   }
+
 
   const handleSupplyDataChange = (invoiceId: number, field: 'suppliedBy' | 'customerName', value: string) => {
     setSupplyData((prev) => ({
@@ -275,6 +310,58 @@ export default function Supply() {
     })
   }
 
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      // Toggle direction if same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Set new column and default to ascending
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  // Calculate missing invoice numbers from the sequence/series
+  const getMissingInvoiceNumbers = () => {
+    // Get all invoice numbers from filtered invoices
+    const invoiceNumbers = filteredInvoices
+      .map((invoice) => invoice.invoice_number)
+      .filter((invoiceNumber): invoiceNumber is string => Boolean(invoiceNumber))
+    
+    if (invoiceNumbers.length === 0) {
+      return []
+    }
+
+    // Convert to numbers and filter out non-numeric values
+    const numericInvoices = invoiceNumbers
+      .map((num) => parseInt(num, 10))
+      .filter((num) => !isNaN(num))
+      .sort((a, b) => a - b)
+
+    if (numericInvoices.length === 0) {
+      return []
+    }
+
+    const min = numericInvoices[0]
+    const max = numericInvoices[numericInvoices.length - 1]
+    
+    // Create a set of existing invoice numbers for quick lookup
+    const existingNumbers = new Set(numericInvoices)
+    
+    // Find missing numbers in the sequence
+    const missing: string[] = []
+    for (let i = min; i <= max; i++) {
+      if (!existingNumbers.has(i)) {
+        missing.push(i.toString())
+      }
+    }
+    
+    return missing
+  }
+
+  const missingInvoiceNumbers = getMissingInvoiceNumbers()
+
   if (!hasPermission('manage_supply')) {
     return (
       <AdminProtectedRoute>
@@ -319,6 +406,61 @@ export default function Supply() {
           {success && (
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-600">{success}</p>
+            </div>
+          )}
+
+          {/* Missing Invoice Numbers Section */}
+          {checkedDateFilter && missingInvoiceNumbers.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <button
+                onClick={() => setShowMissing(!showMissing)}
+                className="flex items-center justify-between w-full text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                      Missing Invoice Numbers
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-0.5">
+                      {missingInvoiceNumbers.length} invoice number{missingInvoiceNumbers.length !== 1 ? 's' : ''} missing from the series for {checkedDateFilter ? new Date(checkedDateFilter).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'selected date'}
+                    </p>
+                  </div>
+                </div>
+                <svg
+                  className={`w-5 h-5 text-gray-500 transition-transform ${showMissing ? 'transform rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showMissing && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  {missingInvoiceNumbers.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {missingInvoiceNumbers.map((invoiceNumber) => (
+                        <span
+                          key={invoiceNumber}
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-orange-50 text-orange-800 border border-orange-200"
+                        >
+                          {invoiceNumber}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No missing invoice numbers in the series for the selected date.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -501,7 +643,35 @@ export default function Supply() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Invoice #
+                        SL
+                      </th>
+                      <th 
+                        className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                        onClick={() => handleSort('invoice_number')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Invoice #
+                          {sortColumn === 'invoice_number' && (
+                            <svg
+                              className={`w-4 h-4 ${sortDirection === 'asc' ? '' : 'transform rotate-180'}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          )}
+                          {sortColumn !== 'invoice_number' && (
+                            <svg
+                              className="w-4 h-4 opacity-30"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
+                          )}
+                        </div>
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Supplied By
@@ -523,6 +693,9 @@ export default function Supply() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredInvoices.map((invoice) => (
                       <tr key={invoice.id} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-700">
+                          {dailySLNumbers[invoice.id] || '-'}
+                        </td>
                         <td className="px-3 sm:px-4 py-3">
                           <div className="text-sm font-medium text-gray-900">{invoice.invoice_number}</div>
                         </td>

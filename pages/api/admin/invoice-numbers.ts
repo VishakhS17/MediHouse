@@ -19,14 +19,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ message: 'Forbidden - Insufficient permissions' })
     }
 
-    // Get all invoice numbers from invoice_collections that don't have supply records yet
-    const result = await query(
-      `SELECT DISTINCT ic.invoice_number
-       FROM invoice_collections ic
-       LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
-       WHERE s.invoice_number IS NULL
-       ORDER BY ic.invoice_number ASC`
-    )
+    // Get date parameter if provided
+    const { date } = req.query
+
+    // Build query with optional date filter
+    let queryStr = `
+      SELECT DISTINCT ic.invoice_number
+      FROM invoice_collections ic
+      LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
+      WHERE s.invoice_number IS NULL
+    `
+    
+    const params: any[] = []
+    let paramIndex = 1
+    
+    // Add date filter if provided (filter by checked_date)
+    if (date && typeof date === 'string' && date.trim() !== '') {
+      queryStr += ` AND DATE(ic.checked_date) = $${paramIndex}`
+      params.push(date)
+      paramIndex++
+    }
+    
+    queryStr += ` ORDER BY ic.invoice_number ASC`
+    
+    const result = await query(queryStr, params)
 
     res.status(200).json({
       success: true,
