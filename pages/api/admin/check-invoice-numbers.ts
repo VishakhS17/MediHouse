@@ -35,18 +35,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
+    // Limit the number of invoice numbers to check (safety measure)
+    const limitedInvoiceNumbers = invoiceNumbersArray.slice(0, 1000)
+    
+    if (limitedInvoiceNumbers.length !== invoiceNumbersArray.length) {
+      console.warn(`Limiting invoice number check to ${limitedInvoiceNumbers.length} numbers (from ${invoiceNumbersArray.length})`)
+    }
+
     // Check which invoice numbers exist in the database (across all dates)
     // Use parameterized query with IN clause
-    const placeholders = invoiceNumbersArray.map((_, index) => `$${index + 1}`).join(', ')
-    const queryStr = `
-      SELECT DISTINCT invoice_number
-      FROM invoice_collections
-      WHERE invoice_number IN (${placeholders})
-    `
-
-    const result = await query(queryStr, invoiceNumbersArray)
-
-    const existingInvoiceNumbers = result.rows.map((row) => row.invoice_number)
+    // PostgreSQL has a limit on the number of parameters, so we'll batch if needed
+    const batchSize = 500
+    const existingInvoiceNumbers: string[] = []
+    
+    for (let i = 0; i < limitedInvoiceNumbers.length; i += batchSize) {
+      const batch = limitedInvoiceNumbers.slice(i, i + batchSize)
+      const placeholders = batch.map((_, index) => `$${index + 1}`).join(', ')
+      const queryStr = `
+        SELECT DISTINCT invoice_number
+        FROM invoice_collections
+        WHERE invoice_number IN (${placeholders})
+      `
+      
+      const result = await query(queryStr, batch)
+      existingInvoiceNumbers.push(...result.rows.map((row: any) => row.invoice_number))
+    }
 
     res.status(200).json({
       success: true,

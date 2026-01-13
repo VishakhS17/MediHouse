@@ -343,9 +343,14 @@ export default function Supply() {
       }
 
       // Convert to numbers and filter out non-numeric values
+      // Also filter out unreasonable values (likely data errors)
       const numericInvoices = invoiceNumbers
-        .map((num) => parseInt(num, 10))
-        .filter((num) => !isNaN(num))
+        .map((num) => {
+          // Extract numeric part (handle cases like "18931(edit)" or "18931-1")
+          const numericPart = num.toString().replace(/[^0-9]/g, '')
+          return numericPart ? parseInt(numericPart, 10) : NaN
+        })
+        .filter((num) => !isNaN(num) && num > 0 && num < 1000000) // Reasonable range: 1 to 999,999
         .sort((a, b) => a - b)
 
       if (numericInvoices.length === 0) {
@@ -355,6 +360,14 @@ export default function Supply() {
 
       const min = numericInvoices[0]
       const max = numericInvoices[numericInvoices.length - 1]
+      
+      // Safety check: Don't check more than 1000 missing numbers to avoid performance issues
+      const range = max - min
+      if (range > 1000) {
+        console.warn(`Invoice number range too large (${range}), limiting check to reasonable range`)
+        setMissingInvoiceNumbers([])
+        return
+      }
       
       // Create a set of existing invoice numbers for quick lookup
       const existingNumbers = new Set(numericInvoices)
