@@ -28,6 +28,8 @@ export default function Supply() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [dailySLNumbers, setDailySLNumbers] = useState<Record<number, number>>({})
   const [showMissing, setShowMissing] = useState(false)
+  const [missingInvoiceNumbers, setMissingInvoiceNumbers] = useState<string[]>([])
+  const [loadingMissing, setLoadingMissing] = useState(false)
 
   useEffect(() => {
     if (admin) {
@@ -322,45 +324,91 @@ export default function Supply() {
     }
   }
 
-  // Calculate missing invoice numbers from the sequence/series
-  const getMissingInvoiceNumbers = () => {
-    // Get all invoice numbers from filtered invoices
-    const invoiceNumbers = filteredInvoices
-      .map((invoice) => invoice.invoice_number)
-      .filter((invoiceNumber): invoiceNumber is string => Boolean(invoiceNumber))
-    
-    if (invoiceNumbers.length === 0) {
-      return []
-    }
+  // Calculate missing invoice numbers from the sequence/series and check against database
+  useEffect(() => {
+    const calculateAndCheckMissing = async () => {
+      if (!checkedDateFilter || !admin) {
+        setMissingInvoiceNumbers([])
+        return
+      }
 
-    // Convert to numbers and filter out non-numeric values
-    const numericInvoices = invoiceNumbers
-      .map((num) => parseInt(num, 10))
-      .filter((num) => !isNaN(num))
-      .sort((a, b) => a - b)
+      // Get all invoice numbers from filtered invoices
+      const invoiceNumbers = filteredInvoices
+        .map((invoice) => invoice.invoice_number)
+        .filter((invoiceNumber): invoiceNumber is string => Boolean(invoiceNumber))
+      
+      if (invoiceNumbers.length === 0) {
+        setMissingInvoiceNumbers([])
+        return
+      }
 
-    if (numericInvoices.length === 0) {
-      return []
-    }
+      // Convert to numbers and filter out non-numeric values
+      const numericInvoices = invoiceNumbers
+        .map((num) => parseInt(num, 10))
+        .filter((num) => !isNaN(num))
+        .sort((a, b) => a - b)
 
-    const min = numericInvoices[0]
-    const max = numericInvoices[numericInvoices.length - 1]
-    
-    // Create a set of existing invoice numbers for quick lookup
-    const existingNumbers = new Set(numericInvoices)
-    
-    // Find missing numbers in the sequence
-    const missing: string[] = []
-    for (let i = min; i <= max; i++) {
-      if (!existingNumbers.has(i)) {
-        missing.push(i.toString())
+      if (numericInvoices.length === 0) {
+        setMissingInvoiceNumbers([])
+        return
+      }
+
+      const min = numericInvoices[0]
+      const max = numericInvoices[numericInvoices.length - 1]
+      
+      // Create a set of existing invoice numbers for quick lookup
+      const existingNumbers = new Set(numericInvoices)
+      
+      // Find missing numbers in the sequence
+      const missing: string[] = []
+      for (let i = min; i <= max; i++) {
+        if (!existingNumbers.has(i)) {
+          missing.push(i.toString())
+        }
+      }
+
+      if (missing.length === 0) {
+        setMissingInvoiceNumbers([])
+        return
+      }
+
+      // Check which missing invoice numbers exist in the database
+      setLoadingMissing(true)
+      try {
+        const response = await fetch('/api/admin/check-invoice-numbers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-data': JSON.stringify(admin),
+          },
+          body: JSON.stringify({
+            invoiceNumbers: missing,
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const existingInDatabase = new Set(data.existingInvoiceNumbers || [])
+          
+          // Filter out invoice numbers that exist in database
+          const trulyMissing = missing.filter((num) => !existingInDatabase.has(num))
+          setMissingInvoiceNumbers(trulyMissing)
+        } else {
+          // If API fails, show all missing numbers
+          console.error('API response not OK:', response.status, response.statusText)
+          setMissingInvoiceNumbers(missing)
+        }
+      } catch (err: any) {
+        console.error('Error checking missing invoice numbers:', err)
+        // If API fails (network error, etc.), show all missing numbers
+        setMissingInvoiceNumbers(missing)
+      } finally {
+        setLoadingMissing(false)
       }
     }
-    
-    return missing
-  }
 
-  const missingInvoiceNumbers = getMissingInvoiceNumbers()
+    calculateAndCheckMissing()
+  }, [filteredInvoices, checkedDateFilter, admin])
 
   if (!hasPermission('manage_supply')) {
     return (
@@ -443,7 +491,12 @@ export default function Supply() {
 
               {showMissing && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  {missingInvoiceNumbers.length > 0 ? (
+                  {loadingMissing ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-ocean-royal mx-auto"></div>
+                      <p className="text-sm text-gray-600 mt-2">Checking database...</p>
+                    </div>
+                  ) : missingInvoiceNumbers.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {missingInvoiceNumbers.map((invoiceNumber) => (
                         <span
@@ -456,7 +509,7 @@ export default function Supply() {
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500 text-center py-4">
-                      No missing invoice numbers in the series for the selected date.
+                      No missing invoice numbers in the series for the selected date (or all missing numbers exist in database on other dates).
                     </p>
                   )}
                 </div>
