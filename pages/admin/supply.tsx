@@ -332,8 +332,16 @@ export default function Supply() {
         return
       }
 
-      // Get all invoice numbers from filtered invoices
-      const invoiceNumbers = filteredInvoices
+      // Filter invoices by date ONLY (ignore search term for missing invoice calculation)
+      // This ensures we check all invoices for the date, not just filtered ones
+      const dateFilteredInvoices = invoices.filter((invoice) => {
+        if (!invoice.checked_date) return false
+        const invoiceDate = new Date(invoice.checked_date).toISOString().split('T')[0]
+        return invoiceDate === checkedDateFilter
+      })
+
+      // Get all invoice numbers from date-filtered invoices (not search-filtered)
+      const invoiceNumbers = dateFilteredInvoices
         .map((invoice) => invoice.invoice_number)
         .filter((invoiceNumber): invoiceNumber is string => Boolean(invoiceNumber))
       
@@ -421,7 +429,7 @@ export default function Supply() {
     }
 
     calculateAndCheckMissing()
-  }, [filteredInvoices, checkedDateFilter, admin])
+  }, [invoices, checkedDateFilter, admin])
 
   if (!hasPermission('manage_supply')) {
     return (
