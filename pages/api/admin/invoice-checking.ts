@@ -100,6 +100,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ic.collection_date,
           ic.checker_name,
           ic.checked_date,
+          ic.notes,
+          ic.created_at,
+          ic.updated_at,
           au.name as collected_by_name,
           s.supplied_by,
           s.customer_name as supply_customer_name

@@ -43,27 +43,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Check which invoice numbers exist in the database (across all dates)
+    // Return invoice numbers with their checked_date from invoice_collections
     // Use parameterized query with IN clause
     // PostgreSQL has a limit on the number of parameters, so we'll batch if needed
     const batchSize = 500
-    const existingInvoiceNumbers: string[] = []
+    const existingInvoices: Array<{ invoice_number: string; checked_date: string | null }> = []
     
     for (let i = 0; i < limitedInvoiceNumbers.length; i += batchSize) {
       const batch = limitedInvoiceNumbers.slice(i, i + batchSize)
       const placeholders = batch.map((_, index) => `$${index + 1}`).join(', ')
       const queryStr = `
-        SELECT DISTINCT invoice_number
-        FROM invoice_collections
-        WHERE invoice_number IN (${placeholders})
+        SELECT DISTINCT ic.invoice_number, ic.checked_date
+        FROM invoice_collections ic
+        WHERE ic.invoice_number IN (${placeholders})
+        ORDER BY ic.invoice_number
       `
       
       const result = await query(queryStr, batch)
-      existingInvoiceNumbers.push(...result.rows.map((row: any) => row.invoice_number))
+      existingInvoices.push(...result.rows.map((row: any) => ({
+        invoice_number: row.invoice_number,
+        checked_date: row.checked_date,
+      })))
     }
 
     res.status(200).json({
       success: true,
-      existingInvoiceNumbers,
+      existingInvoices,
     })
   } catch (error: any) {
     console.error('Check invoice numbers error:', error)

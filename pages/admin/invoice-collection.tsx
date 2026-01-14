@@ -17,9 +17,17 @@ export default function InvoiceCollection() {
   const [filteredCollections, setFilteredCollections] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [dateFilter, setDateFilter] = useState('')
+  const [showEditedOnly, setShowEditedOnly] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editInvoiceNumber, setEditInvoiceNumber] = useState('')
+  const [editOrderId, setEditOrderId] = useState('')
+  const [editCollectorName, setEditCollectorName] = useState('')
+  const [editNotes, setEditNotes] = useState('')
+  const [editRemarks, setEditRemarks] = useState('')
+  const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
     if (admin?.name) {
@@ -91,8 +99,23 @@ export default function InvoiceCollection() {
       })
     }
 
+    // Filter by edited records only
+    if (showEditedOnly) {
+      filtered = filtered.filter((collection) => {
+        // Check if record has been updated (updated_at exists and is different from created_at)
+        const hasBeenUpdated = collection.updated_at && 
+          collection.created_at && 
+          new Date(collection.updated_at).getTime() !== new Date(collection.created_at).getTime()
+        
+        // Check if notes contain remarks
+        const hasRemarks = collection.notes && collection.notes.includes('[Remarks:')
+        
+        return hasBeenUpdated || hasRemarks
+      })
+    }
+
     setFilteredCollections(filtered)
-  }, [collections, searchTerm, dateFilter])
+  }, [collections, searchTerm, dateFilter, showEditedOnly])
 
   const loadCollections = async () => {
     setLoading(true)
@@ -215,6 +238,99 @@ export default function InvoiceCollection() {
       setError(err.message || 'An error occurred')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleEdit = (collection: any) => {
+    console.log('Editing collection:', collection)
+    setEditingId(collection.id)
+    setEditInvoiceNumber(collection.invoice_number || '')
+    setEditOrderId(collection.order_id ? collection.order_id.toString() : '')
+    setEditCollectorName(collection.collector_name || '')
+    setEditNotes(collection.notes || '')
+    setEditRemarks('')
+    setError('')
+    setSuccess('')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditInvoiceNumber('')
+    setEditOrderId('')
+    setEditCollectorName('')
+    setEditNotes('')
+    setEditRemarks('')
+    setError('')
+    setSuccess('')
+  }
+
+  const handleUpdate = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
+    setError('')
+    setSuccess('')
+
+    if (!editInvoiceNumber.trim() || !editCollectorName.trim()) {
+      setError('Invoice number and collector name are required')
+      return
+    }
+
+    if (!editingId) {
+      setError('Invalid collection ID')
+      return
+    }
+
+    setUpdating(true)
+
+    try {
+      const payload = {
+        id: editingId,
+        invoiceNumber: editInvoiceNumber.trim(),
+        orderId: editOrderId ? parseInt(editOrderId) : null,
+        collectorName: editCollectorName.trim(),
+        notes: editNotes.trim() || null,
+        remarks: editRemarks.trim() || null,
+      }
+      console.log('Updating with payload:', payload)
+
+      const response = await fetch('/api/admin/invoice-collection', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-data': JSON.stringify(admin),
+        },
+        body: JSON.stringify(payload),
+      })
+
+      console.log('Response status:', response.status, response.statusText)
+
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        const text = await response.text()
+        console.error('Failed to parse response:', text)
+        setError(`Server error: ${response.status} ${response.statusText}`)
+        setUpdating(false)
+        return
+      }
+
+      if (response.ok) {
+        setSuccess('Invoice collection updated successfully!')
+        handleCancelEdit()
+        if (showHistory) {
+          loadCollections()
+        }
+      } else {
+        setError(data.message || 'Failed to update invoice collection')
+        console.error('Update failed:', data)
+      }
+    } catch (err: any) {
+      console.error('Update error:', err)
+      setError(err.message || 'An error occurred')
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -364,6 +480,20 @@ export default function InvoiceCollection() {
 
           {/* Collection History */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            {(error || success) && editingId && (
+              <div className="mb-4">
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+                {success && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-600">{success}</p>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Collection History</h2>
               <div className="flex flex-wrap gap-3 w-full sm:w-auto">
@@ -431,6 +561,18 @@ export default function InvoiceCollection() {
                           </svg>
                         </button>
                       )}
+                    </div>
+                    {/* Edited Filter */}
+                    <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg bg-white min-h-[44px]">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showEditedOnly}
+                          onChange={(e) => setShowEditedOnly(e.target.checked)}
+                          className="w-4 h-4 text-ocean-royal border-gray-300 rounded focus:ring-ocean-royal"
+                        />
+                        <span className="text-sm text-gray-700 whitespace-nowrap">Edited Only</span>
+                      </label>
                     </div>
                     <button
                       onClick={handleDownloadExcel}
@@ -515,31 +657,143 @@ export default function InvoiceCollection() {
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                             Notes
                           </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Action
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredCollections.map((collection) => (
-                          <tr key={collection.id} className="hover:bg-gray-50">
-                            <td className="px-3 sm:px-4 py-3">
-                              <div className="text-sm font-medium text-gray-900">{collection.invoice_number}</div>
-                              <div className="text-xs text-gray-500 sm:hidden mt-1">{collection.collector_name}</div>
-                            </td>
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
-                              {collection.collector_name}
-                            </td>
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden md:table-cell">
-                              {collection.order_id || '-'}
-                            </td>
-                            <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
-                              {new Date(collection.collection_date).toLocaleString('en-IN', {
-                                timeZone: 'Asia/Kolkata',
-                              })}
-                            </td>
-                            <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 hidden lg:table-cell">
-                              {collection.notes || '-'}
-                            </td>
-                          </tr>
-                        ))}
+                        {filteredCollections.map((collection) => {
+                          const isEditing = editingId === collection.id
+                          return (
+                            <tr key={collection.id} className={`hover:bg-gray-50 ${isEditing ? 'bg-blue-50' : ''}`}>
+                              <td className="px-3 sm:px-4 py-3">
+                                {isEditing ? (
+                                  <div className="space-y-2">
+                                    <input
+                                      type="text"
+                                      value={editInvoiceNumber}
+                                      onChange={(e) => setEditInvoiceNumber(e.target.value)}
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                                      placeholder="Invoice number"
+                                      required
+                                    />
+                                    <input
+                                      type="text"
+                                      value={editCollectorName}
+                                      onChange={(e) => setEditCollectorName(e.target.value)}
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent sm:hidden"
+                                      placeholder="Collector name"
+                                      required
+                                    />
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="text-sm font-medium text-gray-900">{collection.invoice_number}</div>
+                                    <div className="text-xs text-gray-500 sm:hidden mt-1">{collection.collector_name}</div>
+                                  </>
+                                )}
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
+                                {isEditing ? (
+                                  <input
+                                    type="text"
+                                    value={editCollectorName}
+                                    onChange={(e) => setEditCollectorName(e.target.value)}
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                                    placeholder="Collector name"
+                                    required
+                                  />
+                                ) : (
+                                  collection.collector_name
+                                )}
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden md:table-cell">
+                                {isEditing ? (
+                                  <input
+                                    type="number"
+                                    value={editOrderId}
+                                    onChange={(e) => setEditOrderId(e.target.value)}
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                                    placeholder="Order ID"
+                                  />
+                                ) : (
+                                  collection.order_id || '-'
+                                )}
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
+                                {new Date(collection.collection_date).toLocaleString('en-IN', {
+                                  timeZone: 'Asia/Kolkata',
+                                })}
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600 hidden lg:table-cell">
+                                {isEditing ? (
+                                  <div className="space-y-2">
+                                    <textarea
+                                      value={editNotes}
+                                      onChange={(e) => setEditNotes(e.target.value)}
+                                      rows={2}
+                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                                      placeholder="Notes"
+                                    />
+                                    <textarea
+                                      value={editRemarks}
+                                      onChange={(e) => setEditRemarks(e.target.value)}
+                                      rows={1}
+                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                                      placeholder="Remarks (optional)"
+                                    />
+                                  </div>
+                                ) : (
+                                  collection.notes || '-'
+                                )}
+                              </td>
+                              <td className="px-3 sm:px-4 py-3 text-sm">
+                                {isEditing ? (
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                    <button
+                                      onClick={() => handleUpdate()}
+                                      disabled={updating || !editInvoiceNumber.trim() || !editCollectorName.trim()}
+                                      className="text-green-600 hover:text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title="Save changes"
+                                    >
+                                      {updating ? (
+                                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                      ) : (
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={handleCancelEdit}
+                                      disabled={updating}
+                                      className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title="Cancel"
+                                    >
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => handleEdit(collection)}
+                                    className="text-ocean-royal hover:text-ocean-cyan font-medium"
+                                    title="Edit record"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>

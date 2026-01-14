@@ -17,6 +17,7 @@ export default function Supply() {
     const day = String(today.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   })
+  const [showEditedOnly, setShowEditedOnly] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submittingId, setSubmittingId] = useState<number | null>(null)
@@ -28,7 +29,10 @@ export default function Supply() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [dailySLNumbers, setDailySLNumbers] = useState<Record<number, number>>({})
   const [showMissing, setShowMissing] = useState(false)
-  const [missingInvoiceNumbers, setMissingInvoiceNumbers] = useState<string[]>([])
+  const [missingInvoiceNumbers, setMissingInvoiceNumbers] = useState<Array<{
+    invoiceNumber: string
+    existsOnDate: string | null // null if truly missing, date string if exists on different date
+  }>>([])
   const [loadingMissing, setLoadingMissing] = useState(false)
 
   useEffect(() => {
@@ -110,6 +114,21 @@ export default function Supply() {
       })
     }
 
+    // Filter by edited records only
+    if (showEditedOnly) {
+      filtered = filtered.filter((invoice) => {
+        // Check if invoice collection has been updated (updated_at exists and is different from created_at)
+        const hasBeenUpdated = invoice.updated_at && 
+          invoice.created_at && 
+          new Date(invoice.updated_at).getTime() !== new Date(invoice.created_at).getTime()
+        
+        // Check if notes contain remarks
+        const hasRemarks = invoice.notes && invoice.notes.includes('[Remarks:')
+        
+        return hasBeenUpdated || hasRemarks
+      })
+    }
+
     // Calculate SL numbers based on filtered (but unsorted) invoices
     const slMap: Record<string, number> = {}
     const slNumbers: Record<number, number> = {}
@@ -141,7 +160,7 @@ export default function Supply() {
     }
 
     setFilteredInvoices(filtered)
-  }, [invoices, searchTerm, checkedDateFilter, sortColumn, sortDirection])
+  }, [invoices, searchTerm, checkedDateFilter, sortColumn, sortDirection, showEditedOnly])
 
   const loadInvoices = async () => {
     if (!admin) {
@@ -332,15 +351,15 @@ export default function Supply() {
         return
       }
 
-      // Filter invoices by date ONLY (ignore search term for missing invoice calculation)
-      // This ensures we check all invoices for the date, not just filtered ones
+      // Filter invoices by selected date - get ALL invoices checked on that date
+      // Use all invoices (not just those with supply records) to find the range
       const dateFilteredInvoices = invoices.filter((invoice) => {
         if (!invoice.checked_date) return false
         const invoiceDate = new Date(invoice.checked_date).toISOString().split('T')[0]
         return invoiceDate === checkedDateFilter
       })
 
-      // Get all invoice numbers from date-filtered invoices (not search-filtered)
+      // Get all invoice numbers from invoices checked on the selected date
       const invoiceNumbers = dateFilteredInvoices
         .map((invoice) => invoice.invoice_number)
         .filter((invoiceNumber): invoiceNumber is string => Boolean(invoiceNumber))
@@ -366,11 +385,19 @@ export default function Supply() {
         return
       }
 
+      // Need at least 2 invoices to calculate a range
+      if (numericInvoices.length < 2) {
+        setMissingInvoiceNumbers([])
+        return
+      }
+
       const min = numericInvoices[0]
       const max = numericInvoices[numericInvoices.length - 1]
       
       // Safety check: Don't check more than 1000 missing numbers to avoid performance issues
       const range = max - min
+      console.log(`[Missing Invoices] Date: ${checkedDateFilter}, Min: ${min}, Max: ${max}, Range: ${range}, Total invoices: ${numericInvoices.length}`)
+      
       if (range > 1000) {
         console.warn(`Invoice number range too large (${range}), limiting check to reasonable range`)
         setMissingInvoiceNumbers([])
@@ -388,12 +415,17 @@ export default function Supply() {
         }
       }
 
+      console.log(`[Missing Invoices] Found ${missing.length} missing numbers in range ${min}-${max}`)
+      if (missing.length > 0 && missing.length <= 20) {
+        console.log(`[Missing Invoices] Missing numbers: ${missing.join(', ')}`)
+      }
+
       if (missing.length === 0) {
         setMissingInvoiceNumbers([])
         return
       }
 
-      // Check which missing invoice numbers exist in the database
+      // Check which missing invoice numbers exist in the database and get their checked_date
       setLoadingMissing(true)
       try {
         const response = await fetch('/api/admin/check-invoice-numbers', {
@@ -409,20 +441,43 @@ export default function Supply() {
 
         if (response.ok) {
           const data = await response.json()
-          const existingInDatabase = new Set(data.existingInvoiceNumbers || [])
+          const existingInvoices = data.existingInvoices || []
           
-          // Filter out invoice numbers that exist in database
-          const trulyMissing = missing.filter((num) => !existingInDatabase.has(num))
-          setMissingInvoiceNumbers(trulyMissing)
+          // Create a map of invoice number to checked_date
+          const invoiceDateMap = new Map<string, string | null>()
+          existingInvoices.forEach((inv: { invoice_number: string; checked_date: string | null }) => {
+            invoiceDateMap.set(inv.invoice_number, inv.checked_date)
+          })
+          
+          // Build result array with invoice number and date information
+          const missingWithDates = missing.map((invoiceNumber) => {
+            const checkedDate = invoiceDateMap.get(invoiceNumber)
+            if (checkedDate) {
+              // Invoice exists in database, format the date
+              const date = new Date(checkedDate).toISOString().split('T')[0]
+              return {
+                invoiceNumber,
+                existsOnDate: date,
+              }
+            } else {
+              // Invoice doesn't exist in database (truly missing)
+              return {
+                invoiceNumber,
+                existsOnDate: null,
+              }
+            }
+          })
+          
+          setMissingInvoiceNumbers(missingWithDates)
         } else {
-          // If API fails, show all missing numbers
+          // If API fails, show all missing numbers as truly missing
           console.error('API response not OK:', response.status, response.statusText)
-          setMissingInvoiceNumbers(missing)
+          setMissingInvoiceNumbers(missing.map(num => ({ invoiceNumber: num, existsOnDate: null })))
         }
       } catch (err: any) {
         console.error('Error checking missing invoice numbers:', err)
-        // If API fails (network error, etc.), show all missing numbers
-        setMissingInvoiceNumbers(missing)
+        // If API fails (network error, etc.), show all missing numbers as truly missing
+        setMissingInvoiceNumbers(missing.map(num => ({ invoiceNumber: num, existsOnDate: null })))
       } finally {
         setLoadingMissing(false)
       }
@@ -479,24 +534,41 @@ export default function Supply() {
           )}
 
           {/* Missing Invoice Numbers Section */}
-          {checkedDateFilter && missingInvoiceNumbers.length > 0 && (
+          {checkedDateFilter && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
               <button
                 onClick={() => setShowMissing(!showMissing)}
                 className="flex items-center justify-between w-full text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    missingInvoiceNumbers.length > 0 ? 'bg-orange-100' : 'bg-green-100'
+                  }`}>
+                    {missingInvoiceNumbers.length > 0 ? (
+                      <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
                   </div>
                   <div>
                     <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                       Missing Invoice Numbers
                     </h2>
                     <p className="text-sm text-gray-600 mt-0.5">
-                      {missingInvoiceNumbers.length} invoice number{missingInvoiceNumbers.length !== 1 ? 's' : ''} missing from the series for {checkedDateFilter ? new Date(checkedDateFilter).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'selected date'}
+                      {missingInvoiceNumbers.length > 0 ? (
+                        <>
+                          {missingInvoiceNumbers.length} invoice number{missingInvoiceNumbers.length !== 1 ? 's' : ''} missing from the supply records series for {checkedDateFilter ? new Date(checkedDateFilter).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'selected date'}
+                          {missingInvoiceNumbers.filter(item => item.existsOnDate).length > 0 && (
+                            <span className="ml-1">({missingInvoiceNumbers.filter(item => !item.existsOnDate).length} truly missing, {missingInvoiceNumbers.filter(item => item.existsOnDate).length} on different dates)</span>
+                          )}
+                        </>
+                      ) : (
+                        <>No missing invoice numbers found for {checkedDateFilter ? new Date(checkedDateFilter).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'selected date'}</>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -518,19 +590,59 @@ export default function Supply() {
                       <p className="text-sm text-gray-600 mt-2">Checking database...</p>
                     </div>
                   ) : missingInvoiceNumbers.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {missingInvoiceNumbers.map((invoiceNumber) => (
-                        <span
-                          key={invoiceNumber}
-                          className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-orange-50 text-orange-800 border border-orange-200"
-                        >
-                          {invoiceNumber}
-                        </span>
-                      ))}
+                    <div className="space-y-3">
+                      {/* Truly missing invoices */}
+                      {missingInvoiceNumbers.filter(item => !item.existsOnDate).length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-gray-700 mb-2">Truly Missing ({missingInvoiceNumbers.filter(item => !item.existsOnDate).length}):</p>
+                          <div className="flex flex-wrap gap-2">
+                            {missingInvoiceNumbers
+                              .filter(item => !item.existsOnDate)
+                              .map((item) => (
+                                <span
+                                  key={item.invoiceNumber}
+                                  className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-800 border border-red-200"
+                                  title="Invoice not found in database"
+                                >
+                                  {item.invoiceNumber}
+                                </span>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Invoices existing on different dates */}
+                      {missingInvoiceNumbers.filter(item => item.existsOnDate).length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-gray-700 mb-2">Exists on Different Date ({missingInvoiceNumbers.filter(item => item.existsOnDate).length}):</p>
+                          <div className="flex flex-wrap gap-2">
+                            {missingInvoiceNumbers
+                              .filter(item => item.existsOnDate)
+                              .map((item) => {
+                                const date = item.existsOnDate!
+                                const formattedDate = new Date(date).toLocaleDateString('en-IN', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })
+                                return (
+                                  <span
+                                    key={item.invoiceNumber}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-800 border border-blue-200"
+                                    title={`Invoice exists on ${formattedDate}`}
+                                  >
+                                    <span>{item.invoiceNumber}</span>
+                                    <span className="text-xs opacity-75">({formattedDate})</span>
+                                  </span>
+                                )
+                              })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500 text-center py-4">
-                      No missing invoice numbers in the series for the selected date (or all missing numbers exist in database on other dates).
+                      No missing invoice numbers in the series for the selected date.
                     </p>
                   )}
                 </div>
@@ -650,6 +762,18 @@ export default function Supply() {
                       </svg>
                     </button>
                   )}
+                </div>
+                {/* Edited Filter */}
+                <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg bg-white min-h-[44px]">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showEditedOnly}
+                      onChange={(e) => setShowEditedOnly(e.target.checked)}
+                      className="w-4 h-4 text-ocean-royal border-gray-300 rounded focus:ring-ocean-royal"
+                    />
+                    <span className="text-sm text-gray-700 whitespace-nowrap">Edited Only</span>
+                  </label>
                 </div>
                 <button
                   onClick={handleDownloadExcel}

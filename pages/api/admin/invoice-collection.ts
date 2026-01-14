@@ -106,6 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ic.collection_date,
           ic.notes,
           ic.created_at,
+          ic.updated_at,
           au.name as collected_by_name,
           o.customer_name,
           o.customer_phone
@@ -169,6 +170,80 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Get invoice collections error:', error)
       res.status(500).json({
         message: 'Error fetching invoice collections',
+        error: error.message,
+      })
+    }
+  } else if (req.method === 'PUT' || req.method === 'PATCH') {
+    // Update invoice collection
+    try {
+      const { id, invoiceNumber, orderId, collectorName, notes, remarks } = req.body
+
+      if (!id) {
+        return res.status(400).json({
+          message: 'Collection ID is required',
+        })
+      }
+
+      if (!invoiceNumber || !collectorName) {
+        return res.status(400).json({
+          message: 'Invoice number and collector name are required',
+        })
+      }
+
+      // Check if collection exists
+      const existingCheck = await query(
+        'SELECT id FROM invoice_collections WHERE id = $1',
+        [id]
+      )
+
+      if (existingCheck.rows.length === 0) {
+        return res.status(404).json({
+          message: 'Invoice collection not found',
+        })
+      }
+
+      // Check if invoice number is already used by another record
+      const duplicateCheck = await query(
+        'SELECT id FROM invoice_collections WHERE invoice_number = $1 AND id != $2',
+        [invoiceNumber, id]
+      )
+
+      if (duplicateCheck.rows.length > 0) {
+        return res.status(400).json({
+          message: 'Invoice number already used by another collection',
+        })
+      }
+
+      // Combine notes and remarks if remarks is provided
+      let finalNotes = notes || ''
+      if (remarks && remarks.trim()) {
+        finalNotes = finalNotes 
+          ? `${finalNotes}\n\n[Remarks: ${remarks.trim()}]`
+          : `[Remarks: ${remarks.trim()}]`
+      }
+
+      // Update invoice collection
+      const result = await query(
+        `UPDATE invoice_collections 
+         SET invoice_number = $1, 
+             order_id = $2, 
+             collector_name = $3, 
+             notes = $4,
+             updated_at = NOW()
+         WHERE id = $5
+         RETURNING id, invoice_number, order_id, collector_name, collection_date, notes, updated_at`,
+        [invoiceNumber, orderId || null, collectorName, finalNotes || null, id]
+      )
+
+      res.status(200).json({
+        success: true,
+        message: 'Invoice collection updated successfully',
+        data: result.rows[0],
+      })
+    } catch (error: any) {
+      console.error('Update invoice collection error:', error)
+      res.status(500).json({
+        message: 'Error updating invoice collection',
         error: error.message,
       })
     }

@@ -9,6 +9,7 @@ export default function InvoiceChecking() {
   const [collections, setCollections] = useState<any[]>([])
   const [filteredCollections, setFilteredCollections] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [showEditedOnly, setShowEditedOnly] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submittingId, setSubmittingId] = useState<number | null>(null)
@@ -90,8 +91,23 @@ export default function InvoiceChecking() {
       })
     }
 
+    // Filter by edited records only
+    if (showEditedOnly) {
+      filtered = filtered.filter((collection) => {
+        // Check if record has been updated (updated_at exists and is different from created_at)
+        const hasBeenUpdated = collection.updated_at && 
+          collection.created_at && 
+          new Date(collection.updated_at).getTime() !== new Date(collection.created_at).getTime()
+        
+        // Check if notes contain remarks
+        const hasRemarks = collection.notes && collection.notes.includes('[Remarks:')
+        
+        return hasBeenUpdated || hasRemarks
+      })
+    }
+
     setFilteredCollections(filtered)
-  }, [collections, searchTerm])
+  }, [collections, searchTerm, showEditedOnly])
 
   const loadCollections = async () => {
     if (!admin) {
@@ -402,6 +418,18 @@ export default function InvoiceChecking() {
                       </svg>
                     </button>
                   )}
+                </div>
+                {/* Edited Filter */}
+                <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg bg-white min-h-[44px]">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showEditedOnly}
+                      onChange={(e) => setShowEditedOnly(e.target.checked)}
+                      className="w-4 h-4 text-ocean-royal border-gray-300 rounded focus:ring-ocean-royal"
+                    />
+                    <span className="text-sm text-gray-700 whitespace-nowrap">Edited Only</span>
+                  </label>
                 </div>
                 {/* Date Picker */}
                 <div className="flex items-center gap-2">
