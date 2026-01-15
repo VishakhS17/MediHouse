@@ -35,6 +35,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ic.collection_date,
         ic.checker_name,
         ic.checked_date,
+        ic.notes,
+        ic.created_at,
+        ic.updated_at,
         s.supplied_by,
         s.delivery_date,
         s.customer_name

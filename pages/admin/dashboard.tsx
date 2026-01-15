@@ -7,7 +7,7 @@ export default function AdminDashboard() {
   const { hasPermission } = useAdminAuth()
 
   const quickLinks = [
-    { name: 'Outstanding Bills', href: '/admin/outstanding-bills', icon: '📋', permission: 'manage_outstanding_bills', color: 'from-ocean-royal to-ocean-cyan' },
+    { name: 'Outstanding Bills', href: '/admin/outstanding-bills', icon: '📋', permission: 'manage_outstanding_bills', color: 'from-red-500 to-red-600' },
     { name: 'Upload DRS', href: '/admin/upload-drs', icon: '📄', permission: 'manage_outstanding_bills', color: 'from-ocean-royal to-ocean-teal' },
     { name: 'Products', href: '/admin/products', icon: '💊', permission: 'manage_products', color: 'from-ocean-royal to-ocean-cyan' },
     { name: 'Upload Stock', href: '/admin/upload-stock', icon: '📤', permission: 'manage_stock', color: 'from-ocean-teal to-ocean-cyan' },

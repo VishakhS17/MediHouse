@@ -10,6 +10,7 @@ export default function FinalReports() {
   const [filteredReports, setFilteredReports] = useState<any[]>([])
   const [dateFilter, setDateFilter] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const [showEditedOnly, setShowEditedOnly] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [downloading, setDownloading] = useState(false)
@@ -54,8 +55,23 @@ export default function FinalReports() {
       })
     }
 
+    // Filter by edited records only
+    if (showEditedOnly) {
+      filtered = filtered.filter((report) => {
+        // Check if record has been updated (updated_at exists and is different from created_at)
+        const hasBeenUpdated = report.updated_at && 
+          report.created_at && 
+          new Date(report.updated_at).getTime() !== new Date(report.created_at).getTime()
+        
+        // Check if notes contain remarks
+        const hasRemarks = report.notes && report.notes.includes('[Remarks:')
+        
+        return hasBeenUpdated || hasRemarks
+      })
+    }
+
     setFilteredReports(filtered)
-  }, [reports, dateFilter, searchTerm])
+  }, [reports, dateFilter, searchTerm, showEditedOnly])
 
   const loadReports = async () => {
     if (!admin) {
@@ -267,6 +283,18 @@ export default function FinalReports() {
                     </button>
                   )}
                 </div>
+                {/* Edited Filter */}
+                <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg bg-white min-h-[44px]">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showEditedOnly}
+                      onChange={(e) => setShowEditedOnly(e.target.checked)}
+                      className="w-4 h-4 text-ocean-royal border-gray-300 rounded focus:ring-ocean-royal"
+                    />
+                    <span className="text-sm text-gray-700 whitespace-nowrap">Edited Only</span>
+                  </label>
+                </div>
                 <button
                   onClick={handleDownloadExcel}
                   disabled={downloading || filteredReports.length === 0}
@@ -361,11 +389,20 @@ export default function FinalReports() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredReports.map((report, index) => (
-                      <tr key={report.invoice_number || index} className="hover:bg-gray-50">
-                        <td className="px-3 sm:px-4 py-3">
-                          <div className="text-sm font-medium text-gray-900">{report.invoice_number || '-'}</div>
-                        </td>
+                    {filteredReports.map((report, index) => {
+                      // Check if this invoice has been edited
+                      const isEdited = (report.updated_at && 
+                        report.created_at && 
+                        new Date(report.updated_at).getTime() !== new Date(report.created_at).getTime()) ||
+                        (report.notes && report.notes.includes('[Remarks:'))
+                      
+                      return (
+                        <tr key={report.invoice_number || index} className="hover:bg-gray-50">
+                          <td className="px-3 sm:px-4 py-3">
+                            <div className={`text-sm font-medium ${isEdited ? 'text-red-600' : 'text-gray-900'}`}>
+                              {report.invoice_number || '-'}
+                            </div>
+                          </td>
                         <td className="px-3 sm:px-4 py-3">
                           <span className="text-xs sm:text-sm text-gray-900">{report.collector_name || '-'}</span>
                         </td>
@@ -388,7 +425,8 @@ export default function FinalReports() {
                           <span className="text-xs sm:text-sm text-gray-900 font-medium">{report.customer_name || '-'}</span>
                         </td>
                       </tr>
-                    ))}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>

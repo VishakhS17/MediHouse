@@ -28,6 +28,8 @@ export default function InvoiceCollection() {
   const [editNotes, setEditNotes] = useState('')
   const [editRemarks, setEditRemarks] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   useEffect(() => {
     if (admin?.name) {
@@ -331,6 +333,58 @@ export default function InvoiceCollection() {
       setError(err.message || 'An error occurred')
     } finally {
       setUpdating(false)
+    }
+  }
+
+  const handleDelete = async (collectionId: number, invoiceNumber: string) => {
+    if (!window.confirm(`Are you sure you want to delete the invoice collection for "${invoiceNumber}"? This action cannot be undone.`)) {
+      return
+    }
+
+    setDeleting(true)
+    setDeletingId(collectionId)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch('/api/admin/invoice-collection', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-data': JSON.stringify(admin),
+        },
+        body: JSON.stringify({
+          id: collectionId,
+        }),
+      })
+
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        const text = await response.text()
+        console.error('Failed to parse response:', text)
+        setError(`Server error: ${response.status} ${response.statusText}`)
+        setDeleting(false)
+        setDeletingId(null)
+        return
+      }
+
+      if (response.ok) {
+        setSuccess(`Invoice collection "${invoiceNumber}" deleted successfully!`)
+        if (showHistory) {
+          loadCollections()
+        }
+        setTimeout(() => setSuccess(''), 3000)
+      } else {
+        setError(data.message || 'Failed to delete invoice collection')
+      }
+    } catch (err: any) {
+      console.error('Delete error:', err)
+      setError(err.message || 'An error occurred while deleting')
+    } finally {
+      setDeleting(false)
+      setDeletingId(null)
     }
   }
 
@@ -665,6 +719,12 @@ export default function InvoiceCollection() {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {filteredCollections.map((collection) => {
                           const isEditing = editingId === collection.id
+                          // Check if this invoice has been edited
+                          const isEdited = (collection.updated_at && 
+                            collection.created_at && 
+                            new Date(collection.updated_at).getTime() !== new Date(collection.created_at).getTime()) ||
+                            (collection.notes && collection.notes.includes('[Remarks:'))
+                          
                           return (
                             <tr key={collection.id} className={`hover:bg-gray-50 ${isEditing ? 'bg-blue-50' : ''}`}>
                               <td className="px-3 sm:px-4 py-3">
@@ -689,7 +749,9 @@ export default function InvoiceCollection() {
                                   </div>
                                 ) : (
                                   <>
-                                    <div className="text-sm font-medium text-gray-900">{collection.invoice_number}</div>
+                                    <div className={`text-sm font-medium ${isEdited ? 'text-red-600' : 'text-gray-900'}`}>
+                                      {collection.invoice_number}
+                                    </div>
                                     <div className="text-xs text-gray-500 sm:hidden mt-1">{collection.collector_name}</div>
                                   </>
                                 )}
@@ -780,15 +842,34 @@ export default function InvoiceCollection() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <button
-                                    onClick={() => handleEdit(collection)}
-                                    className="text-ocean-royal hover:text-ocean-cyan font-medium"
-                                    title="Edit record"
-                                  >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => handleEdit(collection)}
+                                      className="text-ocean-royal hover:text-ocean-cyan font-medium"
+                                      title="Edit record"
+                                    >
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(collection.id, collection.invoice_number)}
+                                      disabled={deleting && deletingId === collection.id}
+                                      className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      title="Delete record"
+                                    >
+                                      {deleting && deletingId === collection.id ? (
+                                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                      ) : (
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      )}
+                                    </button>
+                                  </div>
                                 )}
                               </td>
                             </tr>

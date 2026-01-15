@@ -247,6 +247,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         error: error.message,
       })
     }
+  } else if (req.method === 'DELETE') {
+    // Delete invoice collection
+    try {
+      const { id } = req.body
+
+      if (!id) {
+        return res.status(400).json({
+          message: 'Collection ID is required',
+        })
+      }
+
+      // Check if collection exists
+      const existingCheck = await query(
+        'SELECT id, invoice_number FROM invoice_collections WHERE id = $1',
+        [id]
+      )
+
+      if (existingCheck.rows.length === 0) {
+        return res.status(404).json({
+          message: 'Invoice collection not found',
+        })
+      }
+
+      // Delete the invoice collection
+      await query(
+        'DELETE FROM invoice_collections WHERE id = $1',
+        [id]
+      )
+
+      res.status(200).json({
+        success: true,
+        message: 'Invoice collection deleted successfully',
+        deletedInvoiceNumber: existingCheck.rows[0].invoice_number,
+      })
+    } catch (error: any) {
+      console.error('Delete invoice collection error:', error)
+      res.status(500).json({
+        message: 'Error deleting invoice collection',
+        error: error.message,
+      })
+    }
   } else {
     res.status(405).json({ message: 'Method not allowed' })
   }

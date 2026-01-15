@@ -558,14 +558,23 @@ export default function InvoiceChecking() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCollections.map((collection) => (
-                      <tr key={collection.id} className="hover:bg-gray-50">
-                        <td className="px-3 sm:px-4 py-3">
-                          <div className="text-sm font-medium text-gray-900">{collection.invoice_number}</div>
-                          <div className="text-xs text-gray-500 sm:hidden mt-1">
-                            Collected by: {collection.collector_name}
-                          </div>
-                        </td>
+                    {filteredCollections.map((collection) => {
+                      // Check if this invoice has been edited
+                      const isEdited = (collection.updated_at && 
+                        collection.created_at && 
+                        new Date(collection.updated_at).getTime() !== new Date(collection.created_at).getTime()) ||
+                        (collection.notes && collection.notes.includes('[Remarks:'))
+                      
+                      return (
+                        <tr key={collection.id} className="hover:bg-gray-50">
+                          <td className="px-3 sm:px-4 py-3">
+                            <div className={`text-sm font-medium ${isEdited ? 'text-red-600' : 'text-gray-900'}`}>
+                              {collection.invoice_number}
+                            </div>
+                            <div className="text-xs text-gray-500 sm:hidden mt-1">
+                              Collected by: {collection.collector_name}
+                            </div>
+                          </td>
                         <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
                           {collection.collector_name}
                         </td>
@@ -615,7 +624,8 @@ export default function InvoiceChecking() {
                           )}
                         </td>
                       </tr>
-                    ))}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>

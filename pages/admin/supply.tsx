@@ -889,14 +889,23 @@ export default function Supply() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredInvoices.map((invoice) => (
-                      <tr key={invoice.id} className="hover:bg-gray-50">
-                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-700">
-                          {dailySLNumbers[invoice.id] || '-'}
-                        </td>
-                        <td className="px-3 sm:px-4 py-3">
-                          <div className="text-sm font-medium text-gray-900">{invoice.invoice_number}</div>
-                        </td>
+                    {filteredInvoices.map((invoice) => {
+                      // Check if this invoice has been edited
+                      const isEdited = (invoice.updated_at && 
+                        invoice.created_at && 
+                        new Date(invoice.updated_at).getTime() !== new Date(invoice.created_at).getTime()) ||
+                        (invoice.notes && invoice.notes.includes('[Remarks:'))
+                      
+                      return (
+                        <tr key={invoice.id} className="hover:bg-gray-50">
+                          <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-700">
+                            {dailySLNumbers[invoice.id] || '-'}
+                          </td>
+                          <td className="px-3 sm:px-4 py-3">
+                            <div className={`text-sm font-medium ${isEdited ? 'text-red-600' : 'text-gray-900'}`}>
+                              {invoice.invoice_number}
+                            </div>
+                          </td>
                         <td className="px-3 sm:px-4 py-3">
                           {invoice.supply_id ? (
                             <span className="text-xs sm:text-sm text-gray-900 font-medium">
@@ -957,7 +966,8 @@ export default function Supply() {
                           )}
                         </td>
                       </tr>
-                    ))}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
