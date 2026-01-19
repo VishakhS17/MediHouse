@@ -18,6 +18,7 @@ export default function Supply() {
     return `${year}-${month}-${day}`
   })
   const [showEditedOnly, setShowEditedOnly] = useState(false)
+  const [showNotSuppliedOnly, setShowNotSuppliedOnly] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submittingId, setSubmittingId] = useState<number | null>(null)
@@ -129,6 +130,14 @@ export default function Supply() {
       })
     }
 
+    // Filter by not supplied records only
+    if (showNotSuppliedOnly) {
+      filtered = filtered.filter((invoice) => {
+        // Show only invoices that don't have a supply record (supply_id is null/undefined)
+        return !invoice.supply_id
+      })
+    }
+
     // Calculate SL numbers based on filtered (but unsorted) invoices
     const slMap: Record<string, number> = {}
     const slNumbers: Record<number, number> = {}
@@ -160,7 +169,7 @@ export default function Supply() {
     }
 
     setFilteredInvoices(filtered)
-  }, [invoices, searchTerm, checkedDateFilter, sortColumn, sortDirection, showEditedOnly])
+  }, [invoices, searchTerm, checkedDateFilter, sortColumn, sortDirection, showEditedOnly, showNotSuppliedOnly])
 
   const loadInvoices = async () => {
     if (!admin) {
@@ -773,6 +782,18 @@ export default function Supply() {
                       className="w-4 h-4 text-ocean-royal border-gray-300 rounded focus:ring-ocean-royal"
                     />
                     <span className="text-sm text-gray-700 whitespace-nowrap">Edited Only</span>
+                  </label>
+                </div>
+                {/* Not Supplied Filter */}
+                <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg bg-white min-h-[44px]">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showNotSuppliedOnly}
+                      onChange={(e) => setShowNotSuppliedOnly(e.target.checked)}
+                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-600"
+                    />
+                    <span className="text-sm text-gray-700 whitespace-nowrap">Not Supplied Only</span>
                   </label>
                 </div>
                 <button
