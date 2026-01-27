@@ -26,9 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       }
 
-      if (!['present', 'half_day', 'leave'].includes(status)) {
+      if (!['present', 'half_day', 'leave', 'optional_holiday'].includes(status)) {
         return res.status(400).json({
-          message: 'Invalid status. Must be: present, half_day, or leave',
+          message: 'Invalid status. Must be: present, half_day, leave, or optional_holiday',
         })
       }
 
@@ -194,9 +194,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Validate status
-      if (!['present', 'half_day', 'leave'].includes(status)) {
+      if (!['present', 'half_day', 'leave', 'optional_holiday'].includes(status)) {
         return res.status(400).json({
-          message: 'Invalid status. Must be: present, half_day, or leave',
+          message: 'Invalid status. Must be: present, half_day, leave, or optional_holiday',
         })
       }
 

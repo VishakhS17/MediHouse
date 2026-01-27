@@ -432,6 +432,8 @@ export default function Attendance() {
         return 'bg-yellow-100 text-yellow-800'
       case 'leave':
         return 'bg-blue-100 text-blue-800'
+      case 'optional_holiday':
+        return 'bg-purple-100 text-purple-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -511,6 +513,7 @@ export default function Attendance() {
                     <option value="present">Present</option>
                     <option value="half_day">Half Day</option>
                     <option value="leave">Leave</option>
+                    <option value="optional_holiday">Optional Holiday</option>
                   </select>
                 </div>
 
@@ -798,6 +801,7 @@ export default function Attendance() {
                                   <option value="present">Present</option>
                                   <option value="half_day">Half Day</option>
                                   <option value="leave">Leave</option>
+                                  <option value="optional_holiday">Optional Holiday</option>
                                 </select>
                                 <div className="flex gap-2">
                                   <button
