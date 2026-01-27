@@ -20,6 +20,32 @@ interface CashbookTransaction {
   created_by_name: string | null
 }
 
+// Helper: Levenshtein distance for fuzzy name matching
+function getNameDistance(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1, // deletion
+        dp[i][j - 1] + 1, // insertion
+        dp[i - 1][j - 1] + cost // substitution
+      )
+    }
+  }
+
+  return dp[m][n]
+}
+
 interface PasswordModalProps {
   isOpen: boolean
   onSubmit: (password: string) => void
@@ -107,6 +133,7 @@ export default function Cashbook() {
   const [totalRecords, setTotalRecords] = useState(0)
   const [totalDebit, setTotalDebit] = useState(0)
   const [totalCredit, setTotalCredit] = useState(0)
+  const [showConsolidated, setShowConsolidated] = useState(false)
 
   // Ref for form section
   const formRef = useRef<HTMLDivElement>(null)
@@ -270,6 +297,85 @@ export default function Cashbook() {
   const handleEditCancel = () => {
     resetForm()
   }
+
+  const getStaffConsolidation = () => {
+    // Consolidation is based ONLY on debit (collection) transactions
+    const staffMap: Record<
+      string,
+      { staffName: string; totalCollection: number; count: number }
+    > = {}
+
+    const normalize = (name: string | null): string => {
+      if (!name) return 'UNKNOWN'
+      return name.trim().toUpperCase().replace(/\s+/g, ' ')
+    }
+
+    transactions.forEach((t) => {
+      // Normalize debit amount to a number
+      const debitAmount =
+        typeof t.debit_amount === 'string'
+          ? parseFloat(t.debit_amount) || 0
+          : t.debit_amount || 0
+
+      // Only consider debit (collection) transactions
+      if (!debitAmount || debitAmount <= 0) {
+        return
+      }
+
+      const originalName = t.staff_name || 'Unknown'
+      const cleaned = normalize(originalName)
+
+      // Try to find an existing key that is very similar (handles minor typos / case differences)
+      let targetKey = cleaned
+      const existingKeys = Object.keys(staffMap)
+
+      if (existingKeys.length > 0) {
+        let bestKey = cleaned
+        let bestDistance = Number.MAX_SAFE_INTEGER
+
+        existingKeys.forEach((key) => {
+          const dist = getNameDistance(cleaned, key)
+          const maxLen = Math.max(cleaned.length, key.length)
+
+          // Allow small differences only (1–2 edits depending on length)
+          const threshold = maxLen <= 6 ? 1 : 2
+
+          if (dist <= threshold && dist < bestDistance) {
+            bestDistance = dist
+            bestKey = key
+          }
+        })
+
+        if (bestDistance !== Number.MAX_SAFE_INTEGER) {
+          targetKey = bestKey
+        }
+      }
+
+      if (!staffMap[targetKey]) {
+        // Use a nicely formatted display name (title case of the first seen variant)
+        const displayName =
+          originalName
+            .toLowerCase()
+            .split(' ')
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ') || 'Unknown'
+
+        staffMap[targetKey] = {
+          staffName: displayName,
+          totalCollection: 0,
+          count: 0,
+        }
+      }
+
+      staffMap[targetKey].totalCollection += debitAmount
+      staffMap[targetKey].count += 1
+    })
+
+    // Sort by highest total collection
+    return Object.values(staffMap).sort((a, b) => b.totalCollection - a.totalCollection)
+  }
+
+  const staffConsolidation = getStaffConsolidation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -553,7 +659,7 @@ export default function Cashbook() {
 
           {/* Summary Card */}
           {!loading && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Current Balance</p>
@@ -577,6 +683,53 @@ export default function Cashbook() {
                   <p className="text-sm font-medium text-gray-600">Total Transactions</p>
                   <p className="text-2xl font-bold text-gray-900 mt-2">{totalRecords}</p>
                 </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowConsolidated((prev) => !prev)}
+                  className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-ocean-royal to-ocean-cyan text-white rounded-lg shadow-sm hover:shadow-md transition-all min-h-[40px] touch-manipulation"
+                >
+                  {showConsolidated ? 'Hide Consolidated Collections' : 'Show Consolidated Collections'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Staff Consolidation */}
+          {!loading && showConsolidated && staffConsolidation.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Employee-wise Consolidated Collections</h2>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Staff
+                      </th>
+                      <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Collection
+                      </th>
+                      <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Transactions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {staffConsolidation.map((row) => (
+                      <tr key={row.staffName} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-semibold text-gray-900">
+                          {row.staffName}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-right text-green-600 font-semibold">
+                          {formatCurrency(row.totalCollection)}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-right text-gray-700 font-semibold">
+                          {row.count}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
