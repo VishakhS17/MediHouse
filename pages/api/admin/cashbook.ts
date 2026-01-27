@@ -343,7 +343,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Update cashbook transaction
     try {
       const { id } = req.query
-      const { transactionDate, receiptNumber, staffName, partyName, billNumbers, debitAmount, creditAmount, notes } = req.body
+      const { transactionDate, receiptNumber, staffName, partyName, billNumbers, debitAmount, creditAmount, notes, password } = req.body
 
       if (!id) {
         return res.status(400).json({
@@ -367,6 +367,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({
           message: 'Cannot have both debit and credit amounts',
         })
+      }
+
+      // Check user role and record age
+      const userRoleCheck = await query(
+        `SELECT r.name as role_name
+         FROM admin_users au
+         LEFT JOIN admin_roles r ON au.role_id = r.id
+         WHERE au.id = $1`,
+        [userId]
+      )
+
+      const isSuperAdmin = userRoleCheck.rows[0]?.role_name === 'super_admin'
+
+      // Get the transaction to check its creation time
+      const transactionCheck = await query(
+        `SELECT id, created_at FROM cashbook_transactions WHERE id = $1`,
+        [parseInt(id as string)]
+      )
+
+      if (transactionCheck.rows.length === 0) {
+        return res.status(404).json({
+          message: 'Transaction not found',
+        })
+      }
+
+      const transaction = transactionCheck.rows[0]
+      const createdAt = new Date(transaction.created_at)
+      const now = new Date()
+      const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
+      const isOlderThan24Hours = hoursDiff > 24
+
+      // If manager (not super admin) and record is older than 24 hours, deny edit
+      if (!isSuperAdmin && isOlderThan24Hours) {
+        return res.status(403).json({
+          message: 'You can only edit records within 24 hours of creation. Please contact a super admin for older records.',
+        })
+      }
+
+      // If super admin and record is older than 24 hours, require password
+      if (isSuperAdmin && isOlderThan24Hours) {
+        const correctPassword = 'MediHouse@170303'
+        if (!password || password !== correctPassword) {
+          return res.status(403).json({
+            message: 'Password required to edit records older than 24 hours. Please provide the correct password.',
+          })
+        }
       }
 
       // If receipt number is provided, check if it already exists (excluding current transaction)

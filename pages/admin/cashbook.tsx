@@ -51,6 +51,10 @@ export default function Cashbook() {
   const [creditAmount, setCreditAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [transactionType, setTransactionType] = useState<'debit' | 'credit'>('debit')
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordInput, setPasswordInput] = useState('')
+  const [pendingEditTransaction, setPendingEditTransaction] = useState<CashbookTransaction | null>(null)
+  const [validatedPassword, setValidatedPassword] = useState<string | null>(null)
 
   // Filter state
   const [startDate, setStartDate] = useState('')
@@ -121,9 +125,39 @@ export default function Cashbook() {
     setTransactionType('debit')
     setEditingId(null)
     setShowAddForm(false)
+    setValidatedPassword(null) // Clear validated password when resetting form
+  }
+
+  const isRecordOlderThan24Hours = (createdAt: string): boolean => {
+    const created = new Date(createdAt)
+    const now = new Date()
+    const hoursDiff = (now.getTime() - created.getTime()) / (1000 * 60 * 60)
+    return hoursDiff > 24
   }
 
   const handleEditStart = (transaction: CashbookTransaction) => {
+    const isSuperAdmin = admin?.role?.name === 'super_admin'
+    const isOlderThan24Hours = isRecordOlderThan24Hours(transaction.created_at)
+
+    // If manager (not super admin) and record is older than 24 hours, deny edit
+    if (!isSuperAdmin && isOlderThan24Hours) {
+      setError('You can only edit records within 24 hours of creation. Please contact a super admin for older records.')
+      return
+    }
+
+    // If super admin and record is older than 24 hours, require password
+    if (isSuperAdmin && isOlderThan24Hours) {
+      setPendingEditTransaction(transaction)
+      setShowPasswordModal(true)
+      setPasswordInput('')
+      return
+    }
+
+    // Otherwise, proceed with edit
+    proceedWithEdit(transaction)
+  }
+
+  const proceedWithEdit = (transaction: CashbookTransaction) => {
     setEditingId(transaction.id)
     setTransactionDate(transaction.transaction_date)
     setReceiptNumber(transaction.receipt_number)
@@ -140,6 +174,29 @@ export default function Cashbook() {
     setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 100)
+  }
+
+  const handlePasswordSubmit = () => {
+    const correctPassword = 'MediHouse@170303'
+    if (passwordInput === correctPassword) {
+      setValidatedPassword(passwordInput) // Store validated password temporarily
+      setShowPasswordModal(false)
+      setPasswordInput('')
+      if (pendingEditTransaction) {
+        proceedWithEdit(pendingEditTransaction)
+        setPendingEditTransaction(null)
+      }
+    } else {
+      setError('Incorrect password. Please try again.')
+      setPasswordInput('')
+    }
+  }
+
+  const handlePasswordCancel = () => {
+    setShowPasswordModal(false)
+    setPasswordInput('')
+    setPendingEditTransaction(null)
+    setValidatedPassword(null)
   }
 
   const handleEditCancel = () => {
@@ -164,11 +221,47 @@ export default function Cashbook() {
       return
     }
 
+    // If editing, check if we need password (should already be validated, but double-check)
+    if (editingId) {
+      const transaction = transactions.find(t => t.id === editingId)
+      if (transaction) {
+        const isSuperAdmin = admin?.role?.name === 'super_admin'
+        const isOlderThan24Hours = isRecordOlderThan24Hours(transaction.created_at)
+        
+        if (!isSuperAdmin && isOlderThan24Hours) {
+          setError('You can only edit records within 24 hours of creation.')
+          return
+        }
+
+        // If super admin editing old record, ensure password is provided
+        if (isSuperAdmin && isOlderThan24Hours && !validatedPassword) {
+          setError('Password validation required. Please try editing again.')
+          return
+        }
+      }
+    }
+
     setSubmitting(true)
 
     try {
       const url = editingId ? `/api/admin/cashbook?id=${editingId}` : '/api/admin/cashbook'
       const method = editingId ? 'PUT' : 'POST'
+
+      const requestBody: any = {
+        transactionDate,
+        receiptNumber: receiptNumber || null,
+        staffName,
+        partyName: partyName || null,
+        billNumbers: billNumbers || null,
+        debitAmount: debit,
+        creditAmount: credit,
+        notes: notes || null,
+      }
+
+      // Include password if editing old record
+      if (editingId && validatedPassword) {
+        requestBody.password = validatedPassword
+      }
 
       const response = await fetch(url, {
         method,
@@ -176,16 +269,7 @@ export default function Cashbook() {
           'Content-Type': 'application/json',
           'x-admin-data': JSON.stringify(admin),
         },
-        body: JSON.stringify({
-          transactionDate,
-          receiptNumber: receiptNumber || null,
-          staffName,
-          partyName: partyName || null,
-          billNumbers: billNumbers || null,
-          debitAmount: debit,
-          creditAmount: credit,
-          notes: notes || null,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const data = await response.json()
@@ -389,6 +473,46 @@ export default function Cashbook() {
           {success && (
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-600">{success}</p>
+            </div>
+          )}
+
+          {/* Password Modal for Super Admin Editing Old Records */}
+          {showPasswordModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Password Required</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  This record is older than 24 hours. Please enter the password to edit it.
+                </p>
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handlePasswordSubmit()
+                    }
+                  }}
+                  placeholder="Enter password"
+                  className="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={handlePasswordCancel}
+                    className="px-4 py-2 text-base font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors min-h-[44px] touch-manipulation"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePasswordSubmit}
+                    disabled={!passwordInput}
+                    className="px-4 py-2 text-base font-semibold text-white bg-gradient-to-r from-ocean-royal to-ocean-cyan rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
+                  >
+                    Submit
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
