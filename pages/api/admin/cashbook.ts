@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { query } from '@/lib/db'
 import { checkPermission, getAdminUserIdFromRequest } from '@/lib/adminPermissions'
 import XLSX from 'xlsx'
+import bcrypt from 'bcrypt'
 
 // Helper to get admin user from request
 async function getAdminUser(req: NextApiRequest): Promise<{ id: number; name: string } | null> {
@@ -407,10 +408,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // If super admin and record is older than 24 hours, require password
       if (isSuperAdmin && isOlderThan24Hours) {
-        const correctPassword = 'MediHouse@170303'
-        if (!password || password !== correctPassword) {
+        if (!password) {
           return res.status(403).json({
-            message: 'Password required to edit records older than 24 hours. Please provide the correct password.',
+            message: 'Password required to edit records older than 24 hours. Please provide your admin password.',
+          })
+        }
+
+        // Verify password against the logged-in admin's password hash
+        const userResult = await query(
+          `SELECT password_hash FROM admin_users WHERE id = $1`,
+          [userId]
+        )
+
+        if (userResult.rows.length === 0) {
+          return res.status(404).json({
+            message: 'Admin user not found',
+          })
+        }
+
+        const passwordHash = userResult.rows[0].password_hash
+        const passwordMatch = await bcrypt.compare(password, passwordHash)
+
+        if (!passwordMatch) {
+          return res.status(403).json({
+            message: 'Invalid password. Please enter the same password you use to log in as super admin.',
           })
         }
       }

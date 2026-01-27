@@ -20,6 +20,81 @@ interface CashbookTransaction {
   created_by_name: string | null
 }
 
+interface PasswordModalProps {
+  isOpen: boolean
+  onSubmit: (password: string) => void
+  onCancel: () => void
+}
+
+function PasswordModal({ isOpen, onSubmit, onCancel }: PasswordModalProps) {
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+
+  if (!isOpen) return null
+
+  const handleSubmit = () => {
+    if (!password) return
+    onSubmit(password)
+    setPassword('')
+    setShowPassword(false)
+  }
+
+  const handleCancel = () => {
+    setPassword('')
+    setShowPassword(false)
+    onCancel()
+  }
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/20 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Password Required</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          This record is older than 24 hours. Please enter your admin password to edit it.
+        </p>
+        <div className="relative mb-4">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                handleSubmit()
+              }
+            }}
+            placeholder="Enter password"
+            className="w-full px-4 py-3 pr-12 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute inset-y-0 right-3 flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none"
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        </div>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={handleCancel}
+            className="px-4 py-2 text-base font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors min-h-[44px] touch-manipulation"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!password}
+            className="px-4 py-2 text-base font-semibold text-white bg-gradient-to-r from-ocean-royal to-ocean-cyan rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Cashbook() {
   const { admin, hasPermission } = useAdminAuth()
   const [transactions, setTransactions] = useState<CashbookTransaction[]>([])
@@ -52,9 +127,8 @@ export default function Cashbook() {
   const [notes, setNotes] = useState('')
   const [transactionType, setTransactionType] = useState<'debit' | 'credit'>('debit')
   const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [passwordInput, setPasswordInput] = useState('')
   const [pendingEditTransaction, setPendingEditTransaction] = useState<CashbookTransaction | null>(null)
-  const [validatedPassword, setValidatedPassword] = useState<string | null>(null)
+  const [editPassword, setEditPassword] = useState<string | null>(null)
 
   // Filter state
   const [startDate, setStartDate] = useState('')
@@ -125,7 +199,9 @@ export default function Cashbook() {
     setTransactionType('debit')
     setEditingId(null)
     setShowAddForm(false)
-    setValidatedPassword(null) // Clear validated password when resetting form
+    setPendingEditTransaction(null)
+    setShowPasswordModal(false)
+    setEditPassword(null)
   }
 
   const isRecordOlderThan24Hours = (createdAt: string): boolean => {
@@ -148,8 +224,8 @@ export default function Cashbook() {
     // If super admin and record is older than 24 hours, require password
     if (isSuperAdmin && isOlderThan24Hours) {
       setPendingEditTransaction(transaction)
+      setEditPassword(null)
       setShowPasswordModal(true)
-      setPasswordInput('')
       return
     }
 
@@ -176,27 +252,19 @@ export default function Cashbook() {
     }, 100)
   }
 
-  const handlePasswordSubmit = () => {
-    const correctPassword = 'MediHouse@170303'
-    if (passwordInput === correctPassword) {
-      setValidatedPassword(passwordInput) // Store validated password temporarily
-      setShowPasswordModal(false)
-      setPasswordInput('')
-      if (pendingEditTransaction) {
-        proceedWithEdit(pendingEditTransaction)
-        setPendingEditTransaction(null)
-      }
-    } else {
-      setError('Incorrect password. Please try again.')
-      setPasswordInput('')
+  const handlePasswordSubmit = (password: string) => {
+    setEditPassword(password)
+    setShowPasswordModal(false)
+    if (pendingEditTransaction) {
+      proceedWithEdit(pendingEditTransaction)
+      setPendingEditTransaction(null)
     }
   }
 
   const handlePasswordCancel = () => {
     setShowPasswordModal(false)
-    setPasswordInput('')
     setPendingEditTransaction(null)
-    setValidatedPassword(null)
+    setEditPassword(null)
   }
 
   const handleEditCancel = () => {
@@ -234,8 +302,8 @@ export default function Cashbook() {
         }
 
         // If super admin editing old record, ensure password is provided
-        if (isSuperAdmin && isOlderThan24Hours && !validatedPassword) {
-          setError('Password validation required. Please try editing again.')
+        if (isSuperAdmin && isOlderThan24Hours && !editPassword) {
+          setError('Password is required to edit records older than 24 hours.')
           return
         }
       }
@@ -259,8 +327,8 @@ export default function Cashbook() {
       }
 
       // Include password if editing old record
-      if (editingId && validatedPassword) {
-        requestBody.password = validatedPassword
+      if (editingId && editPassword) {
+        requestBody.password = editPassword
       }
 
       const response = await fetch(url, {
@@ -477,44 +545,11 @@ export default function Cashbook() {
           )}
 
           {/* Password Modal for Super Admin Editing Old Records */}
-          {showPasswordModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Password Required</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  This record is older than 24 hours. Please enter the password to edit it.
-                </p>
-                <input
-                  type="password"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handlePasswordSubmit()
-                    }
-                  }}
-                  placeholder="Enter password"
-                  className="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent mb-4"
-                  autoFocus
-                />
-                <div className="flex gap-3 justify-end">
-                  <button
-                    onClick={handlePasswordCancel}
-                    className="px-4 py-2 text-base font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors min-h-[44px] touch-manipulation"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handlePasswordSubmit}
-                    disabled={!passwordInput}
-                    className="px-4 py-2 text-base font-semibold text-white bg-gradient-to-r from-ocean-royal to-ocean-cyan rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] touch-manipulation"
-                  >
-                    Submit
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <PasswordModal
+            isOpen={showPasswordModal}
+            onSubmit={handlePasswordSubmit}
+            onCancel={handlePasswordCancel}
+          />
 
           {/* Summary Card */}
           {!loading && (
