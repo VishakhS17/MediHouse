@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     // Create new cashbook transaction
     try {
-      const { transactionDate, receiptNumber, staffName, partyName, billNumbers, debitAmount, creditAmount, notes } = req.body
+      const { transactionDate, receiptNumber, staffName, partyName, billNumbers, debitAmount, creditAmount, bankTransferAmount, notes } = req.body
 
       if (!transactionDate || !staffName) {
         return res.status(400).json({
@@ -42,15 +42,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       }
 
-      if ((!debitAmount || debitAmount <= 0) && (!creditAmount || creditAmount <= 0)) {
+      if ((!debitAmount || debitAmount <= 0) && (!creditAmount || creditAmount <= 0) && (!bankTransferAmount || bankTransferAmount <= 0)) {
         return res.status(400).json({
-          message: 'Either debit amount or credit amount must be greater than 0',
+          message: 'Either debit amount, credit amount, or bank transfer amount must be greater than 0',
         })
       }
 
-      if (debitAmount > 0 && creditAmount > 0) {
+      // Ensure only one transaction type is set
+      const typesSet = [debitAmount > 0, creditAmount > 0, bankTransferAmount > 0].filter(Boolean).length
+      if (typesSet > 1) {
         return res.status(400).json({
-          message: 'Cannot have both debit and credit amounts',
+          message: 'Cannot have multiple transaction types (debit, credit, or bank transfer) in a single transaction',
         })
       }
 
@@ -74,9 +76,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Insert transaction (balance will be calculated by trigger)
       const result = await query(
         `INSERT INTO cashbook_transactions 
-         (transaction_date, receipt_number, staff_name, party_name, bill_numbers, debit_amount, credit_amount, notes, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-         RETURNING id, transaction_date, receipt_number, staff_name, party_name, bill_numbers, debit_amount, credit_amount, balance, notes, created_at`,
+         (transaction_date, receipt_number, staff_name, party_name, bill_numbers, debit_amount, credit_amount, bank_transfer_amount, notes, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING id, transaction_date, receipt_number, staff_name, party_name, bill_numbers, debit_amount, credit_amount, bank_transfer_amount, balance, notes, created_at`,
         [
           transactionDate,
           receiptNumber || null, // Will be auto-generated if null
@@ -85,6 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           billNumbers || null,
           debitAmount || 0,
           creditAmount || 0,
+          bankTransferAmount || 0,
           notes || null,
           createdBy,
         ]
@@ -119,6 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ct.bill_numbers,
           ct.debit_amount,
           ct.credit_amount,
+          ct.bank_transfer_amount,
           ct.balance,
           ct.notes,
           ct.created_at,
@@ -165,6 +169,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         queryStr += ` AND ct.debit_amount > 0`
       } else if (transactionType === 'credit') {
         queryStr += ` AND ct.credit_amount > 0`
+      } else if (transactionType === 'bank_transfer') {
+        queryStr += ` AND ct.bank_transfer_amount > 0`
       }
 
       queryStr += ` ORDER BY ct.transaction_date DESC, ct.id DESC`
@@ -268,6 +274,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         countQuery += ` AND debit_amount > 0`
       } else if (transactionType === 'credit') {
         countQuery += ` AND credit_amount > 0`
+      } else if (transactionType === 'bank_transfer') {
+        countQuery += ` AND bank_transfer_amount > 0`
       }
 
       const countResult = await query(countQuery, countParams)
@@ -454,10 +462,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const result = await query(
         `UPDATE cashbook_transactions 
          SET transaction_date = $1, receipt_number = $2, staff_name = $3, party_name = $4, 
-             bill_numbers = $5, debit_amount = $6, credit_amount = $7, notes = $8, updated_at = NOW()
-         WHERE id = $9
+             bill_numbers = $5, debit_amount = $6, credit_amount = $7, bank_transfer_amount = $8, notes = $9, updated_at = NOW()
+         WHERE id = $10
          RETURNING id, transaction_date, receipt_number, staff_name, party_name, bill_numbers, 
-                   debit_amount, credit_amount, balance, notes, created_at, updated_at`,
+                   debit_amount, credit_amount, bank_transfer_amount, balance, notes, created_at, updated_at`,
         [
           transactionDate,
           receiptNumber || null,
@@ -466,6 +474,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           billNumbers || null,
           debitAmount || 0,
           creditAmount || 0,
+          bankTransferAmount || 0,
           notes || null,
           parseInt(id as string),
         ]

@@ -13,6 +13,7 @@ interface CashbookTransaction {
   bill_numbers: string | null
   debit_amount: number
   credit_amount: number
+  bank_transfer_amount: number
   balance: number
   notes: string | null
   created_at: string
@@ -151,8 +152,9 @@ export default function Cashbook() {
   const [billNumbers, setBillNumbers] = useState('')
   const [debitAmount, setDebitAmount] = useState('')
   const [creditAmount, setCreditAmount] = useState('')
+  const [bankTransferAmount, setBankTransferAmount] = useState('')
   const [notes, setNotes] = useState('')
-  const [transactionType, setTransactionType] = useState<'debit' | 'credit'>('debit')
+  const [transactionType, setTransactionType] = useState<'debit' | 'credit' | 'bank_transfer'>('debit')
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [pendingEditTransaction, setPendingEditTransaction] = useState<CashbookTransaction | null>(null)
   const [editPassword, setEditPassword] = useState<string | null>(null)
@@ -163,7 +165,7 @@ export default function Cashbook() {
   const [filterStaffName, setFilterStaffName] = useState('')
   const [filterPartyName, setFilterPartyName] = useState('')
   const [filterReceiptNumber, setFilterReceiptNumber] = useState('')
-  const [filterTransactionType, setFilterTransactionType] = useState<'all' | 'debit' | 'credit'>('all')
+  const [filterTransactionType, setFilterTransactionType] = useState<'all' | 'debit' | 'credit' | 'bank_transfer'>('all')
 
   useEffect(() => {
     if (admin) {
@@ -222,6 +224,7 @@ export default function Cashbook() {
     setBillNumbers('')
     setDebitAmount('')
     setCreditAmount('')
+    setBankTransferAmount('')
     setNotes('')
     setTransactionType('debit')
     setEditingId(null)
@@ -269,7 +272,12 @@ export default function Cashbook() {
     setBillNumbers(transaction.bill_numbers || '')
     setDebitAmount(transaction.debit_amount > 0 ? transaction.debit_amount.toString() : '')
     setCreditAmount(transaction.credit_amount > 0 ? transaction.credit_amount.toString() : '')
-    setTransactionType(transaction.debit_amount > 0 ? 'debit' : 'credit')
+    setBankTransferAmount((transaction.bank_transfer_amount || 0) > 0 ? transaction.bank_transfer_amount.toString() : '')
+    if (transaction.bank_transfer_amount > 0) {
+      setTransactionType('bank_transfer')
+    } else {
+      setTransactionType(transaction.debit_amount > 0 ? 'debit' : 'credit')
+    }
     setNotes(transaction.notes || '')
     setShowAddForm(true)
     
@@ -389,8 +397,9 @@ export default function Cashbook() {
 
     const debit = transactionType === 'debit' ? parseFloat(debitAmount) : 0
     const credit = transactionType === 'credit' ? parseFloat(creditAmount) : 0
+    const bankTransfer = transactionType === 'bank_transfer' ? parseFloat(bankTransferAmount) : 0
 
-    if (debit <= 0 && credit <= 0) {
+    if (debit <= 0 && credit <= 0 && bankTransfer <= 0) {
       setError('Please enter an amount')
       return
     }
@@ -429,6 +438,7 @@ export default function Cashbook() {
         billNumbers: billNumbers || null,
         debitAmount: debit,
         creditAmount: credit,
+        bankTransferAmount: bankTransfer,
         notes: notes || null,
       }
 
@@ -840,19 +850,23 @@ export default function Cashbook() {
                     <select
                       value={transactionType}
                       onChange={(e) => {
-                        setTransactionType(e.target.value as 'debit' | 'credit')
+                        setTransactionType(e.target.value as 'debit' | 'credit' | 'bank_transfer')
                         setDebitAmount('')
                         setCreditAmount('')
+                        setBankTransferAmount('')
                       }}
                       className={`w-full px-4 py-3 text-base font-medium border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent ${
                         transactionType === 'debit' 
                           ? 'text-green-600' 
-                          : 'text-red-600'
+                          : transactionType === 'credit'
+                          ? 'text-red-600'
+                          : 'text-blue-600'
                       }`}
                       disabled={submitting}
                     >
                       <option value="debit" style={{ color: '#16a34a' }}>Debit (Collection)</option>
                       <option value="credit" style={{ color: '#dc2626' }}>Credit (Deposit/Spending)</option>
+                      <option value="bank_transfer" style={{ color: '#2563eb' }}>Bank TRF</option>
                     </select>
                   </div>
 
@@ -882,12 +896,14 @@ export default function Cashbook() {
                       type="number"
                       step="0.01"
                       min="0.01"
-                      value={transactionType === 'debit' ? debitAmount : creditAmount}
+                      value={transactionType === 'debit' ? debitAmount : transactionType === 'credit' ? creditAmount : bankTransferAmount}
                       onChange={(e) => {
                         if (transactionType === 'debit') {
                           setDebitAmount(e.target.value)
-                        } else {
+                        } else if (transactionType === 'credit') {
                           setCreditAmount(e.target.value)
+                        } else {
+                          setBankTransferAmount(e.target.value)
                         }
                       }}
                       onKeyDown={(e) => {
@@ -1013,12 +1029,13 @@ export default function Cashbook() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Transaction Type</label>
                 <select
                   value={filterTransactionType}
-                  onChange={(e) => setFilterTransactionType(e.target.value as 'all' | 'debit' | 'credit')}
+                  onChange={(e) => setFilterTransactionType(e.target.value as 'all' | 'debit' | 'credit' | 'bank_transfer')}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
                 >
                   <option value="all">All Transactions</option>
                   <option value="debit">Debit (Collection)</option>
                   <option value="credit">Credit (Deposit/Spending)</option>
+                  <option value="bank_transfer">Bank TRF</option>
                 </select>
               </div>
               <div>
@@ -1084,6 +1101,7 @@ export default function Cashbook() {
                       <th className="px-2 sm:px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Bill #</th>
                       <th className="px-2 sm:px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Debit</th>
                       <th className="px-2 sm:px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Credit</th>
+                      <th className="px-2 sm:px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Bank TRF</th>
                       <th className="px-2 sm:px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Balance</th>
                       <th className="px-2 sm:px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Notes</th>
                       <th className="px-2 sm:px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider" style={{ minWidth: '90px', width: '90px', maxWidth: '90px' }}>Action</th>
@@ -1108,6 +1126,9 @@ export default function Cashbook() {
                         </td>
                         <td className="px-2 sm:px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-right text-red-600 font-semibold">
                           {transaction.credit_amount > 0 ? formatCurrency(transaction.credit_amount) : '-'}
+                        </td>
+                        <td className="px-2 sm:px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-right text-blue-600 font-semibold">
+                          {(transaction.bank_transfer_amount || 0) > 0 ? formatCurrency(transaction.bank_transfer_amount) : '-'}
                         </td>
                         <td className="px-2 sm:px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-right font-bold">
                           <span className={transaction.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
