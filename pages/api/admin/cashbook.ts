@@ -352,7 +352,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Update cashbook transaction
     try {
       const { id } = req.query
-      const { transactionDate, receiptNumber, staffName, partyName, billNumbers, debitAmount, creditAmount, notes, password } = req.body
+      const { transactionDate, receiptNumber, staffName, partyName, billNumbers, debitAmount, creditAmount, bankTransferAmount, notes, password } = req.body
 
       if (!id) {
         return res.status(400).json({
@@ -366,15 +366,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       }
 
-      if ((!debitAmount || debitAmount <= 0) && (!creditAmount || creditAmount <= 0)) {
+      if ((!debitAmount || debitAmount <= 0) && (!creditAmount || creditAmount <= 0) && (!bankTransferAmount || bankTransferAmount <= 0)) {
         return res.status(400).json({
-          message: 'Either debit amount or credit amount must be greater than 0',
+          message: 'Either debit amount, credit amount, or bank transfer amount must be greater than 0',
         })
       }
 
-      if (debitAmount > 0 && creditAmount > 0) {
+      // Ensure only one transaction type is set
+      const typesSet = [debitAmount > 0, creditAmount > 0, bankTransferAmount > 0].filter(Boolean).length
+      if (typesSet > 1) {
         return res.status(400).json({
-          message: 'Cannot have both debit and credit amounts',
+          message: 'Cannot have multiple transaction types (debit, credit, or bank transfer) in a single transaction',
         })
       }
 
