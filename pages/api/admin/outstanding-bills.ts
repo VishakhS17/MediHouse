@@ -90,7 +90,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let paramCount = 0
 
       // Fuzzy search using pg_trgm similarity for typo tolerance
-      const searchTerm = customerNumber || customerName || invoiceNumber
+      // Normalize query params to strings (they can be string | string[])
+      const searchTermRaw = customerNumber || customerName || invoiceNumber
+      const searchTerm = searchTermRaw ? (Array.isArray(searchTermRaw) ? searchTermRaw[0] : searchTermRaw) : null
       if (searchTerm) {
         const search = searchTerm.trim()
         // Use similarity() function from pg_trgm for fuzzy matching
@@ -111,21 +113,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Filter by REF if provided
       // For "PART OK", include blank/null values; for others, exact match only
-      if (ref && ref !== '') {
+      const refValue = ref ? (Array.isArray(ref) ? ref[0] : ref) : null
+      if (refValue && refValue !== '') {
         paramCount++
-        if (ref === 'PART OK') {
+        if (refValue === 'PART OK') {
           sql += ` AND (ref = $${paramCount} OR ref IS NULL OR ref = '')`
         } else {
           sql += ` AND ref = $${paramCount}`
         }
-        params.push(ref)
+        params.push(refValue)
       }
 
       // Filter by area if provided
-      if (area && area !== '') {
+      const areaValue = area ? (Array.isArray(area) ? area[0] : area) : null
+      if (areaValue && areaValue !== '') {
         paramCount++
         sql += ` AND area = $${paramCount}`
-        params.push(area)
+        params.push(areaValue)
       }
 
       // Build count query for pagination
@@ -146,18 +150,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         countParamCount++
         countParams.push(search) // Exact term for similarity matching
       }
-      if (ref && ref !== '') {
+      if (refValue && refValue !== '') {
         countParamCount++
-        countParams.push(ref)
-        if (ref === 'PART OK') {
+        countParams.push(refValue)
+        if (refValue === 'PART OK') {
           countSql += ` AND (ref = $${countParamCount} OR ref IS NULL OR ref = '')`
         } else {
           countSql += ` AND ref = $${countParamCount}`
         }
       }
-      if (area && area !== '') {
+      if (areaValue && areaValue !== '') {
         countParamCount++
-        countParams.push(area)
+        countParams.push(areaValue)
         countSql += ` AND area = $${countParamCount}`
       }
 
@@ -219,18 +223,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         summaryParamCount++
         summaryParams.push(search) // Exact term for similarity matching
       }
-      if (ref && ref !== '') {
+      if (refValue && refValue !== '') {
         summaryParamCount++
-        summaryParams.push(ref)
-        if (ref === 'PART OK') {
+        summaryParams.push(refValue)
+        if (refValue === 'PART OK') {
           summarySql += ` AND (ref = $${summaryParamCount} OR ref IS NULL OR ref = '')`
         } else {
           summarySql += ` AND ref = $${summaryParamCount}`
         }
       }
-      if (area && area !== '') {
+      if (areaValue && areaValue !== '') {
         summaryParamCount++
-        summaryParams.push(area)
+        summaryParams.push(areaValue)
         summarySql += ` AND area = $${summaryParamCount}`
       }
 
