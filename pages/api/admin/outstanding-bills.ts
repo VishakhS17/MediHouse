@@ -89,17 +89,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const params: any[] = []
       let paramCount = 0
 
-      // Optimized search - use prefix matching when possible (faster than %term%)
+      // Fuzzy search using pg_trgm similarity for typo tolerance
       const searchTerm = customerNumber || customerName || invoiceNumber
       if (searchTerm) {
+        const search = searchTerm.trim()
+        // Use similarity() function from pg_trgm for fuzzy matching
+        // This handles typos like "Shabnam" vs "Shabanam" (one letter difference)
+        // Similarity threshold of 0.3 allows for small differences while avoiding too many false positives
         paramCount++
-        const search = `%${searchTerm}%`
-        // Search across all fields in one condition for better index usage
+        const searchWildcard = `%${search}%`
         sql += ` AND (
           customer_name ILIKE $${paramCount} 
           OR invoice_number ILIKE $${paramCount}
+          OR similarity(customer_name, $${paramCount + 1}) > 0.3
+          OR similarity(invoice_number, $${paramCount + 1}) > 0.3
         )`
-        params.push(search)
+        params.push(searchWildcard)
+        paramCount++
+        params.push(search) // Exact term for similarity matching
       }
 
       // Filter by REF if provided
@@ -126,9 +133,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const countParams: any[] = []
       let countParamCount = 0
       if (searchTerm) {
+        const search = searchTerm.trim()
         countParamCount++
-        countParams.push(`%${searchTerm}%`)
-        countSql += ` AND (customer_name ILIKE $${countParamCount} OR invoice_number ILIKE $${countParamCount})`
+        const searchWildcard = `%${search}%`
+        countSql += ` AND (
+          customer_name ILIKE $${countParamCount} 
+          OR invoice_number ILIKE $${countParamCount}
+          OR similarity(customer_name, $${countParamCount + 1}) > 0.3
+          OR similarity(invoice_number, $${countParamCount + 1}) > 0.3
+        )`
+        countParams.push(searchWildcard)
+        countParamCount++
+        countParams.push(search) // Exact term for similarity matching
       }
       if (ref && ref !== '') {
         countParamCount++
@@ -146,7 +162,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Add pagination and ordering to main query
-      // Default sorting: bill_date DESC (newest first), then customer_name, then invoice_number
+      // When searching, prioritize exact matches and high similarity matches first
       let orderByClause = 'ORDER BY bill_date DESC, customer_name ASC, invoice_number ASC'
       
       // Override default sorting if sortBy and sortOrder are provided
@@ -154,6 +170,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const sortOrderStr = Array.isArray(sortOrder) ? sortOrder[0] : sortOrder
         const order = sortOrderStr.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
         orderByClause = `ORDER BY bill_date ${order}, customer_name ASC, invoice_number ASC`
+      }
+      
+      // If there's a search term, add relevance sorting (exact matches first, then by similarity score)
+      if (searchTerm) {
+        // The search term parameters are at positions 1 (wildcard) and 2 (exact)
+        // We need to track this before other filters are added
+        const wildcardParamIndex = 1
+        const exactTermParamIndex = 2
+        orderByClause = `ORDER BY 
+          CASE 
+            WHEN customer_name ILIKE $${wildcardParamIndex} OR invoice_number ILIKE $${wildcardParamIndex} THEN 0
+            ELSE 1
+          END,
+          GREATEST(
+            similarity(customer_name, $${exactTermParamIndex}),
+            similarity(invoice_number, $${exactTermParamIndex})
+          ) DESC,
+          bill_date DESC, 
+          customer_name ASC, 
+          invoice_number ASC`
       }
       
       sql += ` ${orderByClause} LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`
@@ -170,9 +206,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const summaryParams: any[] = []
       let summaryParamCount = 0
       if (searchTerm) {
+        const search = searchTerm.trim()
         summaryParamCount++
-        summaryParams.push(`%${searchTerm}%`)
-        summarySql += ` AND (customer_name ILIKE $${summaryParamCount} OR invoice_number ILIKE $${summaryParamCount})`
+        const searchWildcard = `%${search}%`
+        summarySql += ` AND (
+          customer_name ILIKE $${summaryParamCount} 
+          OR invoice_number ILIKE $${summaryParamCount}
+          OR similarity(customer_name, $${summaryParamCount + 1}) > 0.3
+          OR similarity(invoice_number, $${summaryParamCount + 1}) > 0.3
+        )`
+        summaryParams.push(searchWildcard)
+        summaryParamCount++
+        summaryParams.push(search) // Exact term for similarity matching
       }
       if (ref && ref !== '') {
         summaryParamCount++
