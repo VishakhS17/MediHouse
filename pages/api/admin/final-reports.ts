@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { date, download } = req.query
+    const { fromDate, toDate, download } = req.query
 
     // Build query to join invoice_collections with supply
     let queryStr = `
@@ -49,10 +49,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const params: any[] = []
     let paramIndex = 1
     
-    // Add date filter if provided (filter by collection_date)
-    if (date && typeof date === 'string' && date.trim() !== '') {
-      queryStr += ` AND DATE(ic.collection_date) = $${paramIndex}`
-      params.push(date)
+    // Add date range filter if provided (filter by collection_date)
+    const fromDateValue = fromDate ? (Array.isArray(fromDate) ? fromDate[0] : fromDate) : null
+    const toDateValue = toDate ? (Array.isArray(toDate) ? toDate[0] : toDate) : null
+    
+    if (fromDateValue && typeof fromDateValue === 'string' && fromDateValue.trim() !== '') {
+      queryStr += ` AND DATE(ic.collection_date) >= $${paramIndex}`
+      params.push(fromDateValue)
+      paramIndex++
+    }
+    
+    if (toDateValue && typeof toDateValue === 'string' && toDateValue.trim() !== '') {
+      queryStr += ` AND DATE(ic.collection_date) <= $${paramIndex}`
+      params.push(toDateValue)
       paramIndex++
     }
     
@@ -115,9 +124,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Final Reports')
 
       const baseDate = new Date().toISOString().split('T')[0]
-      const dateSuffix = date && typeof date === 'string' && date.trim() !== ''
-        ? `_${date}`
-        : ''
+      let dateSuffix = ''
+      if (fromDateValue && toDateValue) {
+        dateSuffix = `_${fromDateValue}_to_${toDateValue}`
+      } else if (fromDateValue) {
+        dateSuffix = `_from_${fromDateValue}`
+      } else if (toDateValue) {
+        dateSuffix = `_to_${toDateValue}`
+      }
       const filename = `Final_Reports_${baseDate}${dateSuffix}.xlsx`
 
       const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })

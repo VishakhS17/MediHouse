@@ -8,7 +8,8 @@ export default function FinalReports() {
   const { admin, hasPermission } = useAdminAuth()
   const [reports, setReports] = useState<any[]>([])
   const [filteredReports, setFilteredReports] = useState<any[]>([])
-  const [dateFilter, setDateFilter] = useState<string>('')
+  const [fromDate, setFromDate] = useState<string>('')
+  const [toDate, setToDate] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [showEditedOnly, setShowEditedOnly] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -20,18 +21,20 @@ export default function FinalReports() {
       loadReports()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [admin, dateFilter])
+  }, [admin, fromDate, toDate])
 
   useEffect(() => {
     // Filter reports based on date filter and search term
     let filtered = reports
 
-    // Filter by date (already filtered on backend, but keep for consistency)
-    if (dateFilter) {
+    // Filter by date range (already filtered on backend, but keep for consistency)
+    if (fromDate || toDate) {
       filtered = filtered.filter((report) => {
         if (!report.collection_date) return false
         const reportDate = new Date(report.collection_date).toISOString().split('T')[0]
-        return reportDate === dateFilter
+        const fromMatch = !fromDate || reportDate >= fromDate
+        const toMatch = !toDate || reportDate <= toDate
+        return fromMatch && toMatch
       })
     }
 
@@ -71,7 +74,7 @@ export default function FinalReports() {
     }
 
     setFilteredReports(filtered)
-  }, [reports, dateFilter, searchTerm, showEditedOnly])
+  }, [reports, fromDate, toDate, searchTerm, showEditedOnly])
 
   const loadReports = async () => {
     if (!admin) {
@@ -82,10 +85,15 @@ export default function FinalReports() {
     setLoading(true)
     setError('')
     try {
-      let url = '/api/admin/final-reports'
-      if (dateFilter) {
-        url += `?date=${encodeURIComponent(dateFilter)}`
+      const params = new URLSearchParams()
+      if (fromDate) {
+        params.append('fromDate', fromDate)
       }
+      if (toDate) {
+        params.append('toDate', toDate)
+      }
+      const queryString = params.toString()
+      const url = `/api/admin/final-reports${queryString ? `?${queryString}` : ''}`
 
       const response = await fetch(url, {
         headers: {
@@ -113,10 +121,15 @@ export default function FinalReports() {
   const handleDownloadExcel = async () => {
     setDownloading(true)
     try {
-      let queryString = 'download=true'
-      if (dateFilter) {
-        queryString += `&date=${encodeURIComponent(dateFilter)}`
+      const params = new URLSearchParams()
+      params.append('download', 'true')
+      if (fromDate) {
+        params.append('fromDate', fromDate)
       }
+      if (toDate) {
+        params.append('toDate', toDate)
+      }
+      const queryString = params.toString()
 
       const response = await fetch(`/api/admin/final-reports?${queryString}`, {
         headers: {
@@ -262,20 +275,36 @@ export default function FinalReports() {
                     </button>
                   )}
                 </div>
-                {/* Date Filter */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    placeholder="Filter by collection date"
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
-                  />
-                  {dateFilter && (
+                {/* Date Range Filter */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-600 whitespace-nowrap">From:</label>
+                    <input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      placeholder="From date"
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-600 whitespace-nowrap">To:</label>
+                    <input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      placeholder="To date"
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
+                    />
+                  </div>
+                  {(fromDate || toDate) && (
                     <button
-                      onClick={() => setDateFilter('')}
+                      onClick={() => {
+                        setFromDate('')
+                        setToDate('')
+                      }}
                       className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
-                      title="Clear date filter"
+                      title="Clear date filters"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -353,7 +382,7 @@ export default function FinalReports() {
               </div>
             ) : filteredReports.length === 0 ? (
               <p className="text-sm sm:text-base text-gray-500 text-center py-8">
-                {dateFilter || searchTerm
+                {fromDate || toDate || searchTerm
                   ? `No reports found matching the filters`
                   : 'No reports found'}
               </p>
