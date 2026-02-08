@@ -2,8 +2,6 @@ import Link from 'next/link'
 import { contact, siteConfig } from '@/data/site'
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear()
-
   return (
     <footer className="relative overflow-hidden bg-gradient-to-br from-ocean-navy via-ocean-royal to-ocean-navy text-gray-300" role="contentinfo">
       {/* Animated Background Elements */}
@@ -156,7 +154,15 @@ export default function Footer() {
         <div className="mt-8 sm:mt-12 border-t border-gray-700/50 pt-6 sm:pt-8">
           <div className="flex flex-col items-center justify-between space-y-3 sm:space-y-4 md:flex-row md:space-y-0 text-center md:text-left">
             <p className="text-sm text-gray-400">
-              &copy; {currentYear} <span className="text-white font-semibold">{siteConfig.name}</span>. All rights reserved.
+              &copy; 2026 <span className="text-white font-semibold">{siteConfig.name}</span>. All rights reserved. Designed by{' '}
+              <a
+                href="https://www.linkedin.com/in/vishakhs17/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ocean-aqua hover:text-ocean-cyan transition-colors duration-300 font-semibold"
+              >
+                Vishakh S
+              </a>
             </p>
           </div>
         </div>
