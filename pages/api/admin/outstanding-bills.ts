@@ -167,17 +167,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Add pagination and ordering to main query
       // When searching, prioritize exact matches and high similarity matches first
-      let orderByClause = 'ORDER BY bill_date DESC, customer_name ASC, invoice_number ASC'
-      
-      // Override default sorting if sortBy and sortOrder are provided
-      if (sortBy === 'bill_date' && sortOrder) {
+
+      // Determine requested bill_date sort order (defaults to DESC / newest first)
+      let billDateOrder: 'ASC' | 'DESC' = 'DESC'
+      if (sortOrder) {
         const sortOrderStr = Array.isArray(sortOrder) ? sortOrder[0] : sortOrder
-        const order = sortOrderStr.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
-        orderByClause = `ORDER BY bill_date ${order}, customer_name ASC, invoice_number ASC`
+        billDateOrder = sortOrderStr.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
       }
-      
-      // If there's a search term, add relevance sorting (exact matches first, then by similarity score)
+
+      let orderByClause: string
+
       if (searchTerm) {
+        // If there's a search term, add relevance sorting (exact matches first, then by similarity score)
         // The search term parameters are at positions 1 (wildcard) and 2 (exact)
         // We need to track this before other filters are added
         const wildcardParamIndex = 1
@@ -191,9 +192,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             similarity(customer_name, $${exactTermParamIndex}),
             similarity(invoice_number, $${exactTermParamIndex})
           ) DESC,
-          bill_date DESC, 
+          bill_date ${billDateOrder}, 
           customer_name ASC, 
           invoice_number ASC`
+      } else {
+        // No search term – just sort by bill_date and secondary keys
+        orderByClause = `ORDER BY bill_date ${billDateOrder}, customer_name ASC, invoice_number ASC`
       }
       
       sql += ` ${orderByClause} LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`
