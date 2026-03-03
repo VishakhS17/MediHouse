@@ -9,8 +9,15 @@ export default function Supply() {
   const [invoices, setInvoices] = useState<any[]>([])
   const [filteredInvoices, setFilteredInvoices] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  // Set default date filter to today's date (YYYY-MM-DD format for date input)
-  const [checkedDateFilter, setCheckedDateFilter] = useState(() => {
+  // Set default date range filter to today's date (YYYY-MM-DD format for date input)
+  const [fromDate, setFromDate] = useState(() => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })
+  const [toDate, setToDate] = useState(() => {
     const today = new Date()
     const year = today.getFullYear()
     const month = String(today.getMonth() + 1).padStart(2, '0')
@@ -88,7 +95,7 @@ export default function Supply() {
   }
 
   useEffect(() => {
-    // Filter invoices based on search term and date filter
+    // Filter invoices based on search term and date range
     let filtered = invoices
 
     // Filter by search term (invoice number or supplier name with fuzzy matching)
@@ -106,12 +113,18 @@ export default function Supply() {
       })
     }
 
-    // Filter by checked date
-    if (checkedDateFilter) {
+    // Filter by checked date range
+    if (fromDate || toDate) {
       filtered = filtered.filter((invoice) => {
         if (!invoice.checked_date) return false
         const invoiceDate = new Date(invoice.checked_date).toISOString().split('T')[0]
-        return invoiceDate === checkedDateFilter
+        if (fromDate && invoiceDate < fromDate) {
+          return false
+        }
+        if (toDate && invoiceDate > toDate) {
+          return false
+        }
+        return true
       })
     }
 
@@ -166,10 +179,26 @@ export default function Supply() {
           return bValue.localeCompare(aValue)
         }
       })
+    } else if (sortColumn === 'checked_date') {
+      filtered = [...filtered].sort((a, b) => {
+        const ts = (d: string | null | undefined) =>
+          d ? new Date(d).getTime() : (sortDirection === 'asc' ? Infinity : -Infinity)
+        const tsA = ts(a.checked_date)
+        const tsB = ts(b.checked_date)
+        return sortDirection === 'asc' ? tsA - tsB : tsB - tsA
+      })
+    } else if (sortColumn === 'delivery_date') {
+      filtered = [...filtered].sort((a, b) => {
+        const ts = (d: string | null | undefined) =>
+          d ? new Date(d).getTime() : (sortDirection === 'asc' ? Infinity : -Infinity)
+        const tsA = ts(a.delivery_date)
+        const tsB = ts(b.delivery_date)
+        return sortDirection === 'asc' ? tsA - tsB : tsB - tsA
+      })
     }
 
     setFilteredInvoices(filtered)
-  }, [invoices, searchTerm, checkedDateFilter, sortColumn, sortDirection, showEditedOnly, showNotSuppliedOnly])
+  }, [invoices, searchTerm, fromDate, toDate, sortColumn, sortDirection, showEditedOnly, showNotSuppliedOnly])
 
   const loadInvoices = async () => {
     if (!admin) {
@@ -275,10 +304,13 @@ export default function Supply() {
   const handleDownloadExcel = async () => {
     setDownloading(true)
     try {
-      // Build query string with date filter and search term if selected
+      // Build query string with date range filter and search term if selected
       let queryString = 'download=true'
-      if (checkedDateFilter) {
-        queryString += `&checkedDateFilter=${encodeURIComponent(checkedDateFilter)}`
+      if (fromDate) {
+        queryString += `&fromDate=${encodeURIComponent(fromDate)}`
+      }
+      if (toDate) {
+        queryString += `&toDate=${encodeURIComponent(toDate)}`
       }
       if (searchTerm.trim()) {
         queryString += `&searchTerm=${encodeURIComponent(searchTerm.trim())}`
@@ -355,17 +387,23 @@ export default function Supply() {
   // Calculate missing invoice numbers from the sequence/series and check against database
   useEffect(() => {
     const calculateAndCheckMissing = async () => {
-      if (!checkedDateFilter || !admin) {
+      if ((!fromDate && !toDate) || !admin) {
         setMissingInvoiceNumbers([])
         return
       }
 
-      // Filter invoices by selected date - get ALL invoices checked on that date
+      // Filter invoices by selected date range - get ALL invoices checked in that period
       // Use all invoices (not just those with supply records) to find the range
       const dateFilteredInvoices = invoices.filter((invoice) => {
         if (!invoice.checked_date) return false
         const invoiceDate = new Date(invoice.checked_date).toISOString().split('T')[0]
-        return invoiceDate === checkedDateFilter
+        if (fromDate && invoiceDate < fromDate) {
+          return false
+        }
+        if (toDate && invoiceDate > toDate) {
+          return false
+        }
+        return true
       })
 
       // Get all invoice numbers from invoices checked on the selected date
@@ -405,7 +443,7 @@ export default function Supply() {
       
       // Safety check: Don't check more than 1000 missing numbers to avoid performance issues
       const range = max - min
-      console.log(`[Missing Invoices] Date: ${checkedDateFilter}, Min: ${min}, Max: ${max}, Range: ${range}, Total invoices: ${numericInvoices.length}`)
+      console.log(`[Missing Invoices] Date range: ${fromDate || '...'} to ${toDate || '...'}, Min: ${min}, Max: ${max}, Range: ${range}, Total invoices: ${numericInvoices.length}`)
       
       if (range > 1000) {
         console.warn(`Invoice number range too large (${range}), limiting check to reasonable range`)
@@ -493,7 +531,7 @@ export default function Supply() {
     }
 
     calculateAndCheckMissing()
-  }, [invoices, checkedDateFilter, admin])
+  }, [invoices, fromDate, toDate, admin])
 
   if (!hasPermission('manage_supply')) {
     return (
@@ -543,7 +581,7 @@ export default function Supply() {
           )}
 
           {/* Missing Invoice Numbers Section */}
-          {checkedDateFilter && (
+          {(fromDate || toDate) && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
               <button
                 onClick={() => setShowMissing(!showMissing)}
@@ -570,13 +608,31 @@ export default function Supply() {
                     <p className="text-sm text-gray-600 mt-0.5">
                       {missingInvoiceNumbers.length > 0 ? (
                         <>
-                          {missingInvoiceNumbers.length} invoice number{missingInvoiceNumbers.length !== 1 ? 's' : ''} missing from the supply records series for {checkedDateFilter ? new Date(checkedDateFilter).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'selected date'}
+                          {missingInvoiceNumbers.length} invoice number{missingInvoiceNumbers.length !== 1 ? 's' : ''} missing from the supply records series for{' '}
+                          {fromDate && toDate
+                            ? `${new Date(fromDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })} to ${new Date(toDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}`
+                            : fromDate
+                              ? new Date(fromDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
+                              : toDate
+                                ? new Date(toDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
+                                : 'selected period'}
                           {missingInvoiceNumbers.filter(item => item.existsOnDate).length > 0 && (
                             <span className="ml-1">({missingInvoiceNumbers.filter(item => !item.existsOnDate).length} truly missing, {missingInvoiceNumbers.filter(item => item.existsOnDate).length} on different dates)</span>
                           )}
                         </>
                       ) : (
-                        <>No missing invoice numbers found for {checkedDateFilter ? new Date(checkedDateFilter).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'selected date'}</>
+                        fromDate || toDate ? (
+                          <>
+                            No missing invoice numbers found for{' '}
+                            {fromDate && toDate
+                              ? `${new Date(fromDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })} to ${new Date(toDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}`
+                              : fromDate
+                                ? new Date(fromDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
+                                : new Date(toDate as string).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </>
+                        ) : (
+                          <>No missing invoice numbers found for selected period</>
+                        )
                       )}
                     </p>
                   </div>
@@ -751,20 +807,33 @@ export default function Supply() {
                     </button>
                   )}
                 </div>
-                {/* Date Filter */}
+                {/* Date Range Filter */}
                 <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={checkedDateFilter}
-                    onChange={(e) => setCheckedDateFilter(e.target.value)}
-                    placeholder="Filter by checked date"
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
-                  />
-                  {checkedDateFilter && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      placeholder="From date"
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
+                    />
+                    <span className="text-xs text-gray-500">to</span>
+                    <input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      placeholder="To date"
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto"
+                    />
+                  </div>
+                  {(fromDate || toDate) && (
                     <button
-                      onClick={() => setCheckedDateFilter('')}
+                      onClick={() => {
+                        setFromDate('')
+                        setToDate('')
+                      }}
                       className="px-2 py-2 text-sm text-gray-600 hover:text-gray-800 min-h-[44px] touch-manipulation"
-                      title="Clear date filter"
+                      title="Clear date range"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -898,11 +967,61 @@ export default function Supply() {
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Customer Name
                       </th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Checked Date
+                      <th 
+                        className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                        onClick={() => handleSort('checked_date')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Checked Date
+                          {sortColumn === 'checked_date' && (
+                            <svg
+                              className={`w-4 h-4 ${sortDirection === 'asc' ? '' : 'transform rotate-180'}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          )}
+                          {sortColumn !== 'checked_date' && (
+                            <svg
+                              className="w-4 h-4 opacity-30"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
+                          )}
+                        </div>
                       </th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Supply Datetime
+                      <th 
+                        className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                        onClick={() => handleSort('delivery_date')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Supply Datetime
+                          {sortColumn === 'delivery_date' && (
+                            <svg
+                              className={`w-4 h-4 ${sortDirection === 'asc' ? '' : 'transform rotate-180'}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          )}
+                          {sortColumn !== 'delivery_date' && (
+                            <svg
+                              className="w-4 h-4 opacity-30"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
+                          )}
+                        </div>
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Action

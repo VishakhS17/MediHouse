@@ -52,7 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // If download is requested, generate Excel file
       if (download === 'true' || download === 'excel') {
-        const { checkedDateFilter, searchTerm } = req.query
+        const { searchTerm } = req.query
+        const fromDate = typeof req.query.fromDate === 'string' ? req.query.fromDate.trim() : ''
+        const toDate = typeof req.query.toDate === 'string' ? req.query.toDate.trim() : ''
 
         // Fuzzy match function (same as frontend)
         const fuzzyMatch = (text: string, pattern: string): boolean => {
@@ -83,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return matchRatio >= 0.7
         }
 
-        // Build query with optional date filter
+        // Build query with optional date range filter
         let queryStr = `SELECT 
             s.id,
             s.invoice_number,
@@ -102,10 +104,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const params: any[] = []
         let paramIndex = 1
 
-        // Add date filter if provided
-        if (checkedDateFilter && typeof checkedDateFilter === 'string' && checkedDateFilter.trim() !== '') {
-          queryStr += ` AND DATE(ic.checked_date) = $${paramIndex}`
-          params.push(checkedDateFilter)
+        // Add date range filters if provided
+        if (fromDate) {
+          queryStr += ` AND DATE(ic.checked_date) >= $${paramIndex}`
+          params.push(fromDate)
+          paramIndex++
+        }
+        if (toDate) {
+          queryStr += ` AND DATE(ic.checked_date) <= $${paramIndex}`
+          params.push(toDate)
           paramIndex++
         }
 
@@ -171,11 +178,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Supply Records')
 
-        // Construct filename - avoid reassignment by building in one expression
+        // Construct filename - include date range when available
         const baseDate = new Date().toISOString().split('T')[0]
-        const dateSuffix = checkedDateFilter && typeof checkedDateFilter === 'string' && checkedDateFilter.trim() !== '' 
-          ? `_${checkedDateFilter}` 
-          : ''
+        const dateSuffix =
+          fromDate && toDate
+            ? `_${fromDate}_to_${toDate}`
+            : fromDate
+              ? `_${fromDate}_onwards`
+              : toDate
+                ? `_upto_${toDate}`
+                : ''
         const searchSuffix = searchTerm && typeof searchTerm === 'string' && searchTerm.trim() !== ''
           ? `_${searchTerm.trim().replace(/[^a-zA-Z0-9]/g, '_')}`
           : ''
