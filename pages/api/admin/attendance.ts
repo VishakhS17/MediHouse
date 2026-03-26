@@ -132,25 +132,78 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Check if Excel download is requested
       if (download === 'true' || download === 'excel') {
-        // Generate Excel file
-        const excelData = result.rows.map((row) => ({
-          'Date': new Date(row.attendance_date).toLocaleDateString('en-IN'),
-          'Employee Name': row.employee_name,
-          'Employee Email': row.employee_email,
-          'Status': row.status.charAt(0).toUpperCase() + row.status.slice(1).replace('_', ' '),
-          'Marked By': row.marked_by_name || '',
-          'Notes': row.notes || '',
-          'Marked At': new Date(row.created_at).toLocaleString('en-IN', {
+        // Build employee-wise pivot format:
+        // Employee Name | Employee Email | <date> | <date> Marked At | ...
+        const formatStatus = (status: string) =>
+          status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
+
+        const formatDateKey = (dateValue: string | Date) => {
+          const date = new Date(dateValue)
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        }
+
+        const formatMarkedAt = (dateValue: string | Date) =>
+          new Date(dateValue).toLocaleString('en-IN', {
             timeZone: 'Asia/Kolkata',
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
             minute: '2-digit',
-          }),
-        }))
+          })
 
-        const worksheet = XLSX.utils.json_to_sheet(excelData)
+        const uniqueDates = Array.from(
+          new Set(result.rows.map((row) => formatDateKey(row.attendance_date)))
+        ).sort()
+
+        const employeeMap = new Map<
+          string,
+          {
+            name: string
+            email: string
+            byDate: Record<string, { status: string; markedAt: string }>
+          }
+        >()
+
+        result.rows.forEach((row) => {
+          const employeeKey = `${row.employee_id}`
+          const attendanceDate = formatDateKey(row.attendance_date)
+
+          if (!employeeMap.has(employeeKey)) {
+            employeeMap.set(employeeKey, {
+              name: row.employee_name,
+              email: row.employee_email,
+              byDate: {},
+            })
+          }
+
+          const employee = employeeMap.get(employeeKey)!
+          employee.byDate[attendanceDate] = {
+            status: formatStatus(row.status),
+            markedAt: formatMarkedAt(row.created_at),
+          }
+        })
+
+        const headerRow: string[] = ['Employee Name', 'Employee Email']
+        uniqueDates.forEach((date) => {
+          headerRow.push(date)
+          headerRow.push(`${date} Marked At`)
+        })
+
+        const sheetData: (string | number)[][] = [headerRow]
+        Array.from(employeeMap.values()).forEach((employee) => {
+          const row: (string | number)[] = [employee.name, employee.email]
+          uniqueDates.forEach((date) => {
+            row.push(employee.byDate[date]?.status || '')
+            row.push(employee.byDate[date]?.markedAt || '')
+          })
+          sheetData.push(row)
+        })
+
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData)
         const workbook = XLSX.utils.book_new()
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance')
 
