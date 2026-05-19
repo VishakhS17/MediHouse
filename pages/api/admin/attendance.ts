@@ -132,8 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Check if Excel download is requested
       if (download === 'true' || download === 'excel') {
-        // Build employee-wise pivot format:
-        // Employee Name | Employee Email | <date> | <date> Marked At | ...
+        // Build employee-wise pivot format: Employee Name | <date> | <date> | ...
         const formatStatus = (status: string) =>
           status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
 
@@ -145,16 +144,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return `${year}-${month}-${day}`
         }
 
-        const formatMarkedAt = (dateValue: string | Date) =>
-          new Date(dateValue).toLocaleString('en-IN', {
-            timeZone: 'Asia/Kolkata',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-
         const uniqueDates = Array.from(
           new Set(result.rows.map((row) => formatDateKey(row.attendance_date)))
         ).sort()
@@ -163,8 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           string,
           {
             name: string
-            email: string
-            byDate: Record<string, { status: string; markedAt: string }>
+            byDate: Record<string, string>
           }
         >()
 
@@ -175,31 +163,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (!employeeMap.has(employeeKey)) {
             employeeMap.set(employeeKey, {
               name: row.employee_name,
-              email: row.employee_email,
               byDate: {},
             })
           }
 
           const employee = employeeMap.get(employeeKey)!
-          employee.byDate[attendanceDate] = {
-            status: formatStatus(row.status),
-            markedAt: formatMarkedAt(row.created_at),
-          }
+          employee.byDate[attendanceDate] = formatStatus(row.status)
         })
 
-        const headerRow: string[] = ['Employee Name', 'Employee Email']
-        uniqueDates.forEach((date) => {
-          headerRow.push(date)
-          headerRow.push(`${date} Marked At`)
-        })
+        const headerRow: string[] = ['Employee Name', ...uniqueDates]
 
         const sheetData: (string | number)[][] = [headerRow]
         Array.from(employeeMap.values()).forEach((employee) => {
-          const row: (string | number)[] = [employee.name, employee.email]
-          uniqueDates.forEach((date) => {
-            row.push(employee.byDate[date]?.status || '')
-            row.push(employee.byDate[date]?.markedAt || '')
-          })
+          const row: (string | number)[] = [
+            employee.name,
+            ...uniqueDates.map((date) => employee.byDate[date] || ''),
+          ]
           sheetData.push(row)
         })
 
