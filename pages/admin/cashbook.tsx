@@ -399,8 +399,12 @@ export default function Cashbook() {
     const credit = transactionType === 'credit' ? parseFloat(creditAmount) : 0
     const bankTransfer = transactionType === 'bank_transfer' ? parseFloat(bankTransferAmount) : 0
 
-    if (debit <= 0 && credit <= 0 && bankTransfer <= 0) {
-      setError('Please enter an amount')
+    if (
+      (transactionType === 'debit' && (!Number.isFinite(debit) || debit <= 0)) ||
+      (transactionType === 'credit' && (!Number.isFinite(credit) || credit <= 0)) ||
+      (transactionType === 'bank_transfer' && (!Number.isFinite(bankTransfer) || bankTransfer <= 0))
+    ) {
+      setError('Please enter a valid amount greater than 0')
       return
     }
 
@@ -464,7 +468,10 @@ export default function Cashbook() {
         loadTransactions()
         setTimeout(() => setSuccess(''), 3000)
       } else {
-        setError(data.message || (editingId ? 'Failed to update transaction' : 'Failed to record transaction'))
+        const details = data.error ? `: ${data.error}` : ''
+        setError(
+          `${data.message || (editingId ? 'Failed to update transaction' : 'Failed to record transaction')}${details}`
+        )
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred')

@@ -100,8 +100,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     } catch (error: any) {
       console.error('Cashbook transaction error:', error)
+      const isUniqueReceipt =
+        error?.code === '23505' && String(error?.constraint || '').includes('receipt_number')
+      const isDeadlock = error?.code === '40P01'
       res.status(500).json({
-        message: 'Error recording cashbook transaction',
+        message: isUniqueReceipt
+          ? 'Receipt number already exists. Leave it blank to auto-generate, or use a different number.'
+          : isDeadlock
+            ? 'Cashbook is busy with another save. Please try again.'
+            : 'Error recording cashbook transaction',
         error: error.message,
       })
     }
