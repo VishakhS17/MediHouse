@@ -56,6 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ic.invoice_number,
         ic.order_id,
         ic.collector_name,
+        COALESCE(NULLIF(TRIM(ic.customer_name), ''), s.customer_name, o.customer_name) as customer_name,
         ic.collection_date,
         ic.notes,
         ic.created_at,
@@ -111,14 +112,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Check collector name with fuzzy matching
         const collectorName = row.collector_name || ''
         const collectorMatch = fuzzyMatch(collectorName, searchTerm)
+
+        const customerName = row.customer_name || ''
+        const customerMatch = fuzzyMatch(customerName, searchTerm)
         
-        return invoiceMatch || collectorMatch
+        return invoiceMatch || collectorMatch || customerMatch
       })
     }
 
     // Generate Excel file with supply data
     const excelData = result.rows.map((row) => ({
       'Invoice Number': row.invoice_number,
+      'Customer Name': row.customer_name || row.supply_customer_name || row.order_customer_name || '',
       'Order ID': row.order_id || '',
       'Collected By': row.collector_name,
       'Collection Date': new Date(row.collection_date).toLocaleString('en-IN', {
@@ -131,7 +136,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         second: '2-digit',
       }),
       'Supplied By': row.supplied_by || '',
-      'Customer Name': row.supply_customer_name || row.order_customer_name || '',
       'Customer Phone': row.customer_phone || '',
       'Notes': row.notes || '',
       'Collected By (Admin)': row.collected_by_name || '',

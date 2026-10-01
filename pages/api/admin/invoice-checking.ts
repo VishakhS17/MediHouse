@@ -97,6 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ic.id,
           ic.invoice_number,
           ic.collector_name,
+          COALESCE(NULLIF(TRIM(ic.customer_name), ''), s.customer_name) as customer_name,
           ic.collection_date,
           ic.checker_name,
           ic.checked_date,
@@ -146,8 +147,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           // Check checker name with fuzzy matching
           const checkerName = row.checker_name || ''
           const checkerMatch = fuzzyMatch(checkerName, searchTerm)
+
+          const customerName = row.customer_name || ''
+          const customerMatch = fuzzyMatch(customerName, searchTerm)
           
-          return invoiceMatch || collectorMatch || checkerMatch
+          return invoiceMatch || collectorMatch || checkerMatch || customerMatch
         })
       }
 
@@ -156,6 +160,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Generate Excel file
         const excelData = result.rows.map((row) => ({
           'Invoice Number': row.invoice_number,
+          'Customer Name': row.customer_name || row.supply_customer_name || '',
           'Who Collected': row.collector_name,
           'Date and Time of Collection': new Date(row.collection_date).toLocaleString('en-IN', {
             timeZone: 'Asia/Kolkata',
@@ -179,7 +184,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               })
             : '',
           'Supplied By': row.supplied_by || '',
-          'Customer Name': row.supply_customer_name || '',
         }))
 
         const worksheet = XLSX.utils.json_to_sheet(excelData)

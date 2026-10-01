@@ -7,6 +7,7 @@ import { useAdminAuth } from '@/lib/adminAuth'
 export default function InvoiceCollection() {
   const { admin, hasPermission } = useAdminAuth()
   const [invoiceNumber, setInvoiceNumber] = useState('')
+  const [customerName, setCustomerName] = useState('')
   const [orderId, setOrderId] = useState('')
   const [collectorName, setCollectorName] = useState(admin?.name || '')
   const [notes, setNotes] = useState('')
@@ -23,6 +24,7 @@ export default function InvoiceCollection() {
   const [downloading, setDownloading] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editInvoiceNumber, setEditInvoiceNumber] = useState('')
+  const [editCustomerName, setEditCustomerName] = useState('')
   const [editOrderId, setEditOrderId] = useState('')
   const [editCollectorName, setEditCollectorName] = useState('')
   const [editNotes, setEditNotes] = useState('')
@@ -77,18 +79,15 @@ export default function InvoiceCollection() {
     // Filter collections based on search term and date filter
     let filtered = collections
 
-    // Filter by search term (invoice number or collector name with fuzzy matching)
+    // Filter by search term (invoice number, customer name, or collector name)
     if (searchTerm.trim() !== '') {
       const searchLower = searchTerm.toLowerCase().trim()
       filtered = filtered.filter((collection) => {
-        // Check invoice number (exact substring match)
         const invoiceMatch = collection.invoice_number?.toLowerCase().includes(searchLower)
+        const collectorMatch = fuzzyMatch(collection.collector_name || '', searchTerm)
+        const customerMatch = fuzzyMatch(collection.customer_name || '', searchTerm)
         
-        // Check collector name with fuzzy matching
-        const collectorName = collection.collector_name || ''
-        const collectorMatch = fuzzyMatch(collectorName, searchTerm)
-        
-        return invoiceMatch || collectorMatch
+        return invoiceMatch || collectorMatch || customerMatch
       })
     }
 
@@ -217,6 +216,7 @@ export default function InvoiceCollection() {
         },
         body: JSON.stringify({
           invoiceNumber: invoiceNumber.trim(),
+          customerName: customerName.trim() || null,
           orderId: orderId ? parseInt(orderId) : null,
           collectorName: collectorName.trim(),
           notes: notes.trim() || null,
@@ -228,6 +228,7 @@ export default function InvoiceCollection() {
       if (response.ok) {
         setSuccess('Invoice collection recorded successfully!')
         setInvoiceNumber('')
+        setCustomerName('')
         setOrderId('')
         setNotes('')
         if (showHistory) {
@@ -247,6 +248,7 @@ export default function InvoiceCollection() {
     console.log('Editing collection:', collection)
     setEditingId(collection.id)
     setEditInvoiceNumber(collection.invoice_number || '')
+    setEditCustomerName(collection.customer_name || '')
     setEditOrderId(collection.order_id ? collection.order_id.toString() : '')
     setEditCollectorName(collection.collector_name || '')
     setEditNotes(collection.notes || '')
@@ -258,6 +260,7 @@ export default function InvoiceCollection() {
   const handleCancelEdit = () => {
     setEditingId(null)
     setEditInvoiceNumber('')
+    setEditCustomerName('')
     setEditOrderId('')
     setEditCollectorName('')
     setEditNotes('')
@@ -289,6 +292,7 @@ export default function InvoiceCollection() {
       const payload = {
         id: editingId,
         invoiceNumber: editInvoiceNumber.trim(),
+        customerName: editCustomerName.trim() || null,
         orderId: editOrderId ? parseInt(editOrderId) : null,
         collectorName: editCollectorName.trim(),
         notes: editNotes.trim() || null,
@@ -464,6 +468,39 @@ export default function InvoiceCollection() {
                 </div>
 
                 <div>
+                  <label htmlFor="customerName" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
+                    Customer Name
+                  </label>
+                  <input
+                    type="text"
+                    id="customerName"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation"
+                    placeholder="Enter customer name"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="collectorName" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
+                    Collector Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="collectorName"
+                    value={collectorName}
+                    onChange={(e) => setCollectorName(e.target.value)}
+                    className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation"
+                    placeholder="Enter collector name"
+                    required
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div>
                   <label htmlFor="orderId" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
                     Order ID (Optional)
                   </label>
@@ -477,22 +514,6 @@ export default function InvoiceCollection() {
                     disabled={submitting}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label htmlFor="collectorName" className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5">
-                  Collector Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="collectorName"
-                  value={collectorName}
-                  onChange={(e) => setCollectorName(e.target.value)}
-                  className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent touch-manipulation"
-                  placeholder="Enter collector name"
-                  required
-                  disabled={submitting}
-                />
               </div>
 
               <div>
@@ -570,7 +591,7 @@ export default function InvoiceCollection() {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search invoice number or collector name..."
+                        placeholder="Search invoice number, customer, or collector..."
                         className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto min-w-[200px]"
                       />
                       {searchTerm && (
@@ -699,6 +720,9 @@ export default function InvoiceCollection() {
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Invoice #
                           </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Customer
+                          </th>
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                             Collector
                           </th>
@@ -754,6 +778,19 @@ export default function InvoiceCollection() {
                                     </div>
                                     <div className="text-xs text-gray-500 sm:hidden mt-1">{collection.collector_name}</div>
                                   </>
+                                )}
+                              </td>
+                              <td className="px-3 sm:px-4 py-3">
+                                {isEditing ? (
+                                  <input
+                                    type="text"
+                                    value={editCustomerName}
+                                    onChange={(e) => setEditCustomerName(e.target.value)}
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent"
+                                    placeholder="Customer name"
+                                  />
+                                ) : (
+                                  <span className="text-sm text-gray-900">{collection.customer_name || '-'}</span>
                                 )}
                               </td>
                               <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">

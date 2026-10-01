@@ -395,6 +395,9 @@ export default function FinalReports() {
                         Invoice #
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer Name
+                      </th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Collected By
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -411,9 +414,6 @@ export default function FinalReports() {
                       </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Supplied Date & Time
-                      </th>
-                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer Name
                       </th>
                     </tr>
                   </thead>
@@ -432,6 +432,9 @@ export default function FinalReports() {
                               {report.invoice_number || '-'}
                             </div>
                           </td>
+                          <td className="px-3 sm:px-4 py-3">
+                            <span className="text-xs sm:text-sm text-gray-900 font-medium">{report.customer_name || '-'}</span>
+                          </td>
                         <td className="px-3 sm:px-4 py-3">
                           <span className="text-xs sm:text-sm text-gray-900">{report.collector_name || '-'}</span>
                         </td>
@@ -449,9 +452,6 @@ export default function FinalReports() {
                         </td>
                         <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
                           {formatDate(report.delivery_date)}
-                        </td>
-                        <td className="px-3 sm:px-4 py-3">
-                          <span className="text-xs sm:text-sm text-gray-900 font-medium">{report.customer_name || '-'}</span>
                         </td>
                       </tr>
                       )

@@ -78,16 +78,11 @@ export default function InvoiceChecking() {
       filtered = filtered.filter((collection) => {
         // Check invoice number (exact substring match)
         const invoiceMatch = collection.invoice_number?.toLowerCase().includes(searchLower)
+        const collectorMatch = fuzzyMatch(collection.collector_name || '', searchTerm)
+        const checkerMatch = fuzzyMatch(collection.checker_name || '', searchTerm)
+        const customerMatch = fuzzyMatch(collection.customer_name || '', searchTerm)
         
-        // Check collector name with fuzzy matching
-        const collectorName = collection.collector_name || ''
-        const collectorMatch = fuzzyMatch(collectorName, searchTerm)
-        
-        // Check checker name with fuzzy matching
-        const checkerName = collection.checker_name || ''
-        const checkerMatch = fuzzyMatch(checkerName, searchTerm)
-        
-        return invoiceMatch || collectorMatch || checkerMatch
+        return invoiceMatch || collectorMatch || checkerMatch || customerMatch
       })
     }
 
@@ -404,7 +399,7 @@ export default function InvoiceChecking() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search invoice number or collector/checker name..."
+                    placeholder="Search invoice number, customer, or collector/checker name..."
                     className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto min-w-[200px]"
                   />
                   {searchTerm && (
@@ -537,6 +532,9 @@ export default function InvoiceChecking() {
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Invoice #
                       </th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer
+                      </th>
                       <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                         Collected By
                       </th>
@@ -574,6 +572,9 @@ export default function InvoiceChecking() {
                             <div className="text-xs text-gray-500 sm:hidden mt-1">
                               Collected by: {collection.collector_name}
                             </div>
+                          </td>
+                          <td className="px-3 sm:px-4 py-3">
+                            <span className="text-sm text-gray-900">{collection.customer_name || '-'}</span>
                           </td>
                         <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden sm:table-cell">
                           {collection.collector_name}

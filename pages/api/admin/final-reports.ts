@@ -32,6 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       SELECT 
         ic.invoice_number,
         ic.collector_name,
+        COALESCE(NULLIF(TRIM(ic.customer_name), ''), s.customer_name) as customer_name,
         ic.collection_date,
         ic.checker_name,
         ic.checked_date,
@@ -39,8 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ic.created_at,
         ic.updated_at,
         s.supplied_by,
-        s.delivery_date,
-        s.customer_name
+        s.delivery_date
       FROM invoice_collections ic
       LEFT JOIN supply s ON ic.invoice_number = s.invoice_number
       WHERE 1=1
@@ -80,6 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Generate Excel file
       const excelData = result.rows.map((row) => ({
         'Invoice Number': row.invoice_number || '',
+        'Customer Name': row.customer_name || '',
         'Collected By': row.collector_name || '',
         'Collected Date and Time': row.collection_date
           ? new Date(row.collection_date).toLocaleString('en-IN', {
@@ -116,7 +117,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               second: '2-digit',
             })
           : '',
-        'Customer Name': row.customer_name || '',
       }))
 
       const worksheet = XLSX.utils.json_to_sheet(excelData)

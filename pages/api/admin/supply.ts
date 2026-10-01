@@ -90,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             s.id,
             s.invoice_number,
             s.supplied_by,
-            s.customer_name,
+            COALESCE(NULLIF(TRIM(ic.customer_name), ''), s.customer_name) as customer_name,
             s.delivery_date,
             s.created_at,
             s.updated_at,
@@ -130,8 +130,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Check supplier name with fuzzy matching
             const supplierName = row.supplied_by || ''
             const supplierMatch = fuzzyMatch(supplierName, searchTerm)
+
+            const customerName = row.customer_name || ''
+            const customerMatch = fuzzyMatch(customerName, searchTerm)
             
-            return invoiceMatch || supplierMatch
+            return invoiceMatch || supplierMatch || customerMatch
           })
         }
 
@@ -207,6 +210,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ic.id,
             ic.invoice_number,
             ic.collector_name,
+            ic.customer_name,
             ic.collection_date,
             ic.checked_date,
             ic.notes,

@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     // Create new invoice collection
     try {
-      const { invoiceNumber, orderId, collectorName, notes } = req.body
+      const { invoiceNumber, orderId, collectorName, customerName, notes } = req.body
 
       if (!invoiceNumber || !collectorName) {
         return res.status(400).json({
@@ -74,10 +74,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Insert invoice collection
       const result = await query(
         `INSERT INTO invoice_collections 
-         (invoice_number, order_id, collected_by, collector_name, notes)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, invoice_number, order_id, collector_name, collection_date, notes`,
-        [invoiceNumber, orderId || null, collectedBy, collectorName, notes || null]
+         (invoice_number, order_id, collected_by, collector_name, customer_name, notes)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, invoice_number, order_id, collector_name, customer_name, collection_date, notes`,
+        [invoiceNumber, orderId || null, collectedBy, collectorName, customerName?.trim() || null, notes || null]
       )
 
       res.status(201).json({
@@ -103,12 +103,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ic.invoice_number,
           ic.order_id,
           ic.collector_name,
+          COALESCE(NULLIF(TRIM(ic.customer_name), ''), o.customer_name) as customer_name,
           ic.collection_date,
           ic.notes,
           ic.created_at,
           ic.updated_at,
           au.name as collected_by_name,
-          o.customer_name,
           o.customer_phone
         FROM invoice_collections ic
         LEFT JOIN admin_users au ON ic.collected_by = au.id
@@ -176,7 +176,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'PUT' || req.method === 'PATCH') {
     // Update invoice collection
     try {
-      const { id, invoiceNumber, orderId, collectorName, notes, remarks } = req.body
+      const { id, invoiceNumber, orderId, collectorName, customerName, notes, remarks } = req.body
 
       if (!id) {
         return res.status(400).json({
@@ -228,11 +228,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          SET invoice_number = $1, 
              order_id = $2, 
              collector_name = $3, 
-             notes = $4,
+             customer_name = $4,
+             notes = $5,
              updated_at = NOW()
-         WHERE id = $5
-         RETURNING id, invoice_number, order_id, collector_name, collection_date, notes, updated_at`,
-        [invoiceNumber, orderId || null, collectorName, finalNotes || null, id]
+         WHERE id = $6
+         RETURNING id, invoice_number, order_id, collector_name, customer_name, collection_date, notes, updated_at`,
+        [invoiceNumber, orderId || null, collectorName, customerName?.trim() || null, finalNotes || null, id]
       )
 
       res.status(200).json({

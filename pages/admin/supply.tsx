@@ -50,19 +50,26 @@ export default function Supply() {
   }, [admin])
 
   useEffect(() => {
-    // Initialize supply data with existing values for already supplied invoices
-    if (invoices.length > 0) {
-      const initialData: Record<number, { suppliedBy: string; customerName: string }> = {}
+    // Prefill supply form: existing supply values, or customer name from collection
+    if (invoices.length === 0) return
+
+    setSupplyData((prev) => {
+      const next = { ...prev }
       invoices.forEach((invoice) => {
-        if (invoice.supply_id && invoice.supplied_by && invoice.supply_customer_name) {
-          initialData[invoice.id] = {
-            suppliedBy: invoice.supplied_by,
-            customerName: invoice.supply_customer_name,
+        if (invoice.supply_id) {
+          next[invoice.id] = {
+            suppliedBy: invoice.supplied_by || '',
+            customerName: invoice.supply_customer_name || invoice.customer_name || '',
+          }
+        } else if (!next[invoice.id]?.customerName && invoice.customer_name) {
+          next[invoice.id] = {
+            suppliedBy: next[invoice.id]?.suppliedBy || '',
+            customerName: invoice.customer_name,
           }
         }
       })
-      setSupplyData((prev) => ({ ...prev, ...initialData }))
-    }
+      return next
+    })
   }, [invoices])
 
   // Fuzzy search function using Levenshtein distance
@@ -104,12 +111,10 @@ export default function Supply() {
       filtered = filtered.filter((invoice) => {
         // Check invoice number (exact substring match)
         const invoiceMatch = invoice.invoice_number?.toLowerCase().includes(searchLower)
+        const supplierMatch = fuzzyMatch(invoice.supplied_by || '', searchTerm)
+        const customerMatch = fuzzyMatch(invoice.customer_name || invoice.supply_customer_name || '', searchTerm)
         
-        // Check supplier name with fuzzy matching
-        const supplierName = invoice.supplied_by || ''
-        const supplierMatch = fuzzyMatch(supplierName, searchTerm)
-        
-        return invoiceMatch || supplierMatch
+        return invoiceMatch || supplierMatch || customerMatch
       })
     }
 
@@ -792,7 +797,7 @@ export default function Supply() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search invoice number or supplier name..."
+                    placeholder="Search invoice number, customer, or supplier name..."
                     className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-royal focus:border-transparent min-h-[44px] touch-manipulation w-full sm:w-auto min-w-[200px]"
                   />
                   {searchTerm && (
@@ -1045,6 +1050,11 @@ export default function Supply() {
                             <div className={`text-sm font-medium ${isEdited ? 'text-red-600' : 'text-gray-900'}`}>
                               {invoice.invoice_number}
                             </div>
+                            {(invoice.customer_name || invoice.supply_customer_name) && (
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                {invoice.customer_name || invoice.supply_customer_name}
+                              </div>
+                            )}
                           </td>
                         <td className="px-3 sm:px-4 py-3">
                           {invoice.supply_id ? (
@@ -1064,7 +1074,7 @@ export default function Supply() {
                         <td className="px-3 sm:px-4 py-3">
                           {invoice.supply_id ? (
                             <span className="text-xs sm:text-sm text-gray-900 font-medium">
-                              {invoice.supply_customer_name}
+                              {invoice.supply_customer_name || invoice.customer_name}
                             </span>
                           ) : (
                             <input
